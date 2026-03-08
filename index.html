@@ -194,6 +194,15 @@
         .settings-content > *:nth-child(4) { z-index: 7; position: relative; }
         .settings-content > *:nth-child(5) { z-index: 6; position: relative; }
         .settings-content > *:nth-child(6) { z-index: 5; position: relative; }
+
+        .chat-info-content > *:nth-child(1) { z-index: 10; position: relative; }
+        .chat-info-content > *:nth-child(2) { z-index: 9; position: relative; }
+        .chat-info-content > *:nth-child(3) { z-index: 8; position: relative; }
+        .chat-info-content > *:nth-child(4) { z-index: 7; position: relative; }
+        .chat-info-content > *:nth-child(5) { z-index: 6; position: relative; }
+        .chat-info-content > *:nth-child(6) { z-index: 5; position: relative; }
+        .chat-info-content > *:nth-child(7) { z-index: 4; position: relative; }
+        .chat-info-content > *:nth-child(8) { z-index: 3; position: relative; }
         
         .settings-card {
             background: rgba(255, 255, 255, 0.8);
@@ -398,6 +407,8 @@
             padding: 20px;
             border-radius: 15px;
             width: 80%;
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             display: flex;
             flex-direction: column;
@@ -577,12 +588,27 @@
         }
 
         .top-images { display: flex; justify-content: space-between; padding: 10px 25px; gap: 15px; }
-        .image-slot { flex: 1; aspect-ratio: 1/1; border-radius: var(--item-radius); overflow: visible; cursor: pointer; position: relative; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
+        .image-slot { flex: 1; aspect-ratio: 1/1; border-radius: var(--item-radius); overflow: hidden; cursor: pointer; position: relative; transition: transform 0.2s; display: flex; align-items: center; justify-content: center; background-color: #f0f0f0; border: 2px dashed #ccc; box-sizing: border-box; }
         .image-slot:hover { transform: scale(1.02); }
-        .image-slot img { width: 100%; height: 100%; object-fit: contain; border-radius: var(--item-radius); }
+        .image-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--item-radius); display: none; }
+        .image-slot.has-image { border: none; background-color: transparent; }
+        .image-slot.has-image img { display: block; }
+        .image-slot .placeholder-text { font-size: 13px; color: #999; text-align: center; padding: 5px; line-height: 1.2; font-weight: 500; }
+        .image-slot.has-image .placeholder-text { display: none; }
         .info-area { padding: 10px 25px; position: relative; height: 160px; }
-        .avatar-container { position: absolute; top: 20px; left: 25px; width: 70px; height: 70px; cursor: pointer; }
-        .avatar { width: 100%; height: 100%; border-radius: 50%; background-color: #fff; object-fit: cover; padding: 2px; }
+        .avatar-container { position: absolute; top: 20px; left: 25px; width: 70px; height: 70px; cursor: pointer; background-color: #f0f0f0; border-radius: 50%; border: 2px dashed #ccc; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+        .avatar-container.has-image { border: none; background-color: transparent; }
+        .avatar { width: 100%; height: 100%; border-radius: 50%; background-color: #fff; object-fit: cover; padding: 2px; display: none; }
+        .avatar-container.has-image .avatar { display: block; }
+        .avatar-placeholder-text { font-size: 13px; color: #999; text-align: center; line-height: 1.2; font-weight: 500; }
+        .avatar-container.has-image .avatar-placeholder-text { display: none; }
+        
+        .me-avatar-container { position: relative; width: 60px; height: 60px; cursor: pointer; background-color: #f0f0f0; border-radius: 6px; border: 2px dashed #ccc; box-sizing: border-box; display: flex; align-items: center; justify-content: center; }
+        .me-avatar-container.has-image { border: none; background-color: transparent; }
+        .me-avatar-container img { width: 100%; height: 100%; border-radius: 6px; object-fit: cover; display: none; }
+        .me-avatar-container.has-image img { display: block; }
+        .me-avatar-container .avatar-placeholder-text { font-size: 12px; color: #999; text-align: center; line-height: 1.2; font-weight: 500; }
+        .me-avatar-container.has-image .avatar-placeholder-text { display: none; }
         .camera-icon { position: absolute; bottom: -2px; right: -2px; background-color: #999; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; z-index: 2; }
         .camera-icon::after { content: ''; width: 12px; height: 8px; background: white; border-radius: 1px; position: absolute; }
         .camera-icon::before { content: ''; width: 4px; height: 4px; border: 1.5px solid #999; border-radius: 50%; position: absolute; z-index: 3; background: white; }
@@ -1615,11 +1641,14 @@
             border-top: 1px solid #e0e0e0;
             padding: 8px;
             padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+            padding-right: calc(8px + env(safe-area-inset-right, 0px));
+            padding-left: calc(8px + env(safe-area-inset-left, 0px));
             display: flex;
             align-items: center;
             gap: 8px;
             min-height: 52px;
             transition: padding-bottom 0.2s ease-out;
+            width: 100%;
         }
         .chat-input-icon {
             display: flex;
@@ -3047,6 +3076,7 @@
                 right: 0;
                 bottom: 0;
                 height: 100%;
+                height: 100dvh; /* Use dynamic viewport height if supported */
                 width: 100%;
                 align-items: flex-start; /* 确保键盘弹出高度缩小时，顶部固定不移动 */
             }
@@ -3059,7 +3089,11 @@
             }
             .wechat-footer {
                 padding-bottom: env(safe-area-inset-bottom) !important;
-                height: calc(65px + env(safe-area-inset-bottom)) !important;
+                height: auto !important; /* Allow auto height to accommodate padding */
+                min-height: 65px;
+            }
+            .chat-input-container {
+                gap: 5px; /* Reduce gap on mobile to prevent icon overflow */
             }
             .dock-bar {
                 margin-bottom: calc(30px + env(safe-area-inset-bottom)) !important;
@@ -3081,12 +3115,12 @@
 
         <div id="main-page" class="page active">
             <div class="top-images">
-                <div class="image-slot" onclick="triggerUpload('img1')"><img id="img1-display" src="https://via.placeholder.com/150/FFB7B2/ffffff?text=Image+1" alt="Pic"><input type="file" id="img1" accept="image/*" onchange="previewImage(this, 'img1-display')"></div>
-                <div class="image-slot" onclick="triggerUpload('img2')"><img id="img2-display" src="https://via.placeholder.com/150/FFDAC1/ffffff?text=Image+2" alt="Pic"><input type="file" id="img2" accept="image/*" onchange="previewImage(this, 'img2-display')"></div>
-                <div class="image-slot" onclick="triggerUpload('img3')"><img id="img3-display" src="https://via.placeholder.com/150/E2F0CB/ffffff?text=Image+3" alt="Pic"><input type="file" id="img3" accept="image/*" onchange="previewImage(this, 'img3-display')"></div>
+                <div class="image-slot" id="img1-slot" onclick="triggerUpload('img1')"><span class="placeholder-text">点击添加<br>图片</span><img id="img1-display" src="" alt="Pic"><input type="file" id="img1" accept="image/*" onchange="previewImage(this, 'img1-display')"></div>
+                <div class="image-slot" id="img2-slot" onclick="triggerUpload('img2')"><span class="placeholder-text">点击添加<br>图片</span><img id="img2-display" src="" alt="Pic"><input type="file" id="img2" accept="image/*" onchange="previewImage(this, 'img2-display')"></div>
+                <div class="image-slot" id="img3-slot" onclick="triggerUpload('img3')"><span class="placeholder-text">点击添加<br>图片</span><img id="img3-display" src="" alt="Pic"><input type="file" id="img3" accept="image/*" onchange="previewImage(this, 'img3-display')"></div>
             </div>
             <div class="info-area">
-                <div class="avatar-container" onclick="triggerUpload('avatar')"><img id="avatar-display" class="avatar" src="https://via.placeholder.com/150/B5EAD7/ffffff?text=Avatar" alt="Avatar"><div class="camera-icon"></div><input type="file" id="avatar" accept="image/*" onchange="previewImage(this, 'avatar-display')"></div>
+                <div class="avatar-container" id="main-avatar-container" onclick="triggerUpload('avatar')"><span class="avatar-placeholder-text">添加<br>头像</span><img id="avatar-display" class="avatar" src="" alt="Avatar"><div class="camera-icon"></div><input type="file" id="avatar" accept="image/*" onchange="previewImage(this, 'avatar-display')"></div>
                 <div class="dialogue-box" contenteditable="true">00:14</div>
                 <div class="text-line-1" contenteditable="true">人類是脆弱的...</div>
                 <div class="text-line-2" contenteditable="true">小不忍則變大萌>w<</div>
@@ -3413,8 +3447,9 @@
             
             <div style="flex: 1; overflow-y: auto; padding: 10px 0;">
                 <div style="background: white; padding: 30px 25px; margin-bottom: 10px; display: flex; align-items: center; gap: 20px;">
-                    <div style="position: relative; width: 60px; height: 60px; cursor: pointer;" onclick="triggerMePageAvatarUpload()">
-                        <img id="me-page-avatar" src="" style="width: 100%; height: 100%; border-radius: 6px; background: #eee; object-fit: cover;" alt="Avatar">
+                    <div class="me-avatar-container" id="me-avatar-container" onclick="triggerMePageAvatarUpload()">
+                        <span class="avatar-placeholder-text">添加<br>头像</span>
+                        <img id="me-page-avatar" src="" alt="Avatar">
                         <input type="file" id="me-page-avatar-input" accept="image/*" style="display: none;" onchange="handleMePageAvatarUpload(this)">
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -3890,9 +3925,15 @@
             </div>
 
             <div style="background-color: #fff; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer;" onclick="openMemoryManagement()">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #f5f5f5;" onclick="openMemoryManagement()">
                     <span style="font-size: 16px; color: #333;">记忆</span>
                     <span style="color: #ccc; font-size: 18px;">></span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; cursor: pointer;" onclick="toggleFriendVisibility()">
+                    <span style="font-size: 16px; color: #333;">在聊天列表中显示</span>
+                    <div id="fp-visibility-checkbox" style="width: 20px; height: 20px; border: 1.5px solid #aaa; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color 0.2s;">
+                        <div class="inner-dot" style="width: 10px; height: 10px; background-color: #333; border-radius: 50%; transform: scale(0); transition: transform 0.2s;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -5683,15 +5724,20 @@
                 if (profile) {
                     if (profile.avatar) {
                         document.getElementById('avatar-display').src = profile.avatar;
+                        const mainContainer = document.getElementById('main-avatar-container');
+                        if (mainContainer) mainContainer.classList.add('has-image');
                     }
                     if (profile.img1_display) {
                         document.getElementById('img1-display').src = profile.img1_display;
+                        document.getElementById('img1-slot').classList.add('has-image');
                     }
                     if (profile.img2_display) {
                         document.getElementById('img2-display').src = profile.img2_display;
+                        document.getElementById('img2-slot').classList.add('has-image');
                     }
                     if (profile.img3_display) {
                         document.getElementById('img3-display').src = profile.img3_display;
+                        document.getElementById('img3-slot').classList.add('has-image');
                     }
                 }
             });
@@ -5722,6 +5768,7 @@
                 if (displayId === 'img1-display' || displayId === 'img2-display' || displayId === 'img3-display') {
                     compressImage(file, 0.7, (compressedSrc) => {
                         document.getElementById(displayId).src = compressedSrc;
+                        document.getElementById(displayId).parentElement.classList.add('has-image');
                         dbGet('user_profile', 'main_user', profile => {
                             const updatedProfile = profile || { id: 'main_user' };
                             const propName = displayId.replace('-', '_');
@@ -5732,22 +5779,30 @@
                     return;
                 }
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imageUrl = e.target.result;
-                    document.getElementById(displayId).src = imageUrl;
-                    
-                     if (displayId === 'avatar-display') {
+                if (displayId === 'avatar-display') {
+                    compressImage(file, 0.7, (compressedSrc) => {
+                        document.getElementById(displayId).src = compressedSrc;
+                        document.getElementById(displayId).parentElement.classList.add('has-image');
                         dbGet('user_profile', 'main_user', profile => {
                             const updatedProfile = profile || { id: 'main_user' };
-                            updatedProfile.avatar = imageUrl;
+                            updatedProfile.avatar = compressedSrc;
                             dbUpdate('user_profile', updatedProfile);
                             
                             // Sync to Me Page
                             const mePageAvatar = document.getElementById('me-page-avatar');
-                            if (mePageAvatar) mePageAvatar.src = imageUrl;
+                            if (mePageAvatar) {
+                                mePageAvatar.src = compressedSrc;
+                                document.getElementById('me-avatar-container').classList.add('has-image');
+                            }
                         });
-                    }
+                    });
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const imageUrl = e.target.result;
+                    document.getElementById(displayId).src = imageUrl;
                 }
                 reader.readAsDataURL(file);
             }
@@ -5895,26 +5950,22 @@
             let savedCount = 0;
 
             files.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const dataUrl = e.target.result;
-                    const song = {
-                        id: Date.now().toString() + Math.floor(Math.random()*10000),
-                        name: file.name.replace(/\.[^/.]+$/, ""),
-                        artist: '本地音乐',
-                        url: dataUrl,
-                        pic: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-                    };
-
-                    dbAdd('global_playlist', song, () => {
-                        savedCount++;
-                        if (savedCount === files.length) {
-                            showToast(`成功导入 ${savedCount} 首本地音乐`);
-                            loadGlobalPlaylistAndPlay();
-                        }
-                    });
+                const song = {
+                    id: Date.now().toString() + Math.floor(Math.random()*10000),
+                    name: file.name.replace(/\.[^/.]+$/, ""),
+                    artist: '本地音乐',
+                    file: file,
+                    isLocal: true,
+                    pic: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
                 };
-                reader.readAsDataURL(file);
+
+                dbAdd('global_playlist', song, () => {
+                    savedCount++;
+                    if (savedCount === files.length) {
+                        showToast(`成功导入 ${savedCount} 首本地音乐`);
+                        loadGlobalPlaylistAndPlay();
+                    }
+                });
             });
             input.value = '';
         }
@@ -6118,24 +6169,29 @@
                     musicAudio.src = url;
                     await musicAudio.play();
                     
-                    // Duration check for trial versions (< 60s)
-                    if (musicAudio.readyState < 1) {
-                         await new Promise(resolve => {
-                             const onLoaded = () => { resolve(); musicAudio.removeEventListener('loadedmetadata', onLoaded); };
-                             musicAudio.addEventListener('loadedmetadata', onLoaded, {once: true});
-                             setTimeout(resolve, 2000); 
-                         });
-                    }
+                    const isLocalSong = song.isLocal || song.artist === '本地音乐' || (url && (url.startsWith('data:') || url.startsWith('blob:')));
 
-                    if (musicAudio.duration > 0 && musicAudio.duration < 60) {
-                        console.log("Skipping trial/short audio:", musicAudio.duration);
-                        musicAudio.pause();
-                        return false;
+                    // Duration check for trial versions (< 60s), skipped for local music
+                    if (!isLocalSong) {
+                        if (musicAudio.readyState < 1) {
+                             await new Promise(resolve => {
+                                 const onLoaded = () => { resolve(); musicAudio.removeEventListener('loadedmetadata', onLoaded); };
+                                 musicAudio.addEventListener('loadedmetadata', onLoaded, {once: true});
+                                 setTimeout(resolve, 2000); 
+                             });
+                        }
+
+                        if (musicAudio.duration > 0 && musicAudio.duration < 60) {
+                            console.log("Skipping trial/short audio:", musicAudio.duration);
+                            musicAudio.pause();
+                            return false;
+                        }
                     }
 
                     document.getElementById('music-vinyl-disc').classList.add('spin-anim');
                     
-                    if (song.url !== url) {
+                    // Don't save blob URLs to DB as they expire
+                    if (song.url !== url && !song.file && !url.startsWith('blob:')) {
                         song.url = url;
                         if (song.unplayable) {
                             song.unplayable = false;
@@ -6149,12 +6205,30 @@
                     setTimeout(preloadNextSong, 5000);
                     return true;
                 } catch (e) {
+                    console.error("Play error:", e);
                     return false;
                 }
             };
 
+            let targetUrl = song.url;
+            if (song.file) {
+                targetUrl = URL.createObjectURL(song.file);
+            }
+
             // 1. Try existing URL first
-            if (song.url && !song.url.includes('vip') && await attemptPlay(song.url)) {
+            if (targetUrl && !targetUrl.includes('vip') && await attemptPlay(targetUrl)) {
+                return;
+            }
+
+            // For local songs, do not fallback search
+            if (song.isLocal || song.artist === '本地音乐' || song.file) {
+                console.log("Local audio failed to play.");
+                song.unplayable = true;
+                dbUpdate('global_playlist', song);
+                if (document.getElementById('music-playlist-sheet-overlay').classList.contains('show')) {
+                    renderPlaylist();
+                }
+                setTimeout(() => playNextSong(true), 500);
                 return;
             }
 
@@ -8509,19 +8583,24 @@
                 
                 // Apply Chat Wallpaper
                 const chatPage = document.getElementById('chat-interface-page');
+                const chatContainer = document.getElementById('chat-messages-container');
+                
+                // Reset chat page background to default to avoid spilling into status bar
+                chatPage.style.backgroundImage = 'none';
+                chatPage.style.backgroundColor = '#ededed';
+                
                 if (friend.chatWallpaper) {
-                    chatPage.style.backgroundImage = `url(${friend.chatWallpaper})`;
-                    chatPage.style.backgroundSize = 'cover';
-                    chatPage.style.backgroundPosition = 'center';
+                    chatContainer.style.backgroundImage = `url(${friend.chatWallpaper})`;
+                    chatContainer.style.backgroundSize = 'cover';
+                    chatContainer.style.backgroundPosition = 'center';
                 } else {
                     const globalWallpaper = localStorage.getItem('chat_wallpaper');
                     if (globalWallpaper) {
-                        chatPage.style.backgroundImage = `url(${globalWallpaper})`;
-                        chatPage.style.backgroundSize = 'cover';
-                        chatPage.style.backgroundPosition = 'center';
+                        chatContainer.style.backgroundImage = `url(${globalWallpaper})`;
+                        chatContainer.style.backgroundSize = 'cover';
+                        chatContainer.style.backgroundPosition = 'center';
                     } else {
-                        chatPage.style.backgroundImage = 'none';
-                        chatPage.style.backgroundColor = '#ededed';
+                        chatContainer.style.backgroundImage = 'none';
                     }
                 }
             });
@@ -8735,11 +8814,15 @@
                         let aiResponseText = await callLLM(config, systemPrompt, history);
 
                         if (aiResponseText) {
+                            // Fix literal <br> tags
+                            aiResponseText = aiResponseText.replace(/<br\s*\/?>/gi, '\n');
+
                             // Parse Thought Feature Tags
                             let mood = null;
                             let innerThought = null;
                             const moodRegex = /<mood>(.*?)<\/mood>/s;
-                            const thoughtRegex = /<inner_thought>(.*?)<\/inner_thought>/s;
+                            // Updated to catch both <inner_thought> and <thought>
+                            const thoughtRegex = /<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/s;
 
                             const moodMatch = aiResponseText.match(moodRegex);
                             if (moodMatch) {
@@ -9136,6 +9219,13 @@
             let prompt = `你现在的身份是：${friend.realName || friend.name}。\n`;
             const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
 
+            // --- 核心互动原则 (最高优先级) ---
+            prompt += `\n【核心互动原则与禁忌】\n`;
+            prompt += `1. **严禁代替用户行动**：绝对禁止在旁白或动作描写中，替用户（User）做出任何行动、说话，或客观描写用户的心理活动。例如，绝对不能写 \`*你脸红了*\`、\`*你感到很开心*\` 或 \`你点了点头\`。你只能描写你自己（${friend.name}）的言行、动作和心理。\n`;
+            prompt += `2. **允许主观揣摩与互动**：虽然不能客观描述用户状态，但你可以通过对话或你自己的心理描写来合理地**揣摩、猜测、试探**用户的心思。例如，你可以说：\`“你现在是不是很想亲我呀？”\`，或者写 \`<thought>看他一直盯着我看，估计是动心了。</thought>\`。这种主观猜测是允许且鼓励的。\n`;
+            prompt += `3. **【严禁捏造事实】(Anti-Hallucination)**：你必须严格基于提供的【长期记忆】、【最近聊天记录】和【世界书/人设设定】进行回复。**绝对不可凭空捏造任何未发生过的事件、过去的对话或虚假的共同经历**。如果用户提到了一件你记忆（Context）中不存在的事，你应该表现出疑惑（例如“欸？有吗？我怎么不记得了”）或顺势询问，而不是强行编造虚假记忆顺着说。\n`;
+            prompt += `4. **坚守人设**：你的回复必须绝对符合 ${friend.name} 的性格、说话风格、口癖和背景设定。不要为了迎合用户而崩坏人设。\n\n`;
+
             if (aiStickers && aiStickers.length > 0) {
                 prompt += `【你的专属表情包】\n你可以使用以下表情包来表达情感。请根据语境选择合适的表情包，直接输出对应的 XML 标签（不要修改链接）：\n`;
                 aiStickers.forEach((sticker, index) => {
@@ -9232,7 +9322,9 @@
                 prompt += `    - 用户的视角是【${settings.yourPerspective === 'second_person' ? '第二人称 (你)' : '第一人称 (我)'}】。\n`;
 
             } else {
-                prompt += `\n【系统提示】重要：请完全模拟真实人类在微信聊天的习惯。根据你的角色性格，灵活决定是否将一段话拆分为多条短消息发送以增加活人感。你可以根据语义、情绪和停顿，在任何地方（如逗号、句号、感叹号后，甚至一句话的中间）使用【换行符（回车）】来分隔消息。系统会自动将每一行识别为一条独立的消息发出。\n\n            【例如】，对于“你好呀，今天天气真不错！吃饭了吗？”，你可以灵活地回复为：\n\n            - **方案一:**\n              你好呀\n              今天天气真不错！\n              吃饭了吗？\n\n            - **方案二:**\n              你好呀，今天天气真不错！\n              吃饭了吗？\n\n            - **方案三:**\n              你好呀\n              今天天气真不错！吃饭了吗？\n\n            请根据你的角色性格和当前对话的节奏，自然地选择如何断句。\n            \n【功能指令】：\n1. 引用回复：如果你想引用对方（用户）的某句话进行针对性回复，请在这条消息中使用格式 <quote>被引用的对方的话</quote>。
+                prompt += `\n【系统提示】重要：请完全模拟真实人类在微信聊天的习惯。根据你的角色性格，灵活决定是否将一段话拆分为多条短消息发送以增加活人感。你可以根据语义、情绪和停顿，在任何地方（如逗号、句号、感叹号后，甚至一句话的中间）使用【换行符（回车）】来分隔消息。系统会自动将每一行识别为一条独立的消息发出。\n`;
+                prompt += `\n【严禁】：\n1. **严禁输出动作描写**：不要在正文中包含如 *看着你*、(叹气) 等动作或状态描写。\n2. **严禁输出心理标签**：不要在正文中输出 <thought> 标签，心理活动请严格使用 <inner_thought> 标签包裹（系统会自动提取，不会显示在气泡中）。\n3. **严禁输出 HTML 标签**：不要输出 <br> 等 HTML 代码，换行请直接使用回车键。\n`;
+                prompt += `\n            【例如】，对于“你好呀，今天天气真不错！吃饭了吗？”，你可以灵活地回复为：\n\n            - **方案一:**\n              你好呀\n              今天天气真不错！\n              吃饭了吗？\n\n            - **方案二:**\n              你好呀，今天天气真不错！\n              吃饭了吗？\n\n            - **方案三:**\n              你好呀\n              今天天气真不错！吃饭了吗？\n\n            请根据你的角色性格和当前对话的节奏，自然地选择如何断句。\n            \n【功能指令】：\n1. 引用回复：如果你想引用对方（用户）的某句话进行针对性回复，请在这条消息中使用格式 <quote>被引用的对方的话</quote>。
 2. 发起转账：如果你想给对方（用户）转账，请输出单独的一行：<transfer amount="金额">备注说明</transfer>。例如：<transfer amount="52.00">请你喝奶茶</transfer>。
 3. 接收转账：如果对方（用户）给你转账了，你想接收，请在回复中包含：[已接收]。系统会自动将其转换为确认收款的卡片。
 4. 退还转账：如果对方（用户）给你转账了，你想退还，请在回复中包含：[已退还]。系统会自动将其转换为退还转账的卡片。
@@ -10676,66 +10768,10 @@ ${historyText}`;
                                 </div>
                             `;
 
-                            if (friend.isHidden) {
-                                item.style.cursor = 'pointer';
-                                
-                                let pressTimer;
-                                let startX, startY;
-                                let wasLongPress = false;
-
-                                const startPress = (e) => {
-                                    if (e.button === 2) return;
-                                    wasLongPress = false;
-                                    startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                                    startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                                    
-                                    pressTimer = setTimeout(() => {
-                                        wasLongPress = true;
-                                        showCustomConfirm(`要将好友 "<b>${friend.name}</b>" 恢复到聊天列表吗？`, () => {
-                                            friend.isHidden = false;
-                                            dbUpdate('friends', friend, renderContactsList);
-                                        }, '恢复好友');
-                                    }, 500);
-
-                                    item.addEventListener('mousemove', cancelPress);
-                                    item.addEventListener('touchmove', cancelPress);
-                                };
-
-                                const cancelPress = (moveEvent) => {
-                                    let moveX = moveEvent.type.includes('touch') ? moveEvent.touches[0].clientX : moveEvent.clientX;
-                                    let moveY = moveEvent.type.includes('touch') ? moveEvent.touches[0].clientY : moveEvent.clientY;
-                                    if (Math.abs(moveX - startX) > 10 || Math.abs(moveY - startY) > 10) {
-                                        clearTimeout(pressTimer);
-                                        item.removeEventListener('mousemove', cancelPress);
-                                        item.removeEventListener('touchmove', cancelPress);
-                                    }
-                                };
-
-                                const endPress = () => {
-                                    clearTimeout(pressTimer);
-                                    item.removeEventListener('mousemove', cancelPress);
-                                    item.removeEventListener('touchmove', cancelPress);
-                                };
-
-                                item.addEventListener('mousedown', startPress);
-                                item.addEventListener('touchstart', startPress, { passive: true });
-                                item.addEventListener('mouseup', endPress);
-                                item.addEventListener('mouseleave', endPress);
-                                item.addEventListener('touchend', endPress);
-                                item.addEventListener('touchcancel', endPress);
-                                item.addEventListener('contextmenu', (e) => e.preventDefault());
-
-                                item.addEventListener('click', () => {
-                                    if (!wasLongPress) {
-                                        openFriendProfile(friend.id);
-                                    }
-                                });
-                            } else {
-                                item.style.cursor = 'pointer';
-                                item.addEventListener('click', () => {
-                                    openFriendProfile(friend.id);
-                                });
-                            }
+                            item.style.cursor = 'pointer';
+                            item.addEventListener('click', () => {
+                                openFriendProfile(friend.id);
+                            });
                             listContainer.appendChild(item);
                         });
                     }
@@ -10750,7 +10786,42 @@ ${historyText}`;
                     document.getElementById('fp-avatar').src = friend.avatar;
                     document.getElementById('fp-remark').textContent = friend.name;
                     document.getElementById('fp-realname').textContent = friend.realName || friend.name;
+                    
+                    const checkbox = document.getElementById('fp-visibility-checkbox');
+                    const dot = checkbox.querySelector('.inner-dot');
+                    if (friend.isHidden) {
+                        checkbox.style.borderColor = '#aaa';
+                        dot.style.transform = 'scale(0)';
+                    } else {
+                        checkbox.style.borderColor = '#333';
+                        dot.style.transform = 'scale(1)';
+                    }
+
                     showPage('friend-profile-page');
+                }
+            });
+        }
+
+        function toggleFriendVisibility() {
+            if (!currentChatFriendId) return;
+            dbGet('friends', currentChatFriendId, friend => {
+                if (friend) {
+                    friend.isHidden = !friend.isHidden;
+                    dbUpdate('friends', friend, () => {
+                        const checkbox = document.getElementById('fp-visibility-checkbox');
+                        const dot = checkbox.querySelector('.inner-dot');
+                        if (friend.isHidden) {
+                            checkbox.style.borderColor = '#aaa';
+                            dot.style.transform = 'scale(0)';
+                        } else {
+                            checkbox.style.borderColor = '#333';
+                            dot.style.transform = 'scale(1)';
+                        }
+                        
+                        // Update background lists so changes reflect when user goes back
+                        renderChatList();
+                        renderContactsList(); 
+                    });
                 }
             });
         }
@@ -11141,6 +11212,8 @@ ${historyText}`;
                 apiKeyInput.value = '';
             }
 
+            refreshCustomSelect(presetSelect);
+            showToast('删除成功');
             deletePresetModal.style.display = 'none';
         });
 
@@ -11736,6 +11809,8 @@ ${historyText}`;
                 if (profile) {
                     if (profile.avatar) {
                         avatar.src = profile.avatar;
+                        const container = document.getElementById('me-avatar-container');
+                        if (container) container.classList.add('has-image');
                     }
                     if (profile.name) {
                         name.textContent = profile.name;
@@ -11757,22 +11832,25 @@ ${historyText}`;
 
         function handleMePageAvatarUpload(input) {
             if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imageUrl = e.target.result;
-                    document.getElementById('me-page-avatar').src = imageUrl;
+                const file = input.files[0];
+                compressImage(file, 0.7, (compressedSrc) => {
+                    document.getElementById('me-page-avatar').src = compressedSrc;
+                    document.getElementById('me-avatar-container').classList.add('has-image');
                     
                     // Sync to main page avatar
                     const mainAvatar = document.getElementById('avatar-display');
-                    if (mainAvatar) mainAvatar.src = imageUrl;
+                    if (mainAvatar) {
+                        mainAvatar.src = compressedSrc;
+                        document.getElementById('main-avatar-container').classList.add('has-image');
+                    }
 
                     dbGet('user_profile', 'main_user', profile => {
                         const updatedProfile = profile || { id: 'main_user' };
-                        updatedProfile.avatar = imageUrl;
+                        updatedProfile.avatar = compressedSrc;
                         dbUpdate('user_profile', updatedProfile);
                     });
-                }
-                reader.readAsDataURL(input.files[0]);
+                });
+                input.value = ''; // Reset input
             }
         }
 
@@ -12649,23 +12727,9 @@ ${historyText}`;
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').then(registration => {
                     console.log('SW registered: ', registration.scope);
-                    
-                    // 每次加载页面时主动检查 SW 更新，避免被浏览器强缓存
-                    registration.update();
                 }).catch(err => {
                     console.log('SW registration failed: ', err);
                 });
-            });
-            
-            // 监听 Service Worker 的控制权变更
-            // 当新的 SW 安装并调用 clients.claim() 后，会触发此事件
-            let refreshing = false;
-            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                if (!refreshing) {
-                    refreshing = true;
-                    // 自动刷新页面以确保用户使用的是最新代码
-                    window.location.reload();
-                }
             });
         }
 
