@@ -2,12 +2,13 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>蒜皮叽</title>
-    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#e0e5ec">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="./manifest.json">
     <link rel="apple-touch-icon" href="icon.svg">
     <style>
         :root {
@@ -29,26 +30,28 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html, body {
+            height: 100%;
+            height: 100dvh;
+            width: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #e0e5ec;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--phone-bg);
+            margin: 0;
+            padding: 0;
         }
 
         .phone-container {
-            width: 375px;
-            height: 812px;
+            width: 100%;
+            height: 100%;
             background-color: var(--phone-bg);
-            border-radius: var(--border-radius);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1), 0 0 0 8px white inset;
             position: relative;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            border: 1px solid #d1d9e6;
         }
 
         .status-bar {
@@ -126,11 +129,11 @@
             max-height: 100%;
         }
 
-        #main-page, #theme-page, #desktop-theme-page, #chat-theme-page, #settings-page, #world-book-page, #wechat-page, #chat-interface-page, #chat-info-page, #wechat-me-page, #friend-profile-page, #memory-management-page, #emoji-library-page, #wechat-discover-page, #regex-app-page {
+        #main-page, #theme-page, #desktop-theme-page, #chat-theme-page, #settings-page, #world-book-page, #wechat-page, #chat-interface-page, #chat-info-page, #wechat-me-page, #friend-profile-page, #memory-management-page, #emoji-library-page, #wechat-discover-page, #regex-app-page, #global-font-page {
             display: none;
         }
 
-        #main-page.active, #theme-page.active, #desktop-theme-page.active, #chat-theme-page.active, #settings-page.active, #world-book-page.active, #wechat-page.active, #wechat-contacts-page.active, #chat-interface-page.active, #chat-info-page.active, #wechat-me-page.active, #friend-profile-page.active, #memory-management-page.active, #emoji-library-page.active, #wechat-discover-page.active, #regex-app-page.active {
+        #main-page.active, #theme-page.active, #desktop-theme-page.active, #chat-theme-page.active, #settings-page.active, #world-book-page.active, #wechat-page.active, #wechat-contacts-page.active, #chat-interface-page.active, #chat-info-page.active, #wechat-me-page.active, #friend-profile-page.active, #memory-management-page.active, #emoji-library-page.active, #wechat-discover-page.active, #regex-app-page.active, #global-font-page.active {
             display: flex;
         }
         
@@ -140,7 +143,7 @@
             background-color: transparent;
         }
         
-        #theme-page, #desktop-theme-page {
+        #theme-page, #desktop-theme-page, #global-font-page {
             background-color: #f0f2f5;
         }
 
@@ -1670,9 +1673,12 @@
             position: relative;
             display: flex;
             align-items: center;
+            min-width: 0;
         }
         .chat-input {
             flex-grow: 1;
+            width: 100%;
+            min-width: 0;
             border: none;
             background-color: #fff;
             border-radius: 8px;
@@ -3074,11 +3080,10 @@
                 top: 0;
                 left: 0;
                 right: 0;
-                bottom: 0;
+                /* 移除 bottom: 0 避免和 height 冲突导致在 Safari 被底栏遮挡 */
                 height: 100%;
                 height: 100dvh; /* Use dynamic viewport height if supported */
                 width: 100%;
-                align-items: flex-start; /* 确保键盘弹出高度缩小时，顶部固定不移动 */
             }
             .phone-container {
                 width: 100%;
@@ -3153,13 +3158,22 @@
             <div class="theme-options">
                 <div class="theme-option-item" onclick="showPage('desktop-theme-page')"><div class="theme-option-left"><span class="theme-option-text">桌面美化</span></div><span class="theme-option-arrow">></span></div>
                 <div class="theme-option-item" onclick="showPage('chat-theme-page')"><div class="theme-option-left"><span class="theme-option-text">聊天界面美化</span></div><span class="theme-option-arrow">></span></div>
-                <div class="theme-option-item"><div class="theme-option-left"><span class="theme-option-text">全局字体</span></div><span class="theme-option-arrow">></span></div>
+                <div class="theme-option-item" onclick="showPage('global-font-page')"><div class="theme-option-left"><span class="theme-option-text">全局字体</span></div><span class="theme-option-arrow">></span></div>
             </div>
         </div>
 
         <div id="desktop-theme-page" class="page">
             <div class="theme-header"><span class="back-arrow" onclick="showPage('theme-page')"><</span><span class="title">桌面美化</span></div>
             <div class="theme-options">
+                <div class="theme-option-item">
+                    <div class="notification-toggle" style="width: 100%;">
+                        <label for="status-bar-toggle" style="font-size: 16px; font-weight: 500; color: #333;">显示状态栏</label>
+                        <label class="switch">
+                            <input type="checkbox" id="status-bar-toggle" checked onchange="toggleStatusBar(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
                 <div class="theme-option-item">
                     <div style="width:100%; display: flex; flex-direction: column;">
                         <p>主屏幕壁纸</p>
@@ -3195,6 +3209,27 @@
                         <button class="upload-button" onclick="triggerUpload('chat-wallpaper-upload')">上传壁纸</button>
                         <button class="upload-button" onclick="resetChatWallpaper()" style="margin-top: 10px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;">恢复默认</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="global-font-page" class="page">
+            <div class="theme-header"><span class="back-arrow" onclick="showPage('theme-page')"><</span><span class="title">全局字体</span></div>
+            <div class="theme-options">
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px; cursor: default;">
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 14px; font-weight: 500;">网络字体链接</label>
+                        <input type="text" id="font-url-input" placeholder="输入字体链接 (如 .ttf, .woff2)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
+                    </div>
+                    <div style="width: 100%; text-align: center; color: #888; font-size: 12px;">或</div>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-size: 14px; font-weight: 500;">本地字体文件</label>
+                        <button class="upload-button" onclick="document.getElementById('font-file-input').click()">上传字体文件</button>
+                        <input type="file" id="font-file-input" accept=".ttf,.otf,.woff,.woff2" style="display: none;" onchange="handleFontUpload(this)">
+                        <span id="font-file-name" style="font-size: 12px; color: #666; text-align: center;">未选择文件</span>
+                    </div>
+                    <button class="upload-button" style="margin-top: 15px;" onclick="applyGlobalFont()">应用字体</button>
+                    <button class="upload-button" style="margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetGlobalFont()">恢复默认</button>
                 </div>
             </div>
         </div>
@@ -4601,7 +4636,7 @@
             const settingsHeader = document.querySelector('.settings-header');
             const settingsPage = document.getElementById('settings-page');
 
-            if (pageId === 'theme-page' || pageId === 'desktop-theme-page' || pageId === 'chat-theme-page' || pageId === 'world-book-page' || pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'persona-management-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'emoji-library-page' || pageId === 'search-detail-page' || pageId === 'regex-app-page') {
+            if (pageId === 'theme-page' || pageId === 'desktop-theme-page' || pageId === 'chat-theme-page' || pageId === 'global-font-page' || pageId === 'world-book-page' || pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'persona-management-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'emoji-library-page' || pageId === 'search-detail-page' || pageId === 'regex-app-page') {
                 statusBar.style.backgroundColor = (pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'search-detail-page') ? '#ededed' : 'white';
                 statusBar.style.color = '#333';
             } else if (pageId === 'settings-page' || pageId === 'chat-info-page') {
@@ -4735,6 +4770,109 @@
                 updateChatThemePreview();
                 showToast('全局背景已恢复默认');
             }
+        }
+
+        let currentFontData = { type: null, value: null, name: null };
+
+        function handleFontUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('font-file-name').textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentFontData = { type: 'file', value: e.target.result, name: file.name };
+                    document.getElementById('font-url-input').value = ''; // clear url if file uploaded
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function applyGlobalFont() {
+            const urlInput = document.getElementById('font-url-input').value.trim();
+            if (urlInput) {
+                currentFontData = { type: 'url', value: urlInput, name: 'custom_url' };
+            }
+
+            if (!currentFontData.value) {
+                showToast('请输入字体链接或上传字体文件');
+                return;
+            }
+
+            showToast('正在应用字体...');
+            dbGet('user_profile', 'main_user', profile => {
+                const updatedProfile = profile || { id: 'main_user' };
+                updatedProfile.globalFont = currentFontData;
+                dbUpdate('user_profile', updatedProfile, () => {
+                    loadGlobalFont();
+                    showToast('全局字体已应用');
+                });
+            });
+        }
+
+        function resetGlobalFont() {
+            document.getElementById('font-url-input').value = '';
+            document.getElementById('font-file-name').textContent = '未选择文件';
+            document.getElementById('font-file-input').value = '';
+            currentFontData = { type: null, value: null, name: null };
+            
+            dbGet('user_profile', 'main_user', profile => {
+                if (profile) {
+                    profile.globalFont = null;
+                    dbUpdate('user_profile', profile, () => {
+                        loadGlobalFont();
+                        showToast('已恢复默认字体');
+                    });
+                } else {
+                    loadGlobalFont();
+                }
+            });
+        }
+
+        function loadGlobalFont() {
+            dbGet('user_profile', 'main_user', profile => {
+                let styleEl = document.getElementById('custom-global-font-style');
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = 'custom-global-font-style';
+                    document.head.appendChild(styleEl);
+                }
+                
+                if (profile && profile.globalFont && profile.globalFont.value) {
+                    const font = profile.globalFont;
+                    const src = font.type === 'file' ? `url("${font.value}")` : `url('${font.value}')`;
+                    
+                    styleEl.innerHTML = `
+                        @font-face {
+                            font-family: 'CustomGlobalFont';
+                            src: ${src};
+                            font-display: swap;
+                        }
+                        body, .phone-container, input, textarea, select, button, .chat-input, [contenteditable] {
+                            font-family: 'CustomGlobalFont', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                        }
+                    `;
+                    
+                    const urlInput = document.getElementById('font-url-input');
+                    const fileName = document.getElementById('font-file-name');
+                    if (urlInput && fileName) {
+                        if (font.type === 'url') {
+                            urlInput.value = font.value;
+                            fileName.textContent = '未选择文件';
+                            currentFontData = font;
+                        } else if (font.type === 'file') {
+                            urlInput.value = '';
+                            fileName.textContent = font.name || '已上传自定义字体';
+                            currentFontData = font;
+                        }
+                    }
+                } else {
+                    styleEl.innerHTML = '';
+                    const urlInput = document.getElementById('font-url-input');
+                    const fileName = document.getElementById('font-file-name');
+                    if (urlInput) urlInput.value = '';
+                    if (fileName) fileName.textContent = '未选择文件';
+                }
+            });
         }
 
         function initDiscoverScroll() {
@@ -5703,7 +5841,48 @@
             input.click();
         }
 
+        function toggleStatusBar(isVisible) {
+            localStorage.setItem('show_status_bar', isVisible);
+            const statusBar = document.querySelector('.status-bar');
+            if (statusBar) {
+                statusBar.style.display = isVisible ? 'flex' : 'none';
+            }
+            
+    // Adjust padding for pages that rely on status bar height
+    document.querySelectorAll('.page').forEach(page => {
+        if (page.id === 'wechat-discover-page' || page.id === 'music-player-page') {
+            page.style.paddingTop = '0px';
+            return;
+        }
+        
+        if (isVisible) {
+            page.style.paddingTop = '34px';
+        } else {
+            page.style.paddingTop = '0px';
+        }
+    });
+            
+            // Special handling for discover page sticky header
+            const discoverHeader = document.getElementById('discover-sticky-header');
+            if (discoverHeader) {
+                if (isVisible) {
+                    discoverHeader.style.paddingTop = '34px';
+                    discoverHeader.style.height = '80px';
+                } else {
+                    discoverHeader.style.paddingTop = '10px';
+                    discoverHeader.style.height = '56px';
+                }
+            }
+        }
+
         function loadTheme() {
+            const showStatusBar = localStorage.getItem('show_status_bar') !== 'false'; // Default to true
+            const statusBarToggle = document.getElementById('status-bar-toggle');
+            if (statusBarToggle) {
+                statusBarToggle.checked = showStatusBar;
+            }
+            toggleStatusBar(showStatusBar);
+
             const wallpaper = localStorage.getItem('wallpaper');
             if (wallpaper) {
                 document.getElementById('main-page').style.backgroundImage = `url(${wallpaper})`;
@@ -5741,6 +5920,7 @@
                     }
                 }
             });
+            loadGlobalFont();
         }
 
         function updateDate() {
@@ -8016,14 +8196,19 @@
 
                     // Sanitize and format the text
                     let sanitizedText = sanitizeThoughtTags(msg.text);
-                    let formattedHtml = sanitizedText
-                        .replace(/<thought>([\s\S]*?)<\/thought>/g, (match, thoughtText) => {
-                            if (friend.offlineSettings.showThoughts) {
-                                return `<span class="message-thought">${thoughtText}</span>`;
-                            }
-                            return ''; // Hide if showThoughts is false
-                        })
-                        .replace(/\n/g, '<br>');
+                    let formattedHtml = sanitizedText;
+                    
+                    if (friend.offlineSettings.showThoughts) {
+                        formattedHtml = formattedHtml.replace(/<thought>([\s\S]*?)<\/thought>/g, '<span class="message-thought">$1</span>');
+                    } else {
+                        // 如果隐藏心声，移除整个标签，并尝试吃掉周围多余的换行
+                        formattedHtml = formattedHtml.replace(/\n*<thought>[\s\S]*?<\/thought>\n*/g, '\n');
+                    }
+                    
+                    // 修复可能产生的多余换行 (连续3个以上的换行缩减为2个)
+                    formattedHtml = formattedHtml.replace(/\n{3,}/g, '\n\n').trim();
+                    
+                    formattedHtml = formattedHtml.replace(/\n/g, '<br>');
 
                     bubble.innerHTML = formattedHtml;
 
@@ -8536,7 +8721,7 @@
                         if (parts.length < 2) return; 
                         
                         const url = parts[parts.length - 1];
-                        if (!url.startsWith('http')) return;
+                        if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('./') && !url.startsWith('/') && !url.match(/\.(png|jpe?g|gif|webp|svg|bmp)$/i)) return;
                         
                         const desc = parts.slice(0, parts.length - 1).join(' ');
                         
@@ -8820,25 +9005,32 @@
                             // Parse Thought Feature Tags
                             let mood = null;
                             let innerThought = null;
-                            const moodRegex = /<mood>(.*?)<\/mood>/s;
-                            // Updated to catch both <inner_thought> and <thought>
-                            const thoughtRegex = /<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/s;
-
-                            const moodMatch = aiResponseText.match(moodRegex);
-                            if (moodMatch) {
-                                mood = moodMatch[1].replace(/[\u4e00-\u9fa5]/g, '').trim();
+                            
+                            // Handle Mood - support multiple but take the last one, remove all
+                            const moodRegex = /<mood>(.*?)<\/mood>/gis;
+                            let moodMatches = [...aiResponseText.matchAll(moodRegex)];
+                            if (moodMatches.length > 0) {
+                                // Take the content of the last match
+                                mood = moodMatches[moodMatches.length - 1][1].replace(/[\u4e00-\u9fa5]/g, '').trim();
+                                // Remove all mood tags
                                 aiResponseText = aiResponseText.replace(moodRegex, '').trim();
                             }
 
-                            const thoughtMatch = aiResponseText.match(thoughtRegex);
-                            if (thoughtMatch) {
-                                innerThought = thoughtMatch[1].trim();
+                            // Handle Thought - support multiple, concatenate them, remove all
+                            // Updated to catch both <inner_thought> and <thought> globally
+                            const thoughtRegex = /<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/gis;
+                            let thoughtMatches = [...aiResponseText.matchAll(thoughtRegex)];
+                            
+                            if (thoughtMatches.length > 0) {
+                                // Concatenate all thoughts found
+                                innerThought = thoughtMatches.map(m => m[1].trim()).join(' ');
+                                // Remove all thought tags
                                 aiResponseText = aiResponseText.replace(thoughtRegex, '').trim();
                             }
 
                             if (mood || innerThought) {
-                                friend.latestMood = mood;
-                                friend.latestThought = innerThought;
+                                if (mood) friend.latestMood = mood;
+                                if (innerThought) friend.latestThought = innerThought;
                                 // Will be saved via dbUpdate later in this function
                             }
 
@@ -8926,7 +9118,13 @@
                                 const aiStickerMatch = partText.match(aiStickerRegex);
                                 let aiStickerUrl = null;
                                 if (aiStickerMatch) {
-                                    aiStickerUrl = aiStickerMatch[1].trim();
+                                    const stickerValue = aiStickerMatch[1].trim();
+                                    const matchedSticker = aiStickers.find(s => String(s.id) === stickerValue);
+                                    if (matchedSticker) {
+                                        aiStickerUrl = matchedSticker.src;
+                                    } else {
+                                        aiStickerUrl = stickerValue;
+                                    }
                                     partText = partText.replace(aiStickerRegex, '').trim();
                                 }
 
@@ -9227,10 +9425,10 @@
             prompt += `4. **坚守人设**：你的回复必须绝对符合 ${friend.name} 的性格、说话风格、口癖和背景设定。不要为了迎合用户而崩坏人设。\n\n`;
 
             if (aiStickers && aiStickers.length > 0) {
-                prompt += `【你的专属表情包】\n你可以使用以下表情包来表达情感。请根据语境选择合适的表情包，直接输出对应的 XML 标签（不要修改链接）：\n`;
+                prompt += `【你的专属表情包】\n你可以使用以下表情包来表达情感。请根据语境选择合适的表情包，直接输出对应的 XML 标签（不要修改内部的ID）：\n`;
                 aiStickers.forEach((sticker, index) => {
                     const desc = sticker.description ? ` (含义：${sticker.description})` : '';
-                    prompt += `${index + 1}. <sticker>${sticker.src}</sticker>${desc}\n`;
+                    prompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
                 });
                 prompt += `\n`;
             }
@@ -9706,7 +9904,13 @@
                                 const aiStickerMatch = partText.match(aiStickerRegex);
                                 let aiStickerUrl = null;
                                 if (aiStickerMatch) {
-                                    aiStickerUrl = aiStickerMatch[1].trim();
+                                    const stickerValue = aiStickerMatch[1].trim();
+                                    const matchedSticker = aiStickers.find(s => String(s.id) === stickerValue);
+                                    if (matchedSticker) {
+                                        aiStickerUrl = matchedSticker.src;
+                                    } else {
+                                        aiStickerUrl = stickerValue;
+                                    }
                                     partText = partText.replace(aiStickerRegex, '').trim();
                                 }
 
@@ -12535,7 +12739,7 @@ ${historyText}`;
                         if (parts.length < 2) return; 
                         
                         const url = parts[parts.length - 1];
-                        if (!url.startsWith('http')) return;
+                        if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('./') && !url.startsWith('/') && !url.match(/\.(png|jpe?g|gif|webp|svg|bmp)$/i)) return;
                         
                         const desc = parts.slice(0, parts.length - 1).join(' ');
                         
@@ -12690,28 +12894,9 @@ ${historyText}`;
             // The rest of the init can happen in parallel
         });
 
-        // Virtual Keyboard handling via Visual Viewport
-        if (window.visualViewport) {
-            const handleViewportResize = () => {
-                const vvHeight = window.visualViewport.height;
-                const isMobile = window.matchMedia('(max-width: 600px)').matches || 
-                                 window.matchMedia('(display-mode: fullscreen)').matches || 
-                                 window.matchMedia('(display-mode: standalone)').matches;
-                
-                const container = document.querySelector('.phone-container');
-                if (isMobile && container) {
-                    container.style.height = `${vvHeight}px`;
-                    document.body.style.height = `${vvHeight}px`;
-                    window.scrollTo(0, 0); // 防止页面发生整体滚动偏移
-                } else if (container) {
-                    container.style.height = '812px'; 
-                }
-            };
-            
-            window.visualViewport.addEventListener('resize', handleViewportResize);
-            // 延迟一点初始化，确保其他全屏/样式逻辑已应用
-            setTimeout(handleViewportResize, 100);
-        }
+        // Virtual Keyboard handling via Visual Viewport - REMOVED per user request
+        // The 'interactive-widget=resizes-content' meta tag now handles keyboard behavior natively.
+        // The custom handleViewportResize function has been removed to prevent conflicts and page jumping.
         showPage('main-page');
         loadSettings();
         updateDate();
@@ -12722,19 +12907,30 @@ ${historyText}`;
             runAutoSummarization();
         }, 60000); // Check every minute for active chats & summarization
 
-        // Register Service Worker for PWA
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(registration => {
-                    console.log('SW registered: ', registration.scope);
-                }).catch(err => {
-                    console.log('SW registration failed: ', err);
-                });
-            });
-        }
-
         // The 'interactive-widget=resizes-content' meta tag now handles keyboard behavior natively.
         // The custom handleViewportResize function has been removed to prevent conflicts and page jumping.
+
+        // 简化后的视口高度逻辑，依赖 CSS 100dvh 和 flex，避免双重垫高冲突
+        const fixViewportHeight = () => {
+            if (window.visualViewport) {
+                // 监听系统自动滚动的尝试，并强制其归零
+                window.visualViewport.addEventListener('scroll', () => {
+                    if (window.visualViewport.offsetTop > 0) {
+                        window.scrollTo(0, 0);
+                    }
+                });
+            }
+            
+            // 为了在 focusout 时解决 iOS 键盘收起后页面可能产生的留白问题
+            document.addEventListener('focusout', () => {
+                window.scrollTo(0, 0);
+            });
+            
+            // 全局禁止常规滚动，防止iOS弹簧效应把页面整体顶走
+            window.addEventListener('scroll', () => {
+                window.scrollTo(0, 0);
+            }, { passive: false });
+        };
 
         // 全屏管理逻辑
         const enterFullScreen = async () => {
@@ -12821,11 +13017,25 @@ ${historyText}`;
             document.getElementById('thought-modal').style.display = 'none';
         }
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            setupFullScreenRestorer();
-            document.getElementById('comment-drawer-overlay').addEventListener('click', closeCommentDrawer);
+    // 检查并注册 Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
         });
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        fixViewportHeight();
+        setupFullScreenRestorer();
+        document.getElementById('comment-drawer-overlay').addEventListener('click', closeCommentDrawer);
+    });
     </script>
 </body>
 </html>
