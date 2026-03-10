@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suanpiji-v6';
+const CACHE_NAME = 'suanpiji-v7';
 const urlsToCache = [
   './',
   './index.html',
@@ -59,5 +59,27 @@ self.addEventListener('fetch', event => {
         // 网络请求失败（离线或网络极差），尝试从缓存中读取
         return caches.match(event.request);
       })
+  );
+});
+
+// 监听后台推送点击事件，唤醒应用
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      // 如果应用已经打开，就聚焦它
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
+        if (client.url && client.url.includes(self.registration.scope) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // 如果没打开，就打开新窗口
+      if (clients.openWindow) {
+        // 使用相对路径确保基于 PWA 的 start_url 打开
+        return clients.openWindow('./');
+      }
+    })
   );
 });

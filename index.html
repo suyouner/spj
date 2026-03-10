@@ -141,6 +141,13 @@
             background-size: cover;
             background-position: center;
             background-color: transparent;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--fixed-vh, 100dvh) !important;
+            max-height: var(--fixed-vh, 100dvh) !important;
+            z-index: 1;
         }
         
         #theme-page, #desktop-theme-page, #global-font-page {
@@ -3449,6 +3456,10 @@
                     </div>
                     <input type="file" id="discover-cover-input" accept="image/*" style="display: none;" onchange="handleDiscoverCoverUpload(this)">
                 </div>
+                <div id="discover-notification-bar" style="display: none; background: #4c4c4c; color: white; border-radius: 6px; padding: 8px 12px; margin: 40px auto -15px auto; width: fit-content; align-items: center; gap: 10px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; z-index: 10;" onclick="openDiscoverNotificationsModal()">
+                    <img id="discover-notification-avatar" src="" style="width: 30px; height: 30px; border-radius: 4px; object-fit: cover;">
+                    <span id="discover-notification-count" style="font-size: 14px; font-weight: 500;"></span>
+                </div>
                 <div class="discover-content" style="background-color: #fff; padding-top: 35px; padding-bottom: 20px;">
                     <!-- Future content -->
                 </div>
@@ -3462,8 +3473,9 @@
                     <div class="footer-icon footer-icon-contact"></div>
                     <span class="footer-text">通讯录</span>
                 </div>
-                <div class="footer-item active" onclick="switchWechatTab('discover')">
+                <div class="footer-item active" onclick="switchWechatTab('discover')" style="position: relative;">
                     <div class="footer-icon footer-icon-discover"></div>
+                    <div id="discover-badge" style="display:none; position: absolute; top: -2px; right: 10px; width: 8px; height: 8px; background-color: #ff3b30; border-radius: 50%;"></div>
                     <span class="footer-text">动态</span>
                 </div>
                 <div class="footer-item" onclick="switchWechatTab('me')">
@@ -4509,6 +4521,52 @@
     <canvas id="compression-canvas" style="display:none;"></canvas>
     <input type="file" id="sticker-file-input" accept="image/*" style="display: none;" multiple>
     <input type="file" id="action-image-input" accept="image/*" style="display: none;" multiple>
+
+    <!-- Role Moments Modal -->
+    <div class="modal-overlay" id="role-moments-modal">
+        <div class="modal-content" style="width: 320px; padding: 20px; overflow: visible;">
+            <h3 style="text-align: center; margin-bottom: 15px;">角色发朋友圈管理</h3>
+
+            <div class="settings-item" style="flex-direction: row; justify-content: space-between; align-items: center;">
+                <label style="font-weight: 600;">角色自动发朋友圈</label>
+                <label class="switch">
+                    <input type="checkbox" id="role-auto-post-toggle" onchange="toggleRoleAutoPost(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px; align-items: stretch; position: relative; z-index: 50;">
+                <div style="flex: 1; min-width: 0;">
+                    <select id="single-manual-role-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white;"></select>
+                </div>
+                <button id="single-manual-generate-btn" style="padding: 0 15px; border-radius: 8px; background: #333; border: none; color: white; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap; display: flex; align-items: center; justify-content: center;" onclick="triggerSingleManualMomentGeneration()">手动生成</button>
+            </div>
+
+            <div id="role-auto-post-list-container" class="preset-list" style="display: none; margin-top: 15px; max-height: 250px; overflow-y: auto; padding-right: 5px; flex-direction: column; gap: 10px;">
+                <!-- Checkboxes injected by JS -->
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button class="cancel-btn" style="background-color: #fff; border: 1px solid #ddd;" onclick="closeRoleMomentsModal()">取消</button>
+                <button class="save-btn" onclick="saveRoleMomentsSettings()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discover Notifications Modal -->
+    <div class="modal-overlay" id="discover-notifications-modal">
+        <div class="modal-content" style="width: 340px; padding: 0; padding-bottom: 15px; background-color: #ededed; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="background-color: #ededed; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #d7d7d7;">
+                <span style="font-size: 20px; font-weight: bold; cursor: pointer; color: #333;" onclick="closeDiscoverNotificationsModal()"><</span>
+                <span style="font-size: 16px; font-weight: 600;">消息</span>
+                <span style="font-size: 14px; color: #576b95; cursor: pointer;" onclick="clearDiscoverNotifications()">清空</span>
+            </div>
+            <div id="discover-notifications-list" style="flex-grow: 1; overflow-y: auto; background-color: #fff;">
+                <!-- Notifications injected here -->
+            </div>
+        </div>
+    </div>
+
     </div>
 
     <script>
@@ -4517,7 +4575,7 @@
         // --- IndexedDB Helpers ---
         let db;
         function initDB(callback) {
-            const request = indexedDB.open('UserData', 10); // Version 10
+            const request = indexedDB.open('UserData', 11); // Version 11
 
             request.onerror = (event) => {
                 console.error("Database error: ", event.target.error);
@@ -4556,6 +4614,10 @@
                 }
                 if (!db.objectStoreNames.contains('global_playlist')) {
                     db.createObjectStore('global_playlist', { keyPath: 'id' });
+                }
+                if (!db.objectStoreNames.contains('discover_notifications')) {
+                    const notifStore = db.createObjectStore('discover_notifications', { keyPath: 'id' });
+                    notifStore.createIndex('toId', 'toId', { unique: false });
                 }
             };
 
@@ -4772,18 +4834,15 @@
             }
         }
 
-        let currentFontData = { type: null, value: null, name: null };
+        let currentFontData = { type: null, value: null, name: null, file: null };
+        let activeFontBlobUrl = null;
 
         function handleFontUpload(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 document.getElementById('font-file-name').textContent = file.name;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentFontData = { type: 'file', value: e.target.result, name: file.name };
-                    document.getElementById('font-url-input').value = ''; // clear url if file uploaded
-                };
-                reader.readAsDataURL(file);
+                currentFontData = { type: 'file', file: file, name: file.name };
+                document.getElementById('font-url-input').value = ''; // clear url if file uploaded
             }
         }
 
@@ -4793,7 +4852,7 @@
                 currentFontData = { type: 'url', value: urlInput, name: 'custom_url' };
             }
 
-            if (!currentFontData.value) {
+            if (!currentFontData.value && !currentFontData.file) {
                 showToast('请输入字体链接或上传字体文件');
                 return;
             }
@@ -4837,20 +4896,40 @@
                     document.head.appendChild(styleEl);
                 }
                 
-                if (profile && profile.globalFont && profile.globalFont.value) {
+                if (activeFontBlobUrl) {
+                    URL.revokeObjectURL(activeFontBlobUrl);
+                    activeFontBlobUrl = null;
+                }
+
+                if (profile && profile.globalFont && (profile.globalFont.value || profile.globalFont.file)) {
                     const font = profile.globalFont;
-                    const src = font.type === 'file' ? `url("${font.value}")` : `url('${font.value}')`;
+                    let src = '';
                     
-                    styleEl.innerHTML = `
-                        @font-face {
-                            font-family: 'CustomGlobalFont';
-                            src: ${src};
-                            font-display: swap;
+                    if (font.type === 'file') {
+                        const blob = font.file;
+                        if (blob instanceof Blob || blob instanceof File) {
+                            activeFontBlobUrl = URL.createObjectURL(blob);
+                            src = `url("${activeFontBlobUrl}")`;
+                        } else if (font.value) {
+                            src = `url("${font.value}")`;
                         }
-                        body, .phone-container, input, textarea, select, button, .chat-input, [contenteditable] {
-                            font-family: 'CustomGlobalFont', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
-                        }
-                    `;
+                    } else {
+                        src = `url('${font.value}')`;
+                    }
+                    
+                    if (src) {
+                        const fontName = 'CustomGlobalFont_' + Date.now();
+                        styleEl.innerHTML = `
+                            @font-face {
+                                font-family: '${fontName}';
+                                src: ${src};
+                                font-display: swap;
+                            }
+                            body, .phone-container, input, textarea, select, button, .chat-input, [contenteditable] {
+                                font-family: '${fontName}', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+                            }
+                        `;
+                    }
                     
                     const urlInput = document.getElementById('font-url-input');
                     const fileName = document.getElementById('font-file-name');
@@ -4931,6 +5010,8 @@
             // trigger an initial scroll check
             const scrollArea = document.getElementById('discover-scroll-area');
             if (scrollArea) scrollArea.dispatchEvent(new Event('scroll'));
+            
+            checkDiscoverNotifications();
 
             dbGet('user_profile', 'main_user', profile => {
                 const avatar = document.getElementById('discover-avatar');
@@ -4985,9 +5066,242 @@
                 if (action === 'post') {
                     openPostDiscoverModal();
                 } else if (action === 'roles') {
-                    showToast('功能尚未开发');
+                    openRoleMomentsModal();
                 }
             }, 300);
+        }
+
+        function openRoleMomentsModal() {
+            document.getElementById('role-moments-modal').style.display = 'flex';
+            const toggle = document.getElementById('role-auto-post-toggle');
+            const isEnabled = localStorage.getItem('global_auto_post_moments') === 'true';
+            toggle.checked = isEnabled;
+            
+            const listContainer = document.getElementById('role-auto-post-list-container');
+            listContainer.style.display = isEnabled ? 'flex' : 'none';
+            listContainer.innerHTML = '';
+            
+            const singleSelect = document.getElementById('single-manual-role-select');
+            if (singleSelect) {
+                singleSelect.innerHTML = '';
+            }
+            
+            dbGetAll('friends', friends => {
+                friends.forEach(friend => {
+                    const label = document.createElement('label');
+                    label.className = 'preset-checkbox-item';
+                    label.style.padding = '5px 0';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = friend.id;
+                    if (friend.autoPostMoments) {
+                        checkbox.checked = true;
+                    }
+                    
+                    const customCheck = document.createElement('div');
+                    customCheck.className = 'custom-checkbox';
+                    
+                    const span = document.createElement('span');
+                    span.textContent = friend.name;
+                    
+                    label.appendChild(checkbox);
+                    label.appendChild(customCheck);
+                    label.appendChild(span);
+                    listContainer.appendChild(label);
+
+                    if (singleSelect) {
+                        const option = document.createElement('option');
+                        option.value = friend.id;
+                        option.textContent = friend.name;
+                        singleSelect.appendChild(option);
+                    }
+                });
+
+                if (singleSelect) {
+                    refreshCustomSelect(singleSelect);
+                }
+            });
+        }
+
+        function closeRoleMomentsModal() {
+            document.getElementById('role-moments-modal').style.display = 'none';
+        }
+
+        function toggleRoleAutoPost(isChecked) {
+            document.getElementById('role-auto-post-list-container').style.display = isChecked ? 'flex' : 'none';
+        }
+
+        async function triggerSingleManualMomentGeneration() {
+            const selectEl = document.getElementById('single-manual-role-select');
+            if (!selectEl || !selectEl.value) {
+                showToast('请先选择一个角色');
+                return;
+            }
+            const friendId = selectEl.value;
+            
+            const btn = document.getElementById('single-manual-generate-btn');
+            if (btn.disabled) return;
+            
+            const configStr = localStorage.getItem('globalConfig');
+            const config = configStr ? JSON.parse(configStr) : {};
+            if (!config.apiKey || !config.model) {
+                showToast('请先配置API');
+                return;
+            }
+
+            showToast('开始生成朋友圈，请稍候...');
+            btn.disabled = true;
+            btn.textContent = '生成中...';
+
+            dbGet('friends', friendId, async friend => {
+                if (friend) {
+                    try {
+                        await generateMomentForCharacter(friend, config);
+                        showToast(`已成功为 ${friend.name} 生成朋友圈`);
+                        if (document.getElementById('wechat-discover-page').classList.contains('active')) {
+                            renderDiscoverFeed();
+                        }
+                    } catch (e) {
+                        console.error(`Error generating moment for ${friend.name}:`, e);
+                        showToast('生成失败，请重试');
+                    }
+                } else {
+                    showToast('未找到角色');
+                }
+                btn.disabled = false;
+                btn.textContent = '手动生成';
+            });
+        }
+
+        async function generateMomentForCharacter(friend, config) {
+            let userPersona = null;
+            if (friend.myPersonaId) {
+                userPersona = await new Promise(resolve => dbGet('my_personas', friend.myPersonaId, resolve));
+            }
+
+            const visiblePosts = await new Promise(resolve => {
+                dbGetAll('discover_posts', posts => {
+                    dbGetAll('friends', allFriends => {
+                        const vp = posts.filter(p => canBotSeePost(friend, p, allFriends)).sort((a,b) => b.timestamp - a.timestamp).slice(0, 5);
+                        resolve(vp);
+                    });
+                });
+            });
+
+            // 获取带角色的专属表情
+            let aiStickers = await new Promise(resolve => {
+                try {
+                    const transaction = db.transaction(['ai_stickers'], 'readonly');
+                    const store = transaction.objectStore('ai_stickers');
+                    const index = store.index('friendId');
+                    const req = index.getAll(friend.id);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve([]);
+                } catch(e) {
+                    resolve([]);
+                }
+            });
+
+            const systemPrompt = buildSystemPrompt(friend, userPersona, aiStickers, visiblePosts);
+            let momentPrompt = "【系统指令】请结合你的人设、当前的聊天记忆或者最近的世界事件，发布一条符合你设定的“朋友圈动态”。\n要求：\n1. 可以简短如一句吐槽，也可以是对某件事的感慨，务必口语化、符合身份。\n2. 如果你认为这条动态需要配图，可以直接在动态文字后输出一个对应的表情包XML标签（例如 <sticker>xxx</sticker>），不要解释。\n3. 请直接输出动态的最终文本内容（和可选的标签），不要输出包含“我的朋友圈”、“发布动态”等旁白解释。\n";
+            
+            // 找出该角色最新的一条朋友圈，防止重复
+            const myLatestPost = visiblePosts.find(p => p.authorId === friend.id);
+            if (myLatestPost && myLatestPost.text) {
+                momentPrompt += `4. 【重要禁忌】：你上一次发的朋友圈内容是：“${myLatestPost.text}”。请确保这次发的**内容、话题和感慨方向与上次完全不同**，绝对不要重复或高度相似！\n`;
+            }
+
+            const history = await new Promise(resolve => {
+                const tx = db.transaction(['chat_history'], 'readonly');
+                const store = tx.objectStore('chat_history');
+                const idx = store.index('friendId');
+                const req = idx.getAll(friend.id);
+                req.onsuccess = () => {
+                    const msgs = req.result;
+                    const shortTermCount = parseInt(friend.shortTermMemory || '20', 10);
+                    resolve(msgs.slice(-shortTermCount));
+                };
+                req.onerror = () => resolve([]);
+            });
+
+            history.push({
+                type: 'system',
+                text: momentPrompt,
+                timestamp: Date.now()
+            });
+
+            let aiResponseText = await callLLM(config, systemPrompt, history);
+            if (!aiResponseText) return;
+
+            // Remove any inner_thought/mood wrappers they might accidentally use for the post
+            aiResponseText = aiResponseText.replace(/<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/gis, '').trim();
+            aiResponseText = aiResponseText.replace(/<mood>(.*?)<\/mood>/gis, '').trim();
+
+            let postText = aiResponseText;
+            let postImages = [];
+
+            // Check if there's a sticker included
+            const stickerRegex = /<sticker>(.*?)<\/sticker>/g;
+            let match;
+            while ((match = stickerRegex.exec(postText)) !== null) {
+                const stickerValue = match[1].trim();
+                const matchedSticker = aiStickers.find(s => String(s.id) === stickerValue);
+                if (matchedSticker) {
+                    postImages.push(matchedSticker.src);
+                } else if (stickerValue.startsWith('http') || stickerValue.startsWith('data:')) {
+                    postImages.push(stickerValue);
+                }
+            }
+            postText = postText.replace(stickerRegex, '').trim();
+
+            const newPost = {
+                id: Date.now().toString() + Math.floor(Math.random()*1000),
+                authorId: friend.id,
+                authorName: friend.realName || friend.name,
+                authorAvatar: friend.avatar,
+                authorGroup: friend.group || '默认分组',
+                text: postText,
+                images: postImages,
+                visibility: '公开', // bots post publicly to their group by default
+                visibilityRoles: [],
+                timestamp: Date.now(),
+                likes: [],
+                comments: []
+            };
+
+            await new Promise(resolve => dbAdd('discover_posts', newPost, resolve));
+
+            // 更新角色的自动发送时间
+            friend.lastAutoPostTime = Date.now();
+            await new Promise(resolve => dbUpdate('friends', friend, resolve));
+
+            // Trigger reactions from others
+            triggerBotInteractionsForPost(newPost.id);
+        }
+
+        function saveRoleMomentsSettings() {
+            const isEnabled = document.getElementById('role-auto-post-toggle').checked;
+            localStorage.setItem('global_auto_post_moments', isEnabled);
+            
+            const checkboxes = document.querySelectorAll('#role-auto-post-list-container input[type="checkbox"]');
+            
+            dbGetAll('friends', friends => {
+                let promises = [];
+                checkboxes.forEach(cb => {
+                    const friend = friends.find(f => f.id === cb.value);
+                    if (friend) {
+                        if (friend.autoPostMoments !== cb.checked) {
+                            friend.autoPostMoments = cb.checked;
+                            promises.push(new Promise(res => dbUpdate('friends', friend, res)));
+                        }
+                    }
+                });
+                Promise.all(promises).then(() => {
+                    showToast('角色发朋友圈设置已保存');
+                    closeRoleMomentsModal();
+                });
+            });
         }
 
         function triggerDiscoverCoverUpload() {
@@ -5169,19 +5483,29 @@
             document.getElementById('post-visibility-text').textContent = text + ' 〉';
         }
 
-        function canBotSeePost(friend, post) {
-            if (post.authorId !== 'main_user') return true; 
-            if (post.visibility === '公开') return true;
-            if (post.visibility === '私密') return false;
-            
-            const roleIds = post.visibilityRoles.map(r => String(r.id));
-            if (post.visibility === '部分可见') {
-                return roleIds.includes(String(friend.id));
+        function canBotSeePost(friend, post, allFriends = null) {
+            if (post.authorId === 'main_user') {
+                if (post.visibility === '公开') return true;
+                if (post.visibility === '私密') return false;
+                const roleIds = post.visibilityRoles.map(r => String(r.id));
+                if (post.visibility === '部分可见') {
+                    return roleIds.includes(String(friend.id));
+                }
+                if (post.visibility === '不给谁看') {
+                    return !roleIds.includes(String(friend.id));
+                }
+                return true;
+            } else {
+                if (post.authorId === friend.id) return true;
+                
+                let authorGroup = post.authorGroup;
+                if (!authorGroup && allFriends) {
+                    const author = allFriends.find(f => f.id === post.authorId);
+                    if (author) authorGroup = author.group || '默认分组';
+                }
+                const myGroup = friend.group || '默认分组';
+                return authorGroup === myGroup;
             }
-            if (post.visibility === '不给谁看') {
-                return !roleIds.includes(String(friend.id));
-            }
-            return true;
         }
 
         async function triggerBotInteractionsForPost(postId) {
@@ -5194,7 +5518,7 @@
                 if (!post) return;
 
                 dbGetAll('friends', friends => {
-                    const eligibleFriends = friends.filter(f => canBotSeePost(f, post));
+                    const eligibleFriends = friends.filter(f => canBotSeePost(f, post, friends));
                     if (eligibleFriends.length === 0) return;
 
                     const grouped = {};
@@ -5327,12 +5651,15 @@
                         const action = JSON.parse(jsonStr);
 
                         let updated = false;
+                        let newlyAddedLike = false;
                         if (action.like && !hasLiked) {
                             if (!post.likes) post.likes = [];
                             post.likes.push(friend.id);
                             updated = true;
+                            newlyAddedLike = true;
                         }
 
+                        let newComments = [];
                         if (action.comment && typeof action.comment === 'string' && action.comment.trim() !== '' && action.comment !== 'null') {
                             if (!post.comments) post.comments = [];
                             let depth = 0;
@@ -5354,7 +5681,7 @@
                             }
                             
                             if (!shouldBlock) {
-                                post.comments.push({
+                                const newComment = {
                                     id: Date.now().toString() + Math.floor(Math.random()*1000),
                                     authorId: friend.id,
                                     authorName: friend.realName,
@@ -5363,13 +5690,59 @@
                                     replyToId: action.replyToId,
                                     timestamp: Date.now(),
                                     depth: depth
-                                });
+                                };
+                                post.comments.push(newComment);
+                                newComments.push(newComment);
                                 updated = true;
                             }
                         }
 
                         if (updated) {
                             await new Promise(res => dbUpdate('discover_posts', post, res));
+                            
+                            let notifyUser = false;
+                            let actionType = '';
+                            let actionText = '';
+                            
+                            if (post.authorId === 'main_user') {
+                                notifyUser = true;
+                            } else {
+                                if (newComments.length > 0 && newComments[0].replyToId) {
+                                    const targetComment = post.comments.find(c => String(c.id) === String(newComments[0].replyToId));
+                                    if (targetComment && targetComment.authorId === 'main_user') {
+                                        notifyUser = true;
+                                    }
+                                }
+                            }
+
+                            if (notifyUser) {
+                                if (newComments.length > 0) {
+                                    actionType = 'comment';
+                                    actionText = newComments[0].text;
+                                } else if (newlyAddedLike) {
+                                    actionType = 'like';
+                                    actionText = '赞了你的朋友圈';
+                                }
+
+                                if (actionType) {
+                                    const notif = {
+                                        id: Date.now().toString() + Math.floor(Math.random() * 1000),
+                                        toId: 'main_user',
+                                        fromId: friend.id,
+                                        fromName: friend.name,
+                                        fromAvatar: friend.avatar,
+                                        postId: post.id,
+                                        postContent: post.text || (post.images && post.images.length > 0 ? '[图片]' : ''),
+                                        type: actionType,
+                                        text: actionText,
+                                        timestamp: Date.now(),
+                                        isRead: false
+                                    };
+                                    await new Promise(res => dbAdd('discover_notifications', notif, res));
+                                    checkDiscoverNotifications();
+                                }
+                            }
+
                             if (document.getElementById('wechat-discover-page').classList.contains('active')) {
                                 renderDiscoverFeed();
                             }
@@ -5848,6 +6221,11 @@
                 statusBar.style.display = isVisible ? 'flex' : 'none';
             }
             
+            const fakeStatusBar = document.getElementById('discover-fake-status-bar');
+            if (fakeStatusBar) {
+                fakeStatusBar.style.display = isVisible ? 'flex' : 'none';
+            }
+            
     // Adjust padding for pages that rely on status bar height
     document.querySelectorAll('.page').forEach(page => {
         if (page.id === 'wechat-discover-page' || page.id === 'music-player-page') {
@@ -5856,9 +6234,9 @@
         }
         
         if (isVisible) {
-            page.style.paddingTop = '34px';
+            page.style.paddingTop = 'max(34px, env(safe-area-inset-top))';
         } else {
-            page.style.paddingTop = '0px';
+            page.style.paddingTop = 'env(safe-area-inset-top)';
         }
     });
             
@@ -5866,11 +6244,11 @@
             const discoverHeader = document.getElementById('discover-sticky-header');
             if (discoverHeader) {
                 if (isVisible) {
-                    discoverHeader.style.paddingTop = '34px';
-                    discoverHeader.style.height = '80px';
+                    discoverHeader.style.paddingTop = 'max(34px, env(safe-area-inset-top))';
+                    discoverHeader.style.height = 'calc(46px + max(34px, env(safe-area-inset-top)))';
                 } else {
-                    discoverHeader.style.paddingTop = '10px';
-                    discoverHeader.style.height = '56px';
+                    discoverHeader.style.paddingTop = 'env(safe-area-inset-top)';
+                    discoverHeader.style.height = 'calc(46px + env(safe-area-inset-top))';
                 }
             }
         }
@@ -7007,9 +7385,10 @@
                             } else {
                                 const msg = friendMsgs[0];
                                 let previewText = msg.text.replace(/<[^>]+>/g, '');
-                                if (msg.isSticker && msg.stickerDescription) previewText = `[表情] ${msg.stickerDescription}`;
+                                if (msg.isSticker && msg.stickerDescription) previewText = `[表情包] ${msg.stickerDescription}`;
                                 else if (msg.isSticker && msg.isDice) previewText = `[骰子]`;
-                                else if (msg.isSticker) previewText = `[图片/表情]`;
+                                else if (msg.isSticker) previewText = `[表情包]`;
+                                else if (msg.isImage) previewText = `[图片]`;
                                 
                                 const regex = new RegExp(`(${keyword})`, 'gi');
                                 const highlightedText = previewText.replace(regex, '<span style="color:#07c160">$1</span>');
@@ -8616,24 +8995,57 @@
             const files = e.target.files;
             if (!files || files.length === 0) return;
 
-            let processedCount = 0;
+            let currentIndex = 0;
+            let uploadedCount = 0;
             const totalFiles = files.length;
 
-            Array.from(files).forEach(file => {
+            function processNext() {
+                if (currentIndex >= totalFiles) {
+                    if (uploadedCount > 0) {
+                        renderStickerGrid();
+                    }
+                    e.target.value = ''; // Reset file input
+                    return;
+                }
+
+                const file = files[currentIndex];
                 compressImage(file, 0.6, (compressedSrc) => {
-                    const newSticker = {
-                        src: compressedSrc,
-                        group: currentStickerGroup === '全部' ? '默认' : currentStickerGroup
-                    };
-                    dbAdd('stickers', newSticker, () => {
-                        processedCount++;
-                        if (processedCount === totalFiles) {
-                            renderStickerGrid();
+                    const titleText = totalFiles > 1 ? `添加表情包含义 (${currentIndex + 1}/${totalFiles})` : '添加表情包含义';
+                    
+                    showGenericStickerModal({
+                        title: titleText,
+                        body: `
+                            <div style="text-align:center; margin-bottom:15px;">
+                                <img src="${compressedSrc}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #eee;">
+                            </div>
+                            <label>请输入表情包含义</label>
+                            <input type="text" id="sticker-desc-input" placeholder="例如：开心、点赞、疑问...">
+                        `,
+                        onConfirm: () => {
+                            const desc = document.getElementById('sticker-desc-input').value.trim();
+                            
+                            const newSticker = {
+                                src: compressedSrc,
+                                group: currentStickerGroup === '全部' ? '默认' : currentStickerGroup,
+                                description: desc || ''
+                            };
+                            
+                            dbAdd('stickers', newSticker, () => {
+                                uploadedCount++;
+                                currentIndex++;
+                                processNext();
+                            });
+                            return true;
+                        },
+                        onCancel: () => {
+                            currentIndex++;
+                            processNext();
                         }
                     });
                 });
-            });
-            e.target.value = ''; // Reset file input
+            }
+
+            processNext();
         });
 
         function showGenericStickerModal(config) {
@@ -8964,12 +9376,14 @@
                         }
                     });
 
-                    let visiblePosts = await new Promise(resolve => {
-                        dbGetAll('discover_posts', posts => {
-                            const vp = posts.filter(p => canBotSeePost(friend, p)).sort((a,b) => b.timestamp - a.timestamp).slice(0, 3);
+                let visiblePosts = await new Promise(resolve => {
+                    dbGetAll('discover_posts', posts => {
+                        dbGetAll('friends', allFriends => {
+                            const vp = posts.filter(p => canBotSeePost(friend, p, allFriends)).sort((a,b) => b.timestamp - a.timestamp).slice(0, 5);
                             resolve(vp);
                         });
                     });
+                });
 
                     const systemPrompt = buildSystemPrompt(friend, userPersona, aiStickers, visiblePosts);
                     const shortTermCount = parseInt(friend.shortTermMemory || '20', 10);
@@ -9074,6 +9488,31 @@
                                     let partText = msgParts[i];
                                     let quoteData = null;
                                     let transferData = null;
+
+                                    // Parse Delete Moment Command
+                                    const deleteMomentRegex = /<delete_moment>(.*?)<\/delete_moment>/;
+                                    const deleteMomentMatch = partText.match(deleteMomentRegex);
+                                    if (deleteMomentMatch) {
+                                        const keyword = deleteMomentMatch[1].trim();
+                                        partText = partText.replace(deleteMomentRegex, '').trim();
+                                        
+                                        const targetPost = await new Promise(res => {
+                                            dbGetAll('discover_posts', posts => {
+                                                const botPosts = posts.filter(p => p.authorId === friend.id);
+                                                botPosts.sort((a, b) => b.timestamp - a.timestamp);
+                                                const matched = botPosts.find(p => p.id === keyword || (p.text && p.text.includes(keyword)));
+                                                res(matched || botPosts[0]);
+                                            });
+                                        });
+
+                                        if (targetPost) {
+                                            await new Promise(res => dbDelete('discover_posts', targetPost.id, res));
+                                            showToast(`${friend.name} 删除了一条朋友圈`);
+                                            if (document.getElementById('wechat-discover-page').classList.contains('active')) {
+                                                renderDiscoverFeed();
+                                            }
+                                        }
+                                    }
 
                                     // New: Parse Avatar Change Command
                                     const avatarChangeRegex = /<change_avatar>(.*?)<\/change_avatar>/;
@@ -9304,10 +9743,10 @@
                                         if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
                                             addMessageToUI(stickerMsg);
                                         } else {
-                                            showBannerNotification(friend, '[表情]');
+                                            showBannerNotification(friend, '[表情包]');
                                         }
                                         await new Promise(resolve => dbAdd('chat_history', stickerMsg, resolve));
-                                        friend.lastMsg = '[表情]';
+                                        friend.lastMsg = '[表情包]';
                                     } else if (hasDice) {
                                         if (partText) {
                                             const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
@@ -9529,7 +9968,8 @@
 5. 扔骰子：如果你想扔骰子，请在回复中包含：<dice></dice>。系统会自动将其转换为一个随机骰子动画。
 6. 识别图片/表情包：对方可能会发送图片或表情包，请你结合图片内容或表情包上的文字/画面情感进行自然的回应，如果图里有梗，请根据人设回应。
 7. 更换头像：如果用户发给你一张或多张图片让你换头像，你的反应要符合人设，这可以是一个多回合的互动。你可以同意、拒绝，或者先拉扯几句再同意。例如：\n- **如果你是傲娇型**：你可以先说‘我才不要，这个不好看’，如果用户哄你，你再说‘好吧好吧，真拿你没办法……’，然后输出 <change_avatar>图片ID</change_avatar> 指令。\n- **如果你想提条件**：你可以说‘换倒是可以，不过你得先夸我几句’，等用户夸完你再输出指令。\n- **如果你想马上换**：直接换，说出符合人设的话，并输出指令。\n- **核心**：让互动更真实，你可以先拒绝或嘴硬，等用户哄你或满足条件后，再输出 <change_avatar>图片ID或图片链接</change_avatar> 指令来完成更换。如果就是不想换，也可以根据人设坚持拒绝。
-8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。`;
+8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。
+9. 删除朋友圈：如果用户在聊天中提到让你删掉某条朋友圈动态，你可以根据人设决定是否同意。如果同意，请在回复中包含指令 <delete_moment>动态关键字或ID</delete_moment>，系统会自动帮你删除包含该关键字的最新一条朋友圈。如果你不想删，可以找理由拒绝。`;
             }
             prompt += `\n请根据上述人设和记忆，以${friend.name}的口吻进行自然地回复。`;
             return prompt;
@@ -9892,6 +10332,31 @@
                                 let quoteData = null;
                                 let transferData = null;
 
+                                // Parse Delete Moment Command
+                                const deleteMomentRegex = /<delete_moment>(.*?)<\/delete_moment>/;
+                                const deleteMomentMatch = partText.match(deleteMomentRegex);
+                                if (deleteMomentMatch) {
+                                    const keyword = deleteMomentMatch[1].trim();
+                                    partText = partText.replace(deleteMomentRegex, '').trim();
+                                    
+                                    const targetPost = await new Promise(res => {
+                                        dbGetAll('discover_posts', posts => {
+                                            const botPosts = posts.filter(p => p.authorId === friend.id);
+                                            botPosts.sort((a, b) => b.timestamp - a.timestamp);
+                                            const matched = botPosts.find(p => p.id === keyword || (p.text && p.text.includes(keyword)));
+                                            res(matched || botPosts[0]);
+                                        });
+                                    });
+
+                                    if (targetPost) {
+                                        await new Promise(res => dbDelete('discover_posts', targetPost.id, res));
+                                        showToast(`${friend.name} 删除了一条朋友圈`);
+                                        if (document.getElementById('wechat-discover-page').classList.contains('active')) {
+                                            renderDiscoverFeed();
+                                        }
+                                    }
+                                }
+
                                 const transferRegex = /<transfer amount="([^"]+)">([^<]*)<\/transfer>/;
                                 const transferMatch = partText.match(transferRegex);
                                 if (transferMatch) {
@@ -10103,8 +10568,8 @@
                                     };
                                     await new Promise(resolve => dbAdd('chat_history', stickerMsg, resolve));
                                     if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(stickerMsg);
-                                    else showBannerNotification(friend, '[表情]');
-                                    friend.lastMsg = '[表情]';
+                                    else showBannerNotification(friend, '[表情包]');
+                                    friend.lastMsg = '[表情包]';
                                 } else if (hasDice) {
                                     if (partText) {
                                         const textMsg = {
@@ -10172,7 +10637,18 @@
                                 }
                                 
                                 if (config.notifications && Notification.permission === "granted") {
-                                     new Notification(friend.name, { body: partText, icon: friend.avatar || 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me' });
+                                    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+                                        navigator.serviceWorker.ready.then(registration => {
+                                            registration.showNotification(friend.name, {
+                                                body: partText,
+                                                icon: friend.avatar || 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me',
+                                                tag: 'chat-message',
+                                                data: { url: location.href }
+                                            });
+                                        });
+                                    } else {
+                                        new Notification(friend.name, { body: partText, icon: friend.avatar || 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me' });
+                                    }
                                 }
 
                                 if (i < msgParts.length - 1) {
@@ -12894,18 +13370,88 @@ ${historyText}`;
             // The rest of the init can happen in parallel
         });
 
-        // Virtual Keyboard handling via Visual Viewport - REMOVED per user request
-        // The 'interactive-widget=resizes-content' meta tag now handles keyboard behavior natively.
-        // The custom handleViewportResize function has been removed to prevent conflicts and page jumping.
         showPage('main-page');
         loadSettings();
         updateDate();
         updateTime();
         setInterval(updateTime, 1000);
-        setInterval(() => {
+        
+        // Use Web Worker for background intervals instead of main thread setInterval
+        if (window.Worker) {
+            const timerWorker = new Worker('timer-worker.js');
+            timerWorker.postMessage('start');
+            timerWorker.onmessage = function(e) {
+                if (e.data === 'tick') {
+                    checkActiveChats();
+                    runAutoSummarization();
+                    checkAutoPostMoments();
+                }
+            };
+            
+            // Cleanup on page unload (optional but good practice)
+            window.addEventListener('beforeunload', () => {
+                timerWorker.postMessage('stop');
+                timerWorker.terminate();
+            });
+        } else {
+            // Fallback for older browsers
+            setInterval(() => {
+                checkActiveChats();
+                runAutoSummarization();
+                checkAutoPostMoments();
+            }, 60000); // Check every minute for active chats & summarization
+        }
+
+        // Catch-up checks when app comes back to foreground
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                console.log('App resumed, running catch-up checks...');
+                checkActiveChats();
+                runAutoSummarization();
+                checkAutoPostMoments();
+            }
+        });
+        window.addEventListener('focus', () => {
             checkActiveChats();
             runAutoSummarization();
-        }, 60000); // Check every minute for active chats & summarization
+            checkAutoPostMoments();
+        });
+
+        async function checkAutoPostMoments() {
+            const isGlobalEnabled = localStorage.getItem('global_auto_post_moments') === 'true';
+            if (!isGlobalEnabled) return;
+
+            const configStr = localStorage.getItem('globalConfig');
+            if (!configStr) return;
+            const config = JSON.parse(configStr);
+            if (!config.apiKey || !config.model) return;
+
+            dbGetAll('friends', friends => {
+                const now = Date.now();
+                friends.forEach(async friend => {
+                    if (friend.autoPostMoments) {
+                        const lastPostTime = friend.lastAutoPostTime || 0;
+                        // 设定最低冷却时间为 4 小时 (14400000 ms)
+                        const minIntervalMs = 4 * 60 * 60 * 1000; 
+                        
+                        if (now - lastPostTime > minIntervalMs) {
+                            // 超过4小时后，每分钟有 2% 的概率发一条朋友圈
+                            // 这样可以确保不是时间一到就立刻发，而是随机分布在接下来的几个小时内
+                            if (Math.random() < 0.02) {
+                                try {
+                                    await generateMomentForCharacter(friend, config);
+                                    if (document.getElementById('wechat-discover-page').classList.contains('active')) {
+                                        renderDiscoverFeed();
+                                    }
+                                } catch (e) {
+                                    console.error('Auto post failed:', e);
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
 
         // The 'interactive-widget=resizes-content' meta tag now handles keyboard behavior natively.
         // The custom handleViewportResize function has been removed to prevent conflicts and page jumping.
@@ -12930,6 +13476,20 @@ ${historyText}`;
             window.addEventListener('scroll', () => {
                 window.scrollTo(0, 0);
             }, { passive: false });
+
+            // 为主页面锁定高度，防止键盘弹出时缩小或被顶起
+            const setVh = () => {
+                document.documentElement.style.setProperty('--fixed-vh', `${window.innerHeight}px`);
+            };
+            setVh();
+            // 仅在宽度变化（如旋转屏幕）时更新高度，忽略由于键盘导致的单纯高度缩小
+            let lastWidth = window.innerWidth;
+            window.addEventListener('resize', () => {
+                if (window.innerWidth !== lastWidth) {
+                    lastWidth = window.innerWidth;
+                    setVh();
+                }
+            });
         };
 
         // 全屏管理逻辑
@@ -13015,6 +13575,117 @@ ${historyText}`;
                 return;
             }
             document.getElementById('thought-modal').style.display = 'none';
+        }
+
+        function checkDiscoverNotifications() {
+            dbGetAll('discover_notifications', notifs => {
+                const unread = notifs.filter(n => !n.isRead && n.toId === 'main_user');
+                const badge = document.getElementById('discover-badge');
+                const bar = document.getElementById('discover-notification-bar');
+                const countEl = document.getElementById('discover-notification-count');
+                const avatarEl = document.getElementById('discover-notification-avatar');
+                
+                if (unread.length > 0) {
+                    // Show red dot
+                    if (badge) badge.style.display = 'block';
+                    
+                    // Show bar
+                    if (bar && countEl && avatarEl) {
+                        // Sort by newest
+                        unread.sort((a, b) => b.timestamp - a.timestamp);
+                        const latest = unread[0];
+                        avatarEl.src = latest.fromAvatar || 'https://via.placeholder.com/150';
+                        countEl.textContent = `${unread.length}条新消息`;
+                        bar.style.display = 'flex';
+                    }
+                } else {
+                    if (badge) badge.style.display = 'none';
+                    if (bar) bar.style.display = 'none';
+                }
+            });
+        }
+
+        function openDiscoverNotificationsModal() {
+            const listContainer = document.getElementById('discover-notifications-list');
+            listContainer.innerHTML = '';
+            
+            dbGetAll('discover_notifications', notifs => {
+                const myNotifs = notifs.filter(n => n.toId === 'main_user');
+                myNotifs.sort((a, b) => b.timestamp - a.timestamp);
+                
+                if (myNotifs.length === 0) {
+                    listContainer.innerHTML = '<div style="padding: 30px; text-align: center; color: #999; font-size: 14px;">暂无消息</div>';
+                } else {
+                    myNotifs.forEach(notif => {
+                        const item = document.createElement('div');
+                        item.style.padding = '15px';
+                        item.style.borderBottom = '1px solid #f0f0f0';
+                        item.style.display = 'flex';
+                        item.style.gap = '10px';
+                        
+                        const timeDate = new Date(notif.timestamp);
+                        const timeStr = `${timeDate.getMonth() + 1}-${timeDate.getDate()} ${String(timeDate.getHours()).padStart(2, '0')}:${String(timeDate.getMinutes()).padStart(2, '0')}`;
+                        
+                        let contentHtml = '';
+                        if (notif.type === 'like') {
+                            contentHtml = `<svg viewBox="0 0 24 24" style="width: 14px; height: 14px; stroke: #576b95; fill: #576b95; margin-right: 5px; vertical-align: middle;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg><span style="color:#576b95;">赞了你的动态</span>`;
+                        } else {
+                            contentHtml = `<span>${notif.text}</span>`;
+                        }
+
+                        item.innerHTML = `
+                            <img src="${notif.fromAvatar}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover; flex-shrink: 0; background: #eee;">
+                            <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px;">
+                                <span style="font-size: 15px; font-weight: 600; color: #576b95;">${notif.fromName}</span>
+                                <div style="font-size: 14px; color: #333;">${contentHtml}</div>
+                                <span style="font-size: 12px; color: #999;">${timeStr}</span>
+                            </div>
+                            <div style="width: 60px; height: 60px; background: #f7f7f7; overflow: hidden; font-size: 12px; color: #666; padding: 4px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-height: 1.4; border-radius: 4px;">
+                                ${notif.postContent || '图片'}
+                            </div>
+                        `;
+                        
+                        listContainer.appendChild(item);
+                        
+                        // Mark as read
+                        if (!notif.isRead) {
+                            notif.isRead = true;
+                            dbUpdate('discover_notifications', notif);
+                        }
+                    });
+                }
+                
+                document.getElementById('discover-notifications-modal').style.display = 'flex';
+                
+                // Hide badge and bar
+                const badge = document.getElementById('discover-badge');
+                const bar = document.getElementById('discover-notification-bar');
+                if (badge) badge.style.display = 'none';
+                if (bar) bar.style.display = 'none';
+            });
+        }
+
+        function closeDiscoverNotificationsModal() {
+            document.getElementById('discover-notifications-modal').style.display = 'none';
+        }
+
+        function clearDiscoverNotifications() {
+            showCustomConfirm('确定要清空所有消息记录吗？', () => {
+                dbGetAll('discover_notifications', notifs => {
+                    const myNotifs = notifs.filter(n => n.toId === 'main_user');
+                    let count = 0;
+                    if (myNotifs.length === 0) return;
+                    
+                    myNotifs.forEach(notif => {
+                        dbDelete('discover_notifications', notif.id, () => {
+                            count++;
+                            if (count === myNotifs.length) {
+                                openDiscoverNotificationsModal(); // Re-render empty state
+                            }
+                        });
+                    });
+                });
+            }, '清空消息');
         }
 
     // 检查并注册 Service Worker
