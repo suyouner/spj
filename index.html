@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>蒜皮叽</title>
     <meta name="theme-color" content="#e0e5ec">
     <meta name="mobile-web-app-capable" content="yes">
@@ -129,12 +129,59 @@
             max-height: 100%;
         }
 
-        #main-page, #theme-page, #desktop-theme-page, #chat-theme-page, #settings-page, #world-book-page, #wechat-page, #chat-interface-page, #chat-info-page, #wechat-me-page, #friend-profile-page, #memory-management-page, #emoji-library-page, #wechat-discover-page, #regex-app-page, #global-font-page {
+        #main-page, #theme-page, #desktop-theme-page, #chat-theme-page, #bubble-theme-page, #settings-page, #world-book-page, #wechat-page, #chat-interface-page, #chat-info-page, #wechat-me-page, #friend-profile-page, #memory-management-page, #emoji-library-page, #wechat-discover-page, #regex-app-page, #global-font-page {
             display: none;
         }
 
         #main-page.active, #theme-page.active, #desktop-theme-page.active, #chat-theme-page.active, #settings-page.active, #world-book-page.active, #wechat-page.active, #wechat-contacts-page.active, #chat-interface-page.active, #chat-info-page.active, #wechat-me-page.active, #friend-profile-page.active, #memory-management-page.active, #emoji-library-page.active, #wechat-discover-page.active, #regex-app-page.active, #global-font-page.active {
             display: flex;
+        }
+
+        #bubble-theme-page.active {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #ededed;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        #bubble-theme-page .theme-header {
+            background-color: white !important;
+            color: #333;
+        }
+
+        #bubble-theme-page-bottom-actions {
+            display: flex;
+            gap: 15px;
+            padding: 15px 20px;
+            background: transparent;
+            flex-shrink: 0;
+            z-index: 20;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+        }
+
+        #bubble-theme-page-bottom-actions button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        #bubble-theme-page-bottom-actions .btn-cancel {
+            background-color: rgba(245, 245, 245, 0.8);
+            color: #333;
+            border: 1px solid rgba(221, 221, 221, 0.8);
+        }
+
+        #bubble-theme-page-bottom-actions .btn-save {
+            background-color: rgba(51, 51, 51, 0.9);
+            color: white;
         }
         
         #main-page {
@@ -564,6 +611,16 @@
         .theme-option-arrow {
             font-size: 20px;
             color: #bbb;
+        }
+
+        .icon-preview-box {
+            width: 50px;
+            height: 50px;
+            border: 1px dashed #ccc;
+            margin: 0 auto 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         .wallpaper-preview {
@@ -1444,6 +1501,7 @@
             height: 100%;
             /* position: absolute; removed to fix keyboard layout issues */
             z-index: 10;
+            padding-top: 0 !important; /* Remove default page padding for immersive header */
         }
 
         .chat-interface-header {
@@ -1451,9 +1509,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 2px 15px 12px 15px;
-            /* padding-top: 36px; removed because .page already has padding-top */
-            background-color: #ededed;
+            padding: calc(max(34px, env(safe-area-inset-top)) + 2px) 15px 12px 15px;
+            background-color: var(--chat-header-bg-color, #ededed);
+            background-image: var(--chat-header-bg-image);
+            background-size: cover;
+            background-position: center;
             flex-shrink: 0;
             border-bottom: 1px solid #d7d7d7;
         }
@@ -1463,6 +1523,16 @@
             cursor: pointer;
             color: #333;
             width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .chat-interface-header .back-arrow[style*="background-image"] {
+            font-size: 0; /* Hide text if image is set */
         }
         .chat-interface-title {
             font-size: 16px;
@@ -1473,19 +1543,25 @@
         }
         .chat-interface-options {
             width: 30px;
+            height: 30px; /* Ensure consistent clickable area */
             cursor: pointer;
             display: flex;
             justify-content: flex-end;
             align-items: center;
             gap: 3px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
         }
 
         .chat-interface-options b {
-            display: block;
             width: 4px;
             height: 4px;
             background-color: #333;
             border-radius: 50%;
+        }
+        .chat-interface-options[style*="background-image"] b {
+            display: none;
         }
 
         .chat-messages-container {
@@ -1520,10 +1596,11 @@
         }
 
         .chat-avatar-placeholder {
-            width: 40px;
-            height: 40px;
-            border-radius: 6px;
+            width: var(--chat-avatar-size, 40px);
+            height: var(--chat-avatar-size, 40px);
+            border-radius: var(--chat-avatar-radius, 6px);
             flex-shrink: 0;
+            object-fit: cover;
         }
         .message-bubble-wrapper.received .chat-avatar-placeholder {
             margin-right: 10px;
@@ -1557,12 +1634,16 @@
         }
 
         .message-bubble.sent {
-            background-color: #a9e979;
-            color: #000;
+            background-color: var(--bubble-sent-bg-color, #a9e979);
+            border: var(--bubble-sent-border, none);
+            box-shadow: var(--bubble-sent-shadow, none);
+            color: var(--bubble-sent-text-color, #000);
         }
         .message-bubble.received {
-            background-color: #fff;
-            color: #000;
+            background-color: var(--bubble-recv-bg-color, #fff);
+            border: var(--bubble-recv-border, none);
+            box-shadow: var(--bubble-recv-shadow, none);
+            color: var(--bubble-recv-text-color, #000);
         }
 
         .message-bubble:after {
@@ -1576,15 +1657,54 @@
 
         .message-bubble.sent:after {
             border-width: 6px 0 6px 5px;
-            border-color: transparent transparent transparent #a9e979;
+            border-color: transparent transparent transparent var(--bubble-sent-tail-color, var(--bubble-sent-bg-color, #a9e979));
             right: -4px;
+            display: var(--bubble-sent-triangle, block);
         }
 
         .message-bubble.received:after {
             border-width: 6px 5px 6px 0;
-            border-color: transparent #fff transparent transparent;
+            border-color: transparent var(--bubble-recv-tail-color, var(--bubble-recv-bg-color, #fff)) transparent transparent;
             left: -4px;
+            display: var(--bubble-recv-triangle, block);
         }
+
+        .message-bubble.sent::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--bubble-sent-bg-image, none);
+            background-size: cover; border-radius: inherit;
+            opacity: var(--bubble-sent-bg-image-opacity, 1);
+            z-index: -1; pointer-events: none;
+        }
+        
+        .message-bubble.received::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--bubble-recv-bg-image, none);
+            background-size: cover; border-radius: inherit;
+            opacity: var(--bubble-recv-bg-image-opacity, 1);
+            z-index: -1; pointer-events: none;
+        }
+
+        /* Bubble Corner Decorators */
+        .bubble-corner {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .message-bubble.sent .bubble-corner.tl { top: var(--sent-tl-y, -15px); left: var(--sent-tl-x, -15px); width: var(--sent-tl-w, 30px); height: var(--sent-tl-h, 30px); opacity: var(--sent-tl-op, 1); background-image: var(--sent-tl-img, none); }
+        .message-bubble.sent .bubble-corner.tr { top: var(--sent-tr-y, -15px); right: var(--sent-tr-x, -15px); width: var(--sent-tr-w, 30px); height: var(--sent-tr-h, 30px); opacity: var(--sent-tr-op, 1); background-image: var(--sent-tr-img, none); }
+        .message-bubble.sent .bubble-corner.bl { bottom: var(--sent-bl-y, -15px); left: var(--sent-bl-x, -15px); width: var(--sent-bl-w, 30px); height: var(--sent-bl-h, 30px); opacity: var(--sent-bl-op, 1); background-image: var(--sent-bl-img, none); }
+        .message-bubble.sent .bubble-corner.br { bottom: var(--sent-br-y, -15px); right: var(--sent-br-x, -15px); width: var(--sent-br-w, 30px); height: var(--sent-br-h, 30px); opacity: var(--sent-br-op, 1); background-image: var(--sent-br-img, none); }
+
+        .message-bubble.received .bubble-corner.tl { top: var(--recv-tl-y, -15px); left: var(--recv-tl-x, -15px); width: var(--recv-tl-w, 30px); height: var(--recv-tl-h, 30px); opacity: var(--recv-tl-op, 1); background-image: var(--recv-tl-img, none); }
+        .message-bubble.received .bubble-corner.tr { top: var(--recv-tr-y, -15px); right: var(--recv-tr-x, -15px); width: var(--recv-tr-w, 30px); height: var(--recv-tr-h, 30px); opacity: var(--recv-tr-op, 1); background-image: var(--recv-tr-img, none); }
+        .message-bubble.received .bubble-corner.bl { bottom: var(--recv-bl-y, -15px); left: var(--recv-bl-x, -15px); width: var(--recv-bl-w, 30px); height: var(--recv-bl-h, 30px); opacity: var(--recv-bl-op, 1); background-image: var(--recv-bl-img, none); }
+        .message-bubble.received .bubble-corner.br { bottom: var(--recv-br-y, -15px); right: var(--recv-br-x, -15px); width: var(--recv-br-w, 30px); height: var(--recv-br-h, 30px); opacity: var(--recv-br-op, 1); background-image: var(--recv-br-img, none); }
 
         .quote-preview-bar {
             background-color: #f2f2f2;
@@ -1647,7 +1767,10 @@
 
         .chat-input-container {
             flex-shrink: 0;
-            background-color: #f7f7f7;
+            background-color: var(--chat-input-bg-color, #f7f7f7);
+            background-image: var(--chat-input-bg-image);
+            background-size: cover;
+            background-position: center;
             border-top: 1px solid #e0e0e0;
             padding: 8px;
             padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
@@ -1675,6 +1798,26 @@
             stroke: #333;
             fill: #333;
         }
+        #voice-icon {
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        #voice-icon[style*="background-image"] svg { display: none; }
+
+        #emoji-icon {
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        #emoji-icon[style*="background-image"] svg { display: none; }
+
+        #plus-icon {
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        #plus-icon[style*="background-image"] svg { display: none; }
         .chat-input-wrapper {
             flex-grow: 1;
             position: relative;
@@ -1704,6 +1847,16 @@
             font-size: 16px;
             cursor: pointer;
             margin-left: 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+        .send-button[style*="background-image"] {
+            font-size: 0; /* Hide text if image is set */
+            width: 40px; /* Example size, adjust as needed */
+            height: 36px;
+            padding: 0;
+            background-color: transparent;
         }
 
         /* --- Sticker Panel Styles --- */
@@ -2176,9 +2329,17 @@
         .message-bubble.sent-sticker-bubble {
             background: none !important;
             padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .message-bubble.sent-sticker-bubble::before {
+            background-image: none !important;
         }
         .message-bubble.sent-sticker-bubble::after {
-            display: none;
+            display: none !important;
+        }
+        .message-bubble.sent-sticker-bubble .bubble-corner {
+            display: none !important;
         }
         .sent-sticker {
             max-width: 120px;
@@ -3165,6 +3326,7 @@
             <div class="theme-options">
                 <div class="theme-option-item" onclick="showPage('desktop-theme-page')"><div class="theme-option-left"><span class="theme-option-text">桌面美化</span></div><span class="theme-option-arrow">></span></div>
                 <div class="theme-option-item" onclick="showPage('chat-theme-page')"><div class="theme-option-left"><span class="theme-option-text">聊天界面美化</span></div><span class="theme-option-arrow">></span></div>
+                <div class="theme-option-item" onclick="showPage('bubble-theme-page')"><div class="theme-option-left"><span class="theme-option-text">气泡美化</span></div><span class="theme-option-arrow">></span></div>
                 <div class="theme-option-item" onclick="showPage('global-font-page')"><div class="theme-option-left"><span class="theme-option-text">全局字体</span></div><span class="theme-option-arrow">></span></div>
             </div>
         </div>
@@ -3210,12 +3372,273 @@
             </div>
             <div class="theme-options">
                 <div class="theme-option-item">
-                    <div style="width:100%; display: flex; flex-direction: column;">
-                        <p>聊天背景壁纸</p>
+                    <div style="width:100%; display: flex; flex-direction: column; gap: 15px;">
+                        <p style="font-weight: 500;">聊天背景</p>
                         <div class="wallpaper-preview" id="chat-wallpaper-preview" style="background-color: #ededed;"></div>
-                        <button class="upload-button" onclick="triggerUpload('chat-wallpaper-upload')">上传壁纸</button>
-                        <button class="upload-button" onclick="resetChatWallpaper()" style="margin-top: 10px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;">恢复默认</button>
+                        <button class="upload-button" onclick="triggerChatThemeUpload('chat_wallpaper')">上传图片</button>
+                        <button class="upload-button" onclick="resetChatTheme('chat_wallpaper')" style="margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;">恢复默认</button>
                     </div>
+                </div>
+                <div class="theme-option-item">
+                    <div style="width:100%; display: flex; flex-direction: column; gap: 15px;">
+                        <p style="font-weight: 500;">标题栏背景</p>
+                        <div class="wallpaper-preview" id="chat-header-bg-preview" style="background-color: #ededed; height: 60px;"></div>
+                        <button class="upload-button" onclick="triggerChatThemeUpload('chat_header_bg')">上传图片</button>
+                        <button class="upload-button" onclick="resetChatTheme('chat_header_bg')" style="margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;">恢复默认</button>
+                    </div>
+                </div>
+                <div class="theme-option-item">
+                    <div style="width:100%; display: flex; flex-direction: column; gap: 15px;">
+                        <p style="font-weight: 500;">底部输入栏背景</p>
+                        <div class="wallpaper-preview" id="chat-input-bg-preview" style="background-color: #f7f7f7; height: 60px;"></div>
+                        <button class="upload-button" onclick="triggerChatThemeUpload('chat_input_bg')">上传图片</button>
+                        <button class="upload-button" onclick="resetChatTheme('chat_input_bg')" style="margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;">恢复默认</button>
+                    </div>
+                </div>
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 20px;">
+                    <p style="font-weight: 500; width: 100%;">图标样式</p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; text-align: center;">
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">返回按钮</p>
+                            <div class="icon-preview-box" id="chat-back-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerChatThemeUpload('chat_back_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetChatTheme('chat_back_icon')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">设置按钮</p>
+                            <div class="icon-preview-box" id="chat-options-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerChatThemeUpload('chat_options_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetChatTheme('chat_options_icon')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">声波按钮</p>
+                            <div class="icon-preview-box" id="chat-voice-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerChatThemeUpload('chat_voice_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetChatTheme('chat_voice_icon')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">表情按钮</p>
+                            <div class="icon-preview-box" id="chat-emoji-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerChatThemeUpload('chat_emoji_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetChatTheme('chat_emoji_icon')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">加号按钮</p>
+                            <div class="icon-preview-box" id="chat-plus-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerChatThemeUpload('chat_plus_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetChatTheme('chat_plus_icon')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">发送按钮</p>
+                            <div class="icon-preview-box" id="chat-send-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerChatThemeUpload('chat_send_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetChatTheme('chat_send_icon')">默认</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px;">
+                    <p style="font-weight: 500; width: 100%;">消息头像</p>
+                    <div style="width: 100%; display: flex; align-items: flex-start; padding: 10px 0; background: #ededed; border-radius: 8px; padding: 15px;">
+                        <img id="chat-theme-avatar-preview-img" src="https://via.placeholder.com/150/B5EAD7/ffffff?text=Avatar" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover; margin-right: 10px; background-color: #eee;">
+                        <div style="background-color: #fff; padding: 10px 12px; border-radius: 8px; font-size: 15px; position: relative; color: #000; display: flex; align-items: center;">
+                            预览消息内容
+                            <div style="content: ''; position: absolute; width: 0; height: 0; border-style: solid; top: 14px; border-width: 6px 5px 6px 0; border-color: transparent #fff transparent transparent; left: -4px;"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>头像大小</label>
+                            <span id="chat-avatar-size-value">40px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="chat-avatar-size-slider" min="20" max="60" step="1" value="40" oninput="updateChatThemeSlider('chat_avatar_size', this.value)">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>头像圆角</label>
+                            <span id="chat-avatar-radius-value">6px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="chat-avatar-radius-slider" min="0" max="30" step="1" value="6" oninput="updateChatThemeSlider('chat_avatar_radius', this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bubble-theme-page" class="page">
+            <div style="flex-shrink: 0; z-index: 20; background: transparent; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <div class="theme-header" style="background: transparent;">
+                    <span class="back-arrow" onclick="showPage('theme-page')"><</span>
+                    <span class="title">气泡美化</span>
+                </div>
+                <div style="padding: 15px; background-color: transparent; display: flex; gap: 10px;">
+                    <div style="flex: 1; min-width: 0;" class="custom-select-wrapper">
+                        <select id="bubble-theme-character-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; background: white;"></select>
+                    </div>
+                    <div style="flex: 1; min-width: 0;" class="custom-select-wrapper">
+                        <select id="bubble-theme-side-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; background: white;" onchange="updateBubbleThemePreview(); loadCornerSettings();">
+                            <option value="sent">我的气泡</option>
+                            <option value="recv">对方气泡</option>
+                            <option value="both">双方气泡</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="width: 100%; display: flex; align-items: flex-start; padding: 15px; background: transparent; justify-content: center; position: relative;">
+                    <div id="bubble-preview-container" class="message-bubble sent" style="width: 200px; padding: 10px 12px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; z-index: 1;">
+                        <span class="bubble-content">这是一条预览消息，可以在下方调整样式。</span>
+                        <div class="bubble-corner tl"></div><div class="bubble-corner tr"></div><div class="bubble-corner bl"></div><div class="bubble-corner br"></div>
+                    </div>
+                    <div style="position: absolute; right: 15px; top: 15px; font-size: 12px; color: #666; cursor: pointer; text-decoration: underline;" onclick="openBubblePresetModal()">预设</div>
+                </div>
+            </div>
+
+            <div class="theme-options" style="flex-grow: 1; overflow-y: auto; padding-bottom: 80px; z-index: 20;">
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <p style="font-weight: 600;">基础设置</p>
+                    <div class="settings-item" style="width: 100%;">
+                        <label>背景颜色 (Hex)</label>
+                        <input type="text" id="bubble-bg-color" placeholder="#a9e979" onchange="updateBubbleThemeValue('bg_color', this.value)">
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>背景透明度</label>
+                            <span id="bubble-bg-opacity-val">1</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-bg-opacity" min="0" max="1" step="0.05" value="1" oninput="updateBubbleThemeValue('bg_opacity', this.value); document.getElementById('bubble-bg-opacity-val').textContent=this.value;">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <label>背景图片</label>
+                        <button class="upload-button" onclick="triggerBubbleUpload('bg_image')">上传背景图</button>
+                        <button class="upload-button" onclick="updateBubbleThemeValue('bg_image', '')" style="margin-top:5px; background:#f5f5f5; color:#333; border:1px solid #ddd;">清除背景图</button>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>图片透明度</label>
+                            <span id="bubble-bg-img-opacity-val">1</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-bg-img-opacity" min="0" max="1" step="0.05" value="1" oninput="updateBubbleThemeValue('bg_img_opacity', this.value); document.getElementById('bubble-bg-img-opacity-val').textContent=this.value;">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <label>字体颜色</label>
+                        <input type="text" id="bubble-text-color" placeholder="#000000" onchange="updateBubbleThemeValue('text_color', this.value)">
+                    </div>
+                </div>
+
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <p style="font-weight: 600;">边框与阴影</p>
+                    <div class="settings-item" style="width: 100%; flex-direction: row; gap: 10px; display: flex;">
+                        <div style="flex:1"><label>边框颜色</label><input type="text" id="bubble-border-color" placeholder="#ccc" onchange="updateBubbleThemeValue('border_color', this.value)"></div>
+                        <div style="flex:1"><label>边框宽度(px)</label><input type="number" id="bubble-border-width" placeholder="1" onchange="updateBubbleThemeValue('border_width', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>边框透明度</label>
+                            <span id="bubble-border-opacity-val">1</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-border-opacity" min="0" max="1" step="0.05" value="1" oninput="updateBubbleThemeValue('border_opacity', this.value); document.getElementById('bubble-border-opacity-val').textContent=this.value;">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <label>阴影 (类似 0px 2px 5px rgba(0,0,0,0.1))</label>
+                        <input type="text" id="bubble-shadow" placeholder="留空则无阴影" onchange="updateBubbleThemeValue('shadow', this.value)">
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <label>小尾巴颜色 (Hex)</label>
+                        <input type="text" id="bubble-tail-color" placeholder="留空则跟随背景色" onchange="updateBubbleThemeValue('tail_color', this.value)">
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                         <div class="notification-toggle">
+                            <label>隐藏默认小尾巴(三角形)</label>
+                            <label class="switch">
+                                <input type="checkbox" id="bubble-hide-triangle" onchange="updateBubbleThemeValue('hide_triangle', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <p style="font-weight: 600;">四角挂件 (图标)</p>
+                    <select id="bubble-corner-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; background: white;" onchange="loadCornerSettings()">
+                        <option value="tl">左上角 (Top-Left)</option>
+                        <option value="tr">右上角 (Top-Right)</option>
+                        <option value="bl">左下角 (Bottom-Left)</option>
+                        <option value="br">右下角 (Bottom-Right)</option>
+                    </select>
+                    
+                    <div class="settings-item" style="width: 100%; margin-top: 10px;">
+                        <button class="upload-button" onclick="triggerBubbleUpload('corner_img')">上传图标</button>
+                        <button class="upload-button" onclick="updateBubbleCorner('img', '')" style="margin-top:5px; background:#f5f5f5; color:#333; border:1px solid #ddd;">清除图标</button>
+                    </div>
+                    
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>图标透明度</label>
+                            <span id="bubble-corner-op-val">1</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-corner-op" min="0" max="1" step="0.05" value="1" oninput="updateBubbleCorner('op', this.value); document.getElementById('bubble-corner-op-val').textContent=this.value;">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>X偏移 (左右)</label>
+                            <span id="bubble-corner-x-val">-15px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-corner-x" min="-100" max="100" step="1" value="-15" oninput="updateBubbleCorner('x', this.value); document.getElementById('bubble-corner-x-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>Y偏移 (上下)</label>
+                            <span id="bubble-corner-y-val">-15px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-corner-y" min="-100" max="100" step="1" value="-15" oninput="updateBubbleCorner('y', this.value); document.getElementById('bubble-corner-y-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%; flex-direction: row; gap: 10px; display: flex;">
+                        <div style="flex:1"><label>宽度(px)</label><input type="number" id="bubble-corner-w" placeholder="30" onchange="updateBubbleCorner('w', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
+                        <div style="flex:1"><label>高度(px)</label><input type="number" id="bubble-corner-h" placeholder="30" onchange="updateBubbleCorner('h', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
+                    </div>
+                </div>
+            </div>
+        <div id="bubble-theme-page-bottom-actions">
+            <button class="btn-cancel" onclick="resetBubbleTheme()">恢复默认</button>
+            <button class="btn-save" onclick="saveAllBubbleSettings()">保存</button>
+        </div>
+        </div>
+        
+        <!-- Bubble Theme Preset Modal -->
+        <div class="modal-overlay" id="bubble-preset-modal" style="z-index: 800;">
+            <div class="modal-content" style="width: 300px;">
+                <h3 style="text-align: center; margin-bottom: 10px;">气泡预设管理</h3>
+                <div class="settings-item">
+                    <label>加载预设</label>
+                    <div style="display: flex; gap: 10px;">
+                        <select id="bubble-preset-select" style="flex: 1;"></select>
+                        <button class="upload-button" style="width: auto; padding: 10px 15px;" onclick="loadBubblePreset()">加载</button>
+                    </div>
+                </div>
+                <div class="settings-item" style="margin-top: 10px;">
+                    <label>保存当前样式为新预设</label>
+                    <input type="text" id="bubble-preset-name-input" placeholder="输入预设名称">
+                    <button class="upload-button" style="margin-top: 5px;" onclick="saveBubblePreset()">保存</button>
+                </div>
+                <div class="settings-item" style="margin-top: 10px;">
+                    <button class="upload-button" style="background-color: #ff3b30;" onclick="deleteBubblePreset()">删除选中预设</button>
+                </div>
+                <div class="modal-actions" style="margin-top: 15px;">
+                    <button class="cancel-btn" style="width: 100%;" onclick="closeBubblePresetModal()">关闭</button>
                 </div>
             </div>
         </div>
@@ -3370,7 +3793,7 @@
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
                         <span>添加好友</span>
                     </div>
-                    <div class="wechat-menu-item">
+                    <div class="wechat-menu-item" onclick="openAddGroupChatModal()">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                         <span>添加群聊</span>
                     </div>
@@ -3611,6 +4034,35 @@
             </div>
         </div>
 
+        <div class="modal-overlay" id="add-group-chat-modal">
+            <div class="modal-content" style="width: 300px; padding: 25px;">
+                <div class="af-modal-header">发起群聊</div>
+                
+                <div class="af-avatar-upload" id="agc-avatar-container" onclick="triggerAgcAvatarUpload()">
+                    <div class="af-camera-icon camera-placeholder"></div>
+                    <img id="agc-avatar-preview" src="" alt="Avatar">
+                    <input type="file" id="agc-avatar-input" accept="image/*" style="display:none" onchange="previewAgcAvatar(this)">
+                </div>
+
+                <div class="af-field">
+                    <div class="af-field-label" style="font-weight: 700; font-size: 14px; margin-bottom: 5px; color: #000;">群名称</div>
+                    <input type="text" class="af-input" id="agc-name-input" placeholder="群聊名称">
+                </div>
+
+                <div class="af-field" style="margin-top: 10px;">
+                    <div class="af-field-label" style="font-weight: 700; font-size: 14px; margin-bottom: 5px; color: #000;">选择群成员</div>
+                    <div id="agc-members-list" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 5px; display: flex; flex-direction: column; gap: 5px;">
+                        <!-- checkboxes for friends -->
+                    </div>
+                </div>
+
+                <div class="af-btn-group">
+                    <button class="af-btn af-btn-cancel" onclick="closeAddGroupChatModal()">取消</button>
+                    <button class="af-btn af-btn-add" onclick="saveGroupChat()">创建</button>
+                </div>
+            </div>
+        </div>
+
         <div class="modal-overlay" id="add-friend-modal">
             <div class="modal-content" style="width: 300px; padding: 25px;">
                 <div class="af-modal-header">添加好友</div>
@@ -3825,7 +4277,7 @@
                     <input type="file" id="chat-info-avatar-input" accept="image/*" style="display: none;" onchange="handleChatInfoAvatarChange(this)">
                 </div>
                 
-                <div class="chat-info-card">
+                <div class="chat-info-card" id="chat-info-personal-section">
                     <div class="chat-info-item">
                         <div class="chat-info-label">备注名</div>
                         <input type="text" id="chat-info-remark" placeholder="设置备注" class="chat-info-input" onchange="updateFriendInfo('name', this.value)">
@@ -3847,7 +4299,35 @@
                     </div>
                 </div>
 
-                <div class="settings-card" style="width: 100%; margin-top: 15px;">
+                <div class="chat-info-card" id="chat-info-group-section" style="display: none; margin-bottom: 15px;">
+                    <div class="chat-info-item">
+                        <div class="chat-info-label">群名称</div>
+                        <input type="text" id="group-info-name" placeholder="设置群名称" class="chat-info-input" onchange="updateFriendInfo('name', this.value)">
+                    </div>
+                    <div class="chat-info-item">
+                        <div class="chat-info-label" style="font-size: 14px; font-weight: 500; color: #333; margin-bottom: 10px;">群成员</div>
+                        <div id="group-members-display" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                            <!-- Members will be injected here -->
+                        </div>
+                    </div>
+                    <div class="chat-info-item">
+                        <div class="notification-toggle">
+                            <label style="font-size: 14px; font-weight: 500; color: #333;">记忆互通</label>
+                            <label class="switch">
+                                <input type="checkbox" id="group-memory-interop-toggle" onchange="toggleGroupMemoryInterop(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div id="group-memory-interop-roles" style="display: none; margin-top: 10px;">
+                            <div class="chat-info-label" style="font-size: 12px; margin-bottom: 5px;">选择参与记忆互通的角色</div>
+                            <div id="group-memory-interop-list" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; border-radius: 4px; padding: 5px; display: flex; flex-direction: column; gap: 5px;">
+                                <!-- checklist of group members -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-card" id="chat-info-my-avatar-section" style="width: 100%; margin-top: 15px;">
                     <div class="chat-info-item" style="border-bottom: 1px solid #f5f5f5; padding-bottom: 15px;">
                         <div class="chat-info-label" style="margin-bottom: 10px;">我在本聊天的头像</div>
                         <div style="display: flex; align-items: center; gap: 15px; cursor: pointer;" onclick="triggerMyChatAvatarUpload()">
@@ -3865,7 +4345,7 @@
                     </div>
                 </div>
 
-                <div class="settings-card" style="width: 100%; margin-top: 15px;">
+                <div class="settings-card" id="chat-info-ai-settings-section" style="width: 100%; margin-top: 15px;">
                     <div class="settings-item" style="border-bottom: 1px solid #f5f5f5; padding-bottom: 15px;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <label style="font-size: 16px; font-weight: 500; color: #333;">短期记忆 (上下文条数)</label>
@@ -3889,7 +4369,7 @@
                     </div>
                 </div>
 
-                <div class="settings-card" style="width: 100%; margin-top: 15px;">
+                <div class="settings-card" id="chat-info-active-chat-section" style="width: 100%; margin-top: 15px;">
                     <div class="settings-item" style="border-bottom: 1px solid #f5f5f5; padding-bottom: 15px;">
                         <div class="notification-toggle">
                             <label style="font-size: 16px; font-weight: 500; color: #333;">主动聊天</label>
@@ -3916,7 +4396,7 @@
                     </div>
                 </div>
 
-                <div class="settings-card" style="width: 100%; margin-top: 15px;">
+                <div class="settings-card" id="chat-info-display-settings-section" style="width: 100%; margin-top: 15px;">
                     <div class="settings-item">
                         <label style="font-size: 16px; font-weight: 500; color: #333; margin-bottom: 8px;">头像显示</label>
                         <select id="avatar-display-select" onchange="updateFriendInfo('avatarDisplay', this.value)">
@@ -3928,7 +4408,7 @@
                     </div>
                 </div>
 
-                <div class="settings-card" style="width: 100%; margin-top: 15px;">
+                <div class="settings-card" id="chat-info-thought-section" style="width: 100%; margin-top: 15px;">
                     <div class="settings-item">
                         <div class="notification-toggle">
                             <label style="font-size: 16px; font-weight: 500; color: #333;">心声功能</label>
@@ -3951,7 +4431,7 @@
 
                 <div style="width: 100%; display: flex; flex-direction: column; gap: 10px; margin-top: 25px;">
                     <button id="save-chat-info-btn" style="width: 100%; padding: 12px; border-radius: 8px; border: none; background-color: #333; color: white; font-size: 16px; font-weight: bold; cursor: pointer;">保存</button>
-                    <button id="delete-friend-btn" style="width: 100%; padding: 12px; border-radius: 8px; border: none; background-color: #ff3b30; color: white; font-size: 16px; font-weight: bold; cursor: pointer;">删除好友</button>
+                    <button id="delete-friend-btn" style="width: 100%; padding: 12px; border-radius: 8px; border: none; background-color: #ff3b30; color: white; font-size: 16px; font-weight: bold; cursor: pointer;">删除好友 / 退出群聊</button>
                 </div>
             </div>
         </div>
@@ -4698,7 +5178,7 @@
             const settingsHeader = document.querySelector('.settings-header');
             const settingsPage = document.getElementById('settings-page');
 
-            if (pageId === 'theme-page' || pageId === 'desktop-theme-page' || pageId === 'chat-theme-page' || pageId === 'global-font-page' || pageId === 'world-book-page' || pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'persona-management-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'emoji-library-page' || pageId === 'search-detail-page' || pageId === 'regex-app-page') {
+            if (pageId === 'theme-page' || pageId === 'desktop-theme-page' || pageId === 'chat-theme-page' || pageId === 'bubble-theme-page' || pageId === 'global-font-page' || pageId === 'world-book-page' || pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'persona-management-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'emoji-library-page' || pageId === 'search-detail-page' || pageId === 'regex-app-page') {
                 statusBar.style.backgroundColor = (pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'search-detail-page') ? '#ededed' : 'white';
                 statusBar.style.color = '#333';
             } else if (pageId === 'settings-page' || pageId === 'chat-info-page') {
@@ -4750,6 +5230,9 @@
             if (pageId === 'chat-theme-page') {
                 renderChatThemePage();
             }
+            if (pageId === 'bubble-theme-page') {
+                renderBubbleThemePage();
+            }
         }
 
         let currentChatThemeFriendId = '';
@@ -4789,48 +5272,613 @@
         }
 
         function updateChatThemePreview() {
-            const preview = document.getElementById('chat-wallpaper-preview');
+            const applyPreview = (settings) => {
+                const pWallpaper = document.getElementById('chat-wallpaper-preview');
+                if (pWallpaper) pWallpaper.style.backgroundImage = settings.chat_wallpaper ? `url(${settings.chat_wallpaper})` : 'none';
+
+                const pHeader = document.getElementById('chat-header-bg-preview');
+                if (pHeader) pHeader.style.backgroundImage = settings.chat_header_bg ? `url(${settings.chat_header_bg})` : 'none';
+
+                const pInput = document.getElementById('chat-input-bg-preview');
+                if (pInput) pInput.style.backgroundImage = settings.chat_input_bg ? `url(${settings.chat_input_bg})` : 'none';
+
+                const icons = ['back', 'options', 'voice', 'emoji', 'plus', 'send'];
+                icons.forEach(icon => {
+                    const key = `chat_${icon}_icon`;
+                    const box = document.getElementById(`chat-${icon}-icon-preview`);
+                    if (box) box.style.backgroundImage = settings[key] ? `url(${settings[key]})` : 'none';
+                });
+
+                const size = settings.chat_avatar_size || '40';
+                const radius = settings.chat_avatar_radius || '6';
+                
+                const sizeSlider = document.getElementById('chat-avatar-size-slider');
+                const sizeValue = document.getElementById('chat-avatar-size-value');
+                if (sizeSlider) sizeSlider.value = size;
+                if (sizeValue) sizeValue.textContent = `${size}px`;
+
+                const radiusSlider = document.getElementById('chat-avatar-radius-slider');
+                const radiusValue = document.getElementById('chat-avatar-radius-value');
+                if (radiusSlider) radiusSlider.value = radius;
+                if (radiusValue) radiusValue.textContent = `${radius}px`;
+
+                const avatarImg = document.getElementById('chat-theme-avatar-preview-img');
+                if (avatarImg) {
+                    avatarImg.style.width = `${size}px`;
+                    avatarImg.style.height = `${size}px`;
+                    avatarImg.style.borderRadius = `${radius}px`;
+                    if (settings.avatarSrc) {
+                        avatarImg.src = settings.avatarSrc;
+                        avatarImg.style.backgroundColor = 'transparent';
+                    } else {
+                        avatarImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                        avatarImg.style.backgroundColor = '#000';
+                    }
+                }
+            };
+
+            const keys = ['chat_wallpaper', 'chat_header_bg', 'chat_input_bg', 'chat_back_icon', 'chat_options_icon', 'chat_voice_icon', 'chat_emoji_icon', 'chat_plus_icon', 'chat_send_icon', 'chat_avatar_size', 'chat_avatar_radius'];
+            
             if (currentChatThemeFriendId) {
                 dbGet('friends', currentChatThemeFriendId, friend => {
-                    if (friend && friend.chatWallpaper) {
-                        preview.style.backgroundImage = `url(${friend.chatWallpaper})`;
-                    } else {
-                        // Fallback to global
-                        const globalWallpaper = localStorage.getItem('chat_wallpaper');
-                        if (globalWallpaper) {
-                            preview.style.backgroundImage = `url(${globalWallpaper})`;
-                        } else {
-                            preview.style.backgroundImage = 'none';
-                            preview.style.backgroundColor = '#ededed';
-                        }
-                    }
+                    const merged = {};
+                    keys.forEach(k => {
+                        const globalVal = localStorage.getItem(k);
+                        merged[k] = (friend && friend[k] !== undefined && friend[k] !== null) ? friend[k] : globalVal;
+                    });
+                    merged.avatarSrc = friend ? friend.avatar : null;
+                    applyPreview(merged);
                 });
             } else {
-                const globalWallpaper = localStorage.getItem('chat_wallpaper');
-                if (globalWallpaper) {
-                    preview.style.backgroundImage = `url(${globalWallpaper})`;
-                } else {
-                    preview.style.backgroundImage = 'none';
-                    preview.style.backgroundColor = '#ededed';
-                }
+                const globalSettings = {};
+                keys.forEach(k => globalSettings[k] = localStorage.getItem(k));
+                globalSettings.avatarSrc = null;
+                applyPreview(globalSettings);
             }
         }
 
-        function resetChatWallpaper() {
+        function updateChatThemeSlider(type, value) {
+            if (type === 'chat_avatar_size') {
+                const valEl = document.getElementById('chat-avatar-size-value');
+                if (valEl) valEl.textContent = `${value}px`;
+                const previewImg = document.getElementById('chat-theme-avatar-preview-img');
+                if (previewImg) {
+                    previewImg.style.width = `${value}px`;
+                    previewImg.style.height = `${value}px`;
+                }
+            } else if (type === 'chat_avatar_radius') {
+                const valEl = document.getElementById('chat-avatar-radius-value');
+                if (valEl) valEl.textContent = `${value}px`;
+                const previewImg = document.getElementById('chat-theme-avatar-preview-img');
+                if (previewImg) {
+                    previewImg.style.borderRadius = `${value}px`;
+                }
+            }
+
             if (currentChatThemeFriendId) {
                 dbGet('friends', currentChatThemeFriendId, friend => {
                     if (friend) {
-                        friend.chatWallpaper = null;
+                        friend[type] = value;
+                        dbUpdate('friends', friend);
+                    }
+                });
+            } else {
+                localStorage.setItem(type, value);
+            }
+        }
+
+        let currentChatThemeUploadType = null;
+        function triggerChatThemeUpload(type) {
+            currentChatThemeUploadType = type;
+            let input = document.getElementById('chat-theme-file-input');
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'file';
+                input.id = 'chat-theme-file-input';
+                input.accept = 'image/*';
+                input.style.display = 'none';
+                input.onchange = (e) => handleChatThemeUpload(e.target);
+                document.body.appendChild(input);
+            }
+            input.click();
+        }
+
+        function handleChatThemeUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                compressImage(file, 0.7, (compressedSrc) => {
+                    if (currentChatThemeFriendId) {
+                        dbGet('friends', currentChatThemeFriendId, friend => {
+                            if (friend) {
+                                friend[currentChatThemeUploadType] = compressedSrc;
+                                dbUpdate('friends', friend, () => {
+                                    updateChatThemePreview();
+                                    showToast('已保存专属设置');
+                                });
+                            }
+                        });
+                    } else {
+                        localStorage.setItem(currentChatThemeUploadType, compressedSrc);
+                        updateChatThemePreview();
+                        showToast('已保存全局设置');
+                    }
+                });
+            }
+            input.value = '';
+        }
+
+        function resetChatTheme(type) {
+            if (currentChatThemeFriendId) {
+                dbGet('friends', currentChatThemeFriendId, friend => {
+                    if (friend) {
+                        friend[type] = null;
                         dbUpdate('friends', friend, () => {
                             updateChatThemePreview();
-                            showToast('已恢复为全局背景');
+                            showToast('已恢复为全局设置');
                         });
                     }
                 });
             } else {
-                localStorage.removeItem('chat_wallpaper');
+                localStorage.removeItem(type);
                 updateChatThemePreview();
-                showToast('全局背景已恢复默认');
+                showToast('全局设置已恢复默认');
+            }
+        }
+
+        let currentBubbleThemeFriendId = '';
+
+        function renderBubbleThemePage() {
+            const select = document.getElementById('bubble-theme-character-select');
+            const sideSelect = document.getElementById('bubble-theme-side-select');
+            
+            dbGetAll('friends', friends => {
+                select.innerHTML = '';
+                
+                const defaultOption = document.createElement('option');
+                defaultOption.value = "";
+                defaultOption.textContent = "默认/全局";
+                select.appendChild(defaultOption);
+
+                if (friends && friends.length > 0) {
+                    friends.forEach(friend => {
+                        const option = document.createElement('option');
+                        option.value = friend.id;
+                        option.textContent = friend.name;
+                        if (friend.id === currentBubbleThemeFriendId) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                }
+                
+                refreshCustomSelect(select);
+                refreshCustomSelect(sideSelect);
+                
+                select.onchange = (e) => {
+                    currentBubbleThemeFriendId = e.target.value;
+                    updateBubbleThemePreview();
+                    loadCornerSettings();
+                };
+                
+                updateBubbleThemePreview();
+                loadCornerSettings();
+            });
+        }
+
+        function getBubbleSetting(key, friend, defaultVal = null) {
+            if (tempBubbleSettings[key] !== undefined) {
+                return tempBubbleSettings[key];
+            }
+            if (friend && friend[key] !== undefined && friend[key] !== null) {
+                return friend[key];
+            }
+            const globalVal = localStorage.getItem(key);
+            if (globalVal !== null) return globalVal;
+            return defaultVal;
+        }
+
+        function updateBubbleThemePreview() {
+            let styleEl = document.getElementById('bubble-preview-styles');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'bubble-preview-styles';
+                document.head.appendChild(styleEl);
+            }
+
+            const side = document.getElementById('bubble-theme-side-select').value;
+            const container = document.getElementById('bubble-preview-container');
+            
+            // For preview purposes, if 'both' is selected, we'll just preview as 'sent'
+            const previewSide = side === 'both' ? 'sent' : side;
+            container.className = `message-bubble ${previewSide}`;
+
+            const applySettings = (friend) => {
+                const prefix = previewSide === 'sent' ? 'bubble_sent_' : 'bubble_recv_';
+                
+                const bgColor = getBubbleSetting(prefix + 'bg_color', friend, previewSide === 'sent' ? '#a9e979' : '#ffffff');
+                const bgOpacity = getBubbleSetting(prefix + 'bg_opacity', friend, '1');
+                const bgImage = getBubbleSetting(prefix + 'bg_image', friend, '');
+                const bgImageOpacity = getBubbleSetting(prefix + 'bg_img_opacity', friend, '1');
+                const textColor = getBubbleSetting(prefix + 'text_color', friend, '#000000');
+                const borderColor = getBubbleSetting(prefix + 'border_color', friend, 'transparent');
+                const borderWidth = getBubbleSetting(prefix + 'border_width', friend, '0');
+                const borderOpacity = getBubbleSetting(prefix + 'border_opacity', friend, '1');
+                const shadow = getBubbleSetting(prefix + 'shadow', friend, 'none');
+                const tailColor = getBubbleSetting(prefix + 'tail_color', friend, '');
+                const hideTriangleRaw = getBubbleSetting(prefix + 'hide_triangle', friend, 'false');
+                const hideTriangle = hideTriangleRaw === 'true' || hideTriangleRaw === true;
+
+                // Update UI controls to reflect current values
+                document.getElementById('bubble-bg-color').value = bgColor;
+                document.getElementById('bubble-bg-opacity').value = bgOpacity;
+                document.getElementById('bubble-bg-opacity-val').textContent = bgOpacity;
+                document.getElementById('bubble-bg-img-opacity').value = bgImageOpacity;
+                document.getElementById('bubble-bg-img-opacity-val').textContent = bgImageOpacity;
+                document.getElementById('bubble-text-color').value = textColor;
+                document.getElementById('bubble-border-color').value = borderColor;
+                document.getElementById('bubble-border-width').value = borderWidth;
+                document.getElementById('bubble-border-opacity').value = borderOpacity;
+                document.getElementById('bubble-border-opacity-val').textContent = borderOpacity;
+                document.getElementById('bubble-shadow').value = shadow === 'none' ? '' : shadow;
+                document.getElementById('bubble-tail-color').value = tailColor;
+                document.getElementById('bubble-hide-triangle').checked = hideTriangle;
+
+                const hexToRgba = (hex, alpha) => {
+                    if (!hex || hex === 'transparent') return 'transparent';
+                    let r = 0, g = 0, b = 0;
+                    hex = hex.replace('#', '');
+                    if (hex.length === 3) {
+                        r = parseInt(hex[0] + hex[0], 16);
+                        g = parseInt(hex[1] + hex[1], 16);
+                        b = parseInt(hex[2] + hex[2], 16);
+                    } else if (hex.length === 6) {
+                        r = parseInt(hex.substring(0, 2), 16);
+                        g = parseInt(hex.substring(2, 4), 16);
+                        b = parseInt(hex.substring(4, 6), 16);
+                    } else { return hex; }
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+
+                const finalBgColor = hexToRgba(bgColor, bgOpacity);
+                const finalBorderColor = hexToRgba(borderColor, borderOpacity);
+                const finalTailColor = tailColor ? tailColor : finalBgColor;
+
+                let css = `
+                    #bubble-preview-container {
+                        background-color: ${finalBgColor};
+                        color: ${textColor};
+                        border: ${borderWidth}px solid ${finalBorderColor};
+                        box-shadow: ${shadow};
+                    }
+                    #bubble-preview-container::before {
+                        background-image: ${bgImage ? `url(${bgImage})` : 'none'};
+                        opacity: ${bgImageOpacity};
+                    }
+                    #bubble-preview-container.${previewSide}::after {
+                        display: ${hideTriangle ? 'none' : 'block'};
+                        border-color: ${previewSide === 'sent' ? `transparent transparent transparent ${finalTailColor}` : `transparent ${finalTailColor} transparent transparent`};
+                    }
+                `;
+
+                // Corners
+                ['tl', 'tr', 'bl', 'br'].forEach(corner => {
+                    const cPrefix = `${previewSide}_${corner}_`;
+                    const img = getBubbleSetting(cPrefix + 'img', friend, '');
+                    const op = getBubbleSetting(cPrefix + 'op', friend, '1');
+                    const x = getBubbleSetting(cPrefix + 'x', friend, '-15');
+                    const y = getBubbleSetting(cPrefix + 'y', friend, '-15');
+                    const w = getBubbleSetting(cPrefix + 'w', friend, '30');
+                    const h = getBubbleSetting(cPrefix + 'h', friend, '30');
+                    
+                    css += `
+                        #bubble-preview-container .bubble-corner.${corner} {
+                            background-image: ${img ? `url(${img})` : 'none'};
+                            opacity: ${op};
+                            width: ${w}px;
+                            height: ${h}px;
+                            ${corner.includes('l') ? `left: ${x}px;` : `right: ${x}px;`}
+                            ${corner.includes('t') ? `top: ${y}px;` : `bottom: ${y}px;`}
+                        }
+                    `;
+                });
+
+                styleEl.innerHTML = css;
+            };
+
+            if (currentBubbleThemeFriendId) {
+                dbGet('friends', currentBubbleThemeFriendId, friend => applySettings(friend));
+            } else {
+                applySettings(null);
+            }
+        }
+
+        // Store temporary settings before saving
+        let tempBubbleSettings = {};
+
+        function updateBubbleThemeValue(key, value) {
+            if (key === 'page_bg_image' || key === 'page_bg_opacity') {
+                tempBubbleSettings[`bubble_${key}`] = value;
+            } else {
+                const side = document.getElementById('bubble-theme-side-select').value;
+                const sidesToUpdate = side === 'both' ? ['sent', 'recv'] : [side];
+                
+                sidesToUpdate.forEach(s => {
+                    const fullKey = `bubble_${s}_${key}`;
+                    tempBubbleSettings[fullKey] = value;
+                });
+            }
+            
+            // Just update the preview, don't save yet
+            updateBubbleThemePreview();
+        }
+
+        function updateBubbleThemePageOpacity(value) {
+            updateBubbleThemeValue('page_bg_opacity', value);
+        }
+
+        function loadCornerSettings() {
+            // This function now just needs to update the input values for the selected corner
+            const side = document.getElementById('bubble-theme-side-select').value;
+            const previewSide = side === 'both' ? 'sent' : side;
+            const corner = document.getElementById('bubble-corner-select').value;
+            const prefix = `${previewSide}_${corner}_`;
+
+            const applyCornerInputs = (friend) => {
+                const op = getBubbleSetting(prefix + 'op', friend, '1');
+                const x = getBubbleSetting(prefix + 'x', friend, '-15');
+                const y = getBubbleSetting(prefix + 'y', friend, '-15');
+                const w = getBubbleSetting(prefix + 'w', friend, '30');
+                const h = getBubbleSetting(prefix + 'h', friend, '30');
+
+                document.getElementById('bubble-corner-op').value = op;
+                document.getElementById('bubble-corner-op-val').textContent = op;
+                document.getElementById('bubble-corner-x').value = x;
+                document.getElementById('bubble-corner-x-val').textContent = x + 'px';
+                document.getElementById('bubble-corner-y').value = y;
+                document.getElementById('bubble-corner-y-val').textContent = y + 'px';
+                document.getElementById('bubble-corner-w').value = w;
+                document.getElementById('bubble-corner-h').value = h;
+            };
+
+            if (currentBubbleThemeFriendId) {
+                dbGet('friends', currentBubbleThemeFriendId, friend => applyCornerInputs(friend));
+            } else {
+                applyCornerInputs(null);
+            }
+            // The preview is updated by updateBubbleThemePreview, which is called on side-select change.
+            // We also call it here to ensure corner settings are reflected immediately.
+            updateBubbleThemePreview();
+        }
+
+        function updateBubbleCorner(key, value) {
+            const side = document.getElementById('bubble-theme-side-select').value;
+            const corner = document.getElementById('bubble-corner-select').value;
+            const sidesToUpdate = side === 'both' ? ['sent', 'recv'] : [side];
+
+            sidesToUpdate.forEach(s => {
+                const fullKey = `${s}_${corner}_${key}`;
+                tempBubbleSettings[fullKey] = value;
+            });
+            
+            // Just update the preview, don't save yet
+            loadCornerSettings();
+        }
+
+        
+        function saveAllBubbleSettings() {
+            if (Object.keys(tempBubbleSettings).length === 0) {
+                showToast('没有修改需要保存');
+                return;
+            }
+
+            if (currentBubbleThemeFriendId) {
+                dbGet('friends', currentBubbleThemeFriendId, friend => {
+                    if (friend) {
+                        for (const key in tempBubbleSettings) {
+                            friend[key] = tempBubbleSettings[key];
+                        }
+                        dbUpdate('friends', friend, () => {
+                            tempBubbleSettings = {}; // Clear temp after save
+                            showToast('已保存气泡专属设置');
+                        });
+                    }
+                });
+            } else {
+                for (const key in tempBubbleSettings) {
+                    localStorage.setItem(key, tempBubbleSettings[key]);
+                }
+                tempBubbleSettings = {}; // Clear temp after save
+                showToast('已保存气泡全局设置');
+            }
+        }
+        
+        // --- Bubble Presets Logic ---
+        function openBubblePresetModal() {
+            const select = document.getElementById('bubble-preset-select');
+            select.innerHTML = '<option value="">选择预设...</option>';
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('bubble_preset_')) {
+                    const name = key.replace('bubble_preset_', '');
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    select.appendChild(option);
+                }
+            }
+            refreshCustomSelect(select);
+            document.getElementById('bubble-preset-name-input').value = '';
+            document.getElementById('bubble-preset-modal').style.display = 'flex';
+        }
+
+        function closeBubblePresetModal() {
+            document.getElementById('bubble-preset-modal').style.display = 'none';
+        }
+
+        function saveBubblePreset() {
+            const name = document.getElementById('bubble-preset-name-input').value.trim();
+            if (!name) {
+                showToast('请输入预设名称');
+                return;
+            }
+
+            const bubbleKeys = [
+                'bg_color', 'bg_opacity', 'bg_image', 'text_color', 'border_color', 'border_width', 'border_opacity', 'shadow', 'tail_color', 'hide_triangle'
+            ];
+            const cornerKeys = ['img', 'op', 'x', 'y', 'w', 'h'];
+            const sides = ['sent', 'recv'];
+            const corners = ['tl', 'tr', 'bl', 'br'];
+
+            const presetData = {};
+
+            const extractData = (source, isGlobal) => {
+                sides.forEach(side => {
+                    bubbleKeys.forEach(k => {
+                        const fullKey = `bubble_${side}_${k}`;
+                        presetData[fullKey] = isGlobal ? localStorage.getItem(fullKey) : source[fullKey];
+                    });
+                    corners.forEach(corner => {
+                        cornerKeys.forEach(k => {
+                            const fullKey = `${side}_${corner}_${k}`;
+                            presetData[fullKey] = isGlobal ? localStorage.getItem(fullKey) : source[fullKey];
+                        });
+                    });
+                });
+            };
+
+            if (currentBubbleThemeFriendId) {
+                dbGet('friends', currentBubbleThemeFriendId, friend => {
+                    if (friend) {
+                        extractData(friend, false);
+                        localStorage.setItem(`bubble_preset_${name}`, JSON.stringify(presetData));
+                        showToast('气泡预设保存成功');
+                        closeBubblePresetModal();
+                    }
+                });
+            } else {
+                extractData(localStorage, true);
+                localStorage.setItem(`bubble_preset_${name}`, JSON.stringify(presetData));
+                showToast('气泡预设保存成功');
+                closeBubblePresetModal();
+            }
+        }
+
+        function loadBubblePreset() {
+            const name = document.getElementById('bubble-preset-select').value;
+            if (!name) {
+                showToast('请选择一个预设');
+                return;
+            }
+
+            const dataStr = localStorage.getItem(`bubble_preset_${name}`);
+            if (!dataStr) return;
+            const presetData = JSON.parse(dataStr);
+
+            if (currentBubbleThemeFriendId) {
+                dbGet('friends', currentBubbleThemeFriendId, friend => {
+                    if (friend) {
+                        Object.assign(friend, presetData);
+                        dbUpdate('friends', friend, () => {
+                            updateBubbleThemePreview();
+                            loadCornerSettings();
+                            showToast(`已加载预设：${name}`);
+                            closeBubblePresetModal();
+                        });
+                    }
+                });
+            } else {
+                for (const key in presetData) {
+                    if (presetData[key] !== null && presetData[key] !== undefined) {
+                        localStorage.setItem(key, presetData[key]);
+                    } else {
+                        localStorage.removeItem(key);
+                    }
+                }
+                updateBubbleThemePreview();
+                loadCornerSettings();
+                showToast(`已加载预设：${name}`);
+                closeBubblePresetModal();
+            }
+        }
+
+        function deleteBubblePreset() {
+            const name = document.getElementById('bubble-preset-select').value;
+            if (!name) {
+                showToast('请选择要删除的预设');
+                return;
+            }
+            
+            showCustomConfirm(`确定要删除预设 "${name}" 吗？`, () => {
+                localStorage.removeItem(`bubble_preset_${name}`);
+                showToast('预设已删除');
+                openBubblePresetModal(); // Refresh list
+            }, '删除预设');
+        }
+
+        let currentBubbleUploadType = null;
+        function triggerBubbleUpload(type) {
+            currentBubbleUploadType = type;
+            let input = document.getElementById('bubble-theme-file-input');
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'file';
+                input.id = 'bubble-theme-file-input';
+                input.accept = 'image/*';
+                input.style.display = 'none';
+                input.onchange = (e) => handleBubbleThemeUpload(e.target);
+                document.body.appendChild(input);
+            }
+            input.click();
+        }
+
+        function handleBubbleThemeUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                compressImage(file, 0.7, (compressedSrc) => {
+                    if (currentBubbleUploadType === 'corner_img') {
+                        updateBubbleCorner('img', compressedSrc);
+                    } else if (currentBubbleUploadType === 'bg_image') {
+                        updateBubbleThemeValue('bg_image', compressedSrc);
+                    } else if (currentBubbleUploadType === 'page_bg_image') {
+                        updateBubbleThemeValue('page_bg_image', compressedSrc);
+                    }
+                });
+            }
+            input.value = '';
+        }
+
+        function resetBubbleTheme() {
+            tempBubbleSettings = {};
+            if (currentBubbleThemeFriendId) {
+                dbGet('friends', currentBubbleThemeFriendId, friend => {
+                    if (friend) {
+                        const keysToRemove = [];
+                        for (let k in friend) {
+                            if (k.startsWith('bubble_')) keysToRemove.push(k);
+                        }
+                        keysToRemove.forEach(k => delete friend[k]);
+                        
+                        dbUpdate('friends', friend, () => {
+                            updateBubbleThemePreview();
+                            loadCornerSettings();
+                            showToast('已恢复为全局设置');
+                        });
+                    }
+                });
+            } else {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k.startsWith('bubble_') && !k.startsWith('bubble_preset_')) {
+                        keysToRemove.push(k);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+                
+                updateBubbleThemePreview();
+                loadCornerSettings();
+                showToast('全局设置已恢复默认');
             }
         }
 
@@ -5086,7 +6134,8 @@
                 singleSelect.innerHTML = '';
             }
             
-            dbGetAll('friends', friends => {
+            dbGetAll('friends', allFriends => {
+                const friends = allFriends.filter(f => !f.isGroup);
                 friends.forEach(friend => {
                     const label = document.createElement('label');
                     label.className = 'preset-checkbox-item';
@@ -6228,7 +7277,7 @@
             
     // Adjust padding for pages that rely on status bar height
     document.querySelectorAll('.page').forEach(page => {
-        if (page.id === 'wechat-discover-page' || page.id === 'music-player-page') {
+        if (page.id === 'wechat-discover-page' || page.id === 'music-player-page' || page.id === 'chat-interface-page') {
             page.style.paddingTop = '0px';
             return;
         }
@@ -6249,6 +7298,16 @@
                 } else {
                     discoverHeader.style.paddingTop = 'env(safe-area-inset-top)';
                     discoverHeader.style.height = 'calc(46px + env(safe-area-inset-top))';
+                }
+            }
+
+            // Special handling for chat interface header
+            const chatHeader = document.querySelector('.chat-interface-header');
+            if (chatHeader) {
+                if (isVisible) {
+                    chatHeader.style.paddingTop = 'calc(max(34px, env(safe-area-inset-top)) + 2px)';
+                } else {
+                    chatHeader.style.paddingTop = 'max(2px, env(safe-area-inset-top))';
                 }
             }
         }
@@ -7078,6 +8137,108 @@
             }
         }
 
+        function openAddGroupChatModal() {
+            document.getElementById('add-group-chat-modal').style.display = 'flex';
+            document.getElementById('wechat-menu').classList.remove('show');
+            document.getElementById('agc-name-input').value = '';
+            document.getElementById('agc-avatar-preview').src = '';
+            document.getElementById('agc-avatar-container').classList.remove('has-image');
+            document.getElementById('agc-avatar-input').value = '';
+
+            const list = document.getElementById('agc-members-list');
+            list.innerHTML = '';
+            dbGetAll('friends', friends => {
+                const nonGroupFriends = friends.filter(f => !f.isGroup);
+                nonGroupFriends.forEach(f => {
+                    const label = document.createElement('label');
+                    label.className = 'preset-checkbox-item';
+                    label.style.padding = '5px 0';
+                    label.innerHTML = `
+                        <input type="checkbox" value="${f.id}">
+                        <div class="custom-checkbox"></div>
+                        <img src="${f.avatar}" style="width: 24px; height: 24px; border-radius: 4px; margin-right: 5px; object-fit: cover;">
+                        <span>${f.name}</span>
+                    `;
+                    list.appendChild(label);
+                });
+            });
+        }
+
+        function closeAddGroupChatModal() {
+            document.getElementById('add-group-chat-modal').style.display = 'none';
+        }
+
+        function triggerAgcAvatarUpload() {
+            document.getElementById('agc-avatar-input').click();
+        }
+
+        function previewAgcAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('agc-avatar-preview');
+                    preview.src = e.target.result;
+                    document.getElementById('agc-avatar-container').classList.add('has-image');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function saveGroupChat() {
+            let name = document.getElementById('agc-name-input').value.trim();
+            const avatarSrc = document.getElementById('agc-avatar-preview').src;
+            const hasAvatar = document.getElementById('agc-avatar-container').classList.contains('has-image');
+            
+            const checkboxes = document.querySelectorAll('#agc-members-list input[type="checkbox"]:checked');
+            const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+
+            if (selectedIds.length === 0) {
+                showToast('请至少选择一个群成员');
+                return;
+            }
+            
+            if (!name) {
+                const selectedNames = Array.from(checkboxes).map(cb => {
+                    const span = cb.parentElement.querySelector('span');
+                    return span ? span.textContent : '';
+                }).filter(n => n);
+                
+                if (selectedNames.length > 2) {
+                    name = selectedNames.slice(0, 2).join('、') + '...的群聊';
+                } else if (selectedNames.length > 0) {
+                    name = selectedNames.join('、') + '的群聊';
+                } else {
+                    name = '群聊';
+                }
+            }
+
+            if (!hasAvatar) {
+                showToast('请上传群头像');
+                return;
+            }
+
+            const newGroupChat = {
+                id: 'group_' + Date.now().toString(),
+                name: name,
+                realName: name,
+                avatar: avatarSrc,
+                isGroup: true,
+                members: selectedIds,
+                memoryInterop: false,
+                memoryInteropRoles: [],
+                lastMsg: "群聊已创建",
+                lastTime: getCurrentTimeStr(),
+                isPinned: false,
+                isHidden: false,
+                group: '默认分组'
+            };
+
+            dbAdd('friends', newGroupChat, () => {
+                closeAddGroupChatModal();
+                renderChatList();
+            });
+        }
+
         function openAddFriendModal() {
             document.getElementById('add-friend-modal').style.display = 'flex';
             document.getElementById('wechat-menu').classList.remove('show');
@@ -7766,6 +8927,24 @@
                 // If opening
                 exitStickerEditMode();
                 exitGroupEditMode();
+                
+                // Hide non-image options if it is a group chat
+                if (currentChatFriendId) {
+                    dbGet('friends', currentChatFriendId, friend => {
+                        const items = actionPanel.querySelectorAll('.action-item');
+                        if (friend && friend.isGroup) {
+                            items.forEach(item => {
+                                if (item.querySelector('.action-name').textContent !== '图片') {
+                                    item.style.display = 'none';
+                                } else {
+                                    item.style.display = 'flex';
+                                }
+                            });
+                        } else {
+                            items.forEach(item => item.style.display = 'flex');
+                        }
+                    });
+                }
             } else {
                 // If closing
                 chatInput.focus();
@@ -8568,8 +9747,28 @@
                 container.appendChild(wrapper);
 
                 dbGet('friends', msg.friendId, friend => {
+                    if (friend && friend.isGroup && msg.type === 'received' && msg.senderName) {
+                        const nameLabel = document.createElement('div');
+                        nameLabel.style.fontSize = '12px';
+                        nameLabel.style.color = '#999';
+                        nameLabel.style.marginBottom = '2px';
+                        nameLabel.style.marginLeft = '2px';
+                        nameLabel.textContent = msg.senderName;
+                        contentGroup.insertBefore(nameLabel, contentGroup.firstChild);
+                    }
+
                     if (!friend || !friend.offlineSettings) {
                         bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
+                        if (msg.type === 'received') {
+                            if (friend && friend.isGroup && msg.senderAvatar) {
+                                avatar.src = msg.senderAvatar;
+                            } else {
+                                avatar.src = friend ? friend.avatar : '';
+                            }
+                            if (friend && (friend.avatarDisplay === 'hide_other' || friend.avatarDisplay === 'hide_both')) {
+                                avatar.style.display = 'none';
+                            }
+                        }
                         return; 
                     }
 
@@ -8592,7 +9791,11 @@
                     bubble.innerHTML = formattedHtml;
 
                     if (msg.type === 'received') {
-                        avatar.src = friend.avatar;
+                        if (friend && friend.isGroup && msg.senderAvatar) {
+                            avatar.src = msg.senderAvatar;
+                        } else {
+                            avatar.src = friend.avatar;
+                        }
                         if (friend.avatarDisplay === 'hide_other' || friend.avatarDisplay === 'hide_both') {
                             avatar.style.display = 'none';
                         }
@@ -8729,7 +9932,11 @@
                     }
 
                     if (msg.type === 'received') {
-                        avatar.src = friend ? friend.avatar : '';
+                        if (friend && friend.isGroup && msg.senderAvatar) {
+                            avatar.src = msg.senderAvatar;
+                        } else {
+                            avatar.src = friend ? friend.avatar : '';
+                        }
                     } else {
                         if (friend && friend.myAvatar) avatar.src = friend.myAvatar;
                         else {
@@ -8809,8 +10016,21 @@
                 const targetFriendId = msg.friendId || currentChatFriendId;
                 if (msg.type === 'received') {
                     dbGet('friends', targetFriendId, friend => {
+                        if (friend && friend.isGroup && msg.senderName) {
+                            const nameLabel = document.createElement('div');
+                            nameLabel.style.fontSize = '12px';
+                            nameLabel.style.color = '#999';
+                            nameLabel.style.marginBottom = '2px';
+                            nameLabel.style.marginLeft = '2px';
+                            nameLabel.textContent = msg.senderName;
+                            contentGroup.insertBefore(nameLabel, contentGroup.firstChild);
+                        }
                         if (friend) {
-                            avatar.src = friend.avatar;
+                            if (friend.isGroup && msg.senderAvatar) {
+                                avatar.src = msg.senderAvatar;
+                            } else {
+                                avatar.src = friend.avatar;
+                            }
                             if (friend.avatarDisplay === 'hide_other' || friend.avatarDisplay === 'hide_both') {
                                 avatar.style.display = 'none';
                             }
@@ -8856,7 +10076,31 @@
 
             const bubble = document.createElement('div');
             bubble.className = `message-bubble ${msg.type}`;
-            bubble.textContent = msg.text;
+            
+            // Programmatically add text and line breaks to prevent XSS
+            msg.text.split('\n').forEach((line, index, arr) => {
+                bubble.appendChild(document.createTextNode(line));
+                if (index < arr.length - 1) {
+                    bubble.appendChild(document.createElement('br'));
+                }
+            });
+
+            // Add corner decorators
+            const tl = document.createElement('div');
+            tl.className = 'bubble-corner tl';
+            bubble.appendChild(tl);
+
+            const tr = document.createElement('div');
+            tr.className = 'bubble-corner tr';
+            bubble.appendChild(tr);
+
+            const bl = document.createElement('div');
+            bl.className = 'bubble-corner bl';
+            bubble.appendChild(bl);
+
+            const br = document.createElement('div');
+            br.className = 'bubble-corner br';
+            bubble.appendChild(br);
 
             // Attach events
             attachMessageEvents(bubble, msg);
@@ -8892,8 +10136,21 @@
 
             if (msg.type === 'received') {
                 dbGet('friends', currentChatFriendId, friend => {
+                    if (friend && friend.isGroup && msg.senderName) {
+                        const nameLabel = document.createElement('div');
+                        nameLabel.style.fontSize = '12px';
+                        nameLabel.style.color = '#999';
+                        nameLabel.style.marginBottom = '2px';
+                        nameLabel.style.marginLeft = '2px';
+                        nameLabel.textContent = msg.senderName;
+                        contentGroup.insertBefore(nameLabel, contentGroup.firstChild);
+                    }
                     if (friend) {
-                        avatar.src = friend.avatar;
+                        if (friend.isGroup && msg.senderAvatar) {
+                            avatar.src = msg.senderAvatar;
+                        } else {
+                            avatar.src = friend.avatar;
+                        }
                         // Handle avatar hiding for received messages
                         if (friend.avatarDisplay === 'hide_other' || friend.avatarDisplay === 'hide_both') {
                             avatar.style.display = 'none';
@@ -9168,6 +10425,168 @@
         });
 
 
+        function applyChatTheme(friend) {
+            const getSetting = (key, defaultVal) => {
+                if (friend && friend[key] !== undefined && friend[key] !== null) return friend[key];
+                const globalVal = localStorage.getItem(key);
+                if (globalVal !== null) return globalVal;
+                return defaultVal;
+            };
+
+            const chatPage = document.getElementById('chat-interface-page');
+            const chatContainer = document.getElementById('chat-messages-container');
+            const chatHeader = document.querySelector('.chat-interface-header');
+            const chatInputContainer = document.getElementById('chat-input-container');
+            
+            // Reset base colors
+            chatPage.style.backgroundImage = 'none';
+            chatPage.style.backgroundColor = '#ededed';
+
+            // Wallpaper
+            const wallpaper = getSetting('chat_wallpaper', null);
+            if (wallpaper) {
+                chatContainer.style.backgroundImage = `url(${wallpaper})`;
+                chatContainer.style.backgroundSize = 'cover';
+                chatContainer.style.backgroundPosition = 'center';
+            } else {
+                chatContainer.style.backgroundImage = 'none';
+            }
+
+            // Header BG
+            const headerBg = getSetting('chat_header_bg', null);
+            if (headerBg) {
+                chatHeader.style.backgroundImage = `url(${headerBg})`;
+                chatHeader.style.backgroundColor = 'transparent';
+                chatHeader.style.borderBottom = 'none';
+            } else {
+                chatHeader.style.backgroundImage = 'none';
+                chatHeader.style.backgroundColor = 'var(--chat-header-bg-color, #ededed)';
+                chatHeader.style.borderBottom = '1px solid #d7d7d7';
+            }
+
+            // Input BG
+            const inputBg = getSetting('chat_input_bg', null);
+            if (inputBg) {
+                chatInputContainer.style.backgroundImage = `url(${inputBg})`;
+                chatInputContainer.style.backgroundColor = 'transparent';
+                chatInputContainer.style.borderTop = 'none';
+            } else {
+                chatInputContainer.style.backgroundImage = 'none';
+                chatInputContainer.style.backgroundColor = 'var(--chat-input-bg-color, #f7f7f7)';
+                chatInputContainer.style.borderTop = '1px solid #e0e0e0';
+            }
+
+            // Icons
+            const setIconInline = (selector, key) => {
+                const el = document.querySelector(selector);
+                if (!el) return;
+                const val = getSetting(key, null);
+                if (val) {
+                    el.style.backgroundImage = `url(${val})`;
+                } else {
+                    el.style.removeProperty('background-image');
+                }
+            };
+            
+            setIconInline('.chat-interface-header .back-arrow', 'chat_back_icon');
+            setIconInline('.chat-interface-options', 'chat_options_icon');
+            setIconInline('#voice-icon', 'chat_voice_icon');
+            setIconInline('#emoji-icon', 'chat_emoji_icon');
+            setIconInline('#plus-icon', 'chat_plus_icon');
+            setIconInline('#send-message-btn', 'chat_send_icon');
+
+            // Avatar Styles via CSS variables on root
+            const avatarSize = getSetting('chat_avatar_size', '40');
+            const avatarRadius = getSetting('chat_avatar_radius', '6');
+            document.documentElement.style.setProperty('--chat-avatar-size', `${avatarSize}px`);
+            document.documentElement.style.setProperty('--chat-avatar-radius', `${avatarRadius}px`);
+
+            // Bubble Theme Styles via CSS variables on root
+            const applyBubbleSide = (side) => {
+                const prefix = side === 'sent' ? 'bubble_sent_' : 'bubble_recv_';
+                
+                const bgColor = getSetting(prefix + 'bg_color', side === 'sent' ? '#a9e979' : '#ffffff');
+                const bgOpacity = getSetting(prefix + 'bg_opacity', '1');
+                const bgImage = getSetting(prefix + 'bg_image', '');
+                const textColor = getSetting(prefix + 'text_color', '#000000');
+                const borderColor = getSetting(prefix + 'border_color', 'transparent');
+                const borderWidth = getSetting(prefix + 'border_width', '0');
+                const borderOpacity = getSetting(prefix + 'border_opacity', '1');
+                const shadow = getSetting(prefix + 'shadow', 'none');
+                const tailColor = getSetting(prefix + 'tail_color', '');
+                const bgImageOpacity = getSetting(prefix + 'bg_img_opacity', '1');
+                const hideTriangleRaw = getSetting(prefix + 'hide_triangle', 'false');
+                const hideTriangle = hideTriangleRaw === 'true' || hideTriangleRaw === true;
+
+                const hexToRgba = (hex, alpha) => {
+                    if (!hex || hex === 'transparent') return 'transparent';
+                    let r = 0, g = 0, b = 0;
+                    hex = hex.replace('#', '');
+                    if (hex.length === 3) {
+                        r = parseInt(hex[0] + hex[0], 16);
+                        g = parseInt(hex[1] + hex[1], 16);
+                        b = parseInt(hex[2] + hex[2], 16);
+                    } else if (hex.length === 6) {
+                        r = parseInt(hex.substring(0, 2), 16);
+                        g = parseInt(hex.substring(2, 4), 16);
+                        b = parseInt(hex.substring(4, 6), 16);
+                    } else {
+                        return hex;
+                    }
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                };
+
+                const finalBgColor = hexToRgba(bgColor, bgOpacity);
+                const finalBorderColor = hexToRgba(borderColor, borderOpacity);
+
+                document.documentElement.style.setProperty(`--bubble-${side}-bg-color`, finalBgColor);
+                document.documentElement.style.setProperty(`--bubble-${side}-text-color`, textColor);
+                if (bgImage) {
+                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image`, `url(${bgImage})`);
+                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image-opacity`, bgImageOpacity);
+                } else {
+                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image`, 'none');
+                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image-opacity`, '1');
+                }
+                document.documentElement.style.setProperty(`--bubble-${side}-border`, `${borderWidth}px solid ${finalBorderColor}`);
+                document.documentElement.style.setProperty(`--bubble-${side}-shadow`, shadow);
+                
+                if (tailColor) {
+                    document.documentElement.style.setProperty(`--bubble-${side}-tail-color`, tailColor);
+                } else {
+                    document.documentElement.style.setProperty(`--bubble-${side}-tail-color`, finalBgColor);
+                }
+
+                document.documentElement.style.setProperty(`--bubble-${side}-triangle`, hideTriangle ? 'none' : 'block');
+
+                // Apply Corners
+                ['tl', 'tr', 'bl', 'br'].forEach(corner => {
+                    const cPrefix = `${side}_${corner}_`;
+                    const cImg = getSetting(cPrefix + 'img', '');
+                    const cOp = getSetting(cPrefix + 'op', '1');
+                    const cx = getSetting(cPrefix + 'x', '-15');
+                    const cy = getSetting(cPrefix + 'y', '-15');
+                    const cw = getSetting(cPrefix + 'w', '30');
+                    const ch = getSetting(cPrefix + 'h', '30');
+                    
+                    const varPrefix = `--${side}-${corner}-`;
+                    document.documentElement.style.setProperty(varPrefix + 'op', cOp);
+                    document.documentElement.style.setProperty(varPrefix + 'x', cx + 'px');
+                    document.documentElement.style.setProperty(varPrefix + 'y', cy + 'px');
+                    document.documentElement.style.setProperty(varPrefix + 'w', cw + 'px');
+                    document.documentElement.style.setProperty(varPrefix + 'h', ch + 'px');
+                    if (cImg) {
+                        document.documentElement.style.setProperty(varPrefix + 'img', `url(${cImg})`);
+                    } else {
+                        document.documentElement.style.setProperty(varPrefix + 'img', 'none');
+                    }
+                });
+            };
+
+            applyBubbleSide('sent');
+            applyBubbleSide('recv');
+        }
+
         function openChat(friendId, targetMsgId = null) {
             currentChatFriendId = friendId;
             dbGet('friends', friendId, friend => {
@@ -9175,31 +10594,10 @@
                 document.getElementById('chat-interface-title').textContent = friend.name;
                 showPage('chat-interface-page');
                 renderMessages(friendId, targetMsgId);
-                // Also change status bar color
-                document.querySelector('.status-bar').style.backgroundColor = '#ededed';
+                // Also change status bar color to transparent so header background shows through
+                document.querySelector('.status-bar').style.backgroundColor = 'transparent';
                 
-                // Apply Chat Wallpaper
-                const chatPage = document.getElementById('chat-interface-page');
-                const chatContainer = document.getElementById('chat-messages-container');
-                
-                // Reset chat page background to default to avoid spilling into status bar
-                chatPage.style.backgroundImage = 'none';
-                chatPage.style.backgroundColor = '#ededed';
-                
-                if (friend.chatWallpaper) {
-                    chatContainer.style.backgroundImage = `url(${friend.chatWallpaper})`;
-                    chatContainer.style.backgroundSize = 'cover';
-                    chatContainer.style.backgroundPosition = 'center';
-                } else {
-                    const globalWallpaper = localStorage.getItem('chat_wallpaper');
-                    if (globalWallpaper) {
-                        chatContainer.style.backgroundImage = `url(${globalWallpaper})`;
-                        chatContainer.style.backgroundSize = 'cover';
-                        chatContainer.style.backgroundPosition = 'center';
-                    } else {
-                        chatContainer.style.backgroundImage = 'none';
-                    }
-                }
+                applyChatTheme(friend);
             });
         }
 
@@ -9316,21 +10714,39 @@
 
         function showTypingIndicator(friendId) {
             if (currentChatFriendId === friendId) {
-                const titleEl = document.getElementById('chat-interface-title');
-                if (titleEl) {
-                    titleEl.textContent = '对方正在输入...';
-                }
+                dbGet('friends', friendId, friend => {
+                    if (friend && friend.isGroup) {
+                        const container = document.getElementById('chat-messages-container');
+                        if (!container.querySelector('.group-typing-indicator')) {
+                            const indicator = document.createElement('div');
+                            indicator.className = 'message-time-divider group-typing-indicator';
+                            indicator.textContent = '......';
+                            container.appendChild(indicator);
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    } else {
+                        const titleEl = document.getElementById('chat-interface-title');
+                        if (titleEl) {
+                            titleEl.textContent = '对方正在输入...';
+                        }
+                    }
+                });
             }
         }
 
         function hideTypingIndicator(friendId) {
             if (currentChatFriendId === friendId) {
-                const titleEl = document.getElementById('chat-interface-title');
-                if (titleEl) {
-                    dbGet('friends', friendId, friend => {
-                        if (friend) titleEl.textContent = friend.name;
-                    });
-                }
+                dbGet('friends', friendId, friend => {
+                    if (friend && friend.isGroup) {
+                        const indicators = document.querySelectorAll('.group-typing-indicator');
+                        indicators.forEach(el => el.remove());
+                    } else {
+                        const titleEl = document.getElementById('chat-interface-title');
+                        if (titleEl && friend) {
+                            titleEl.textContent = friend.name;
+                        }
+                    }
+                });
             }
         }
 
@@ -9368,9 +10784,17 @@
                             const transaction = db.transaction(['ai_stickers'], 'readonly');
                             const store = transaction.objectStore('ai_stickers');
                             const index = store.index('friendId');
-                            const req = index.getAll(friend.id);
-                            req.onsuccess = () => resolve(req.result);
-                            req.onerror = () => resolve([]);
+                            // If group, fetch all stickers or we fetch below. Actually let's fetch by friendId for normal chats,
+                            // but for group chats we'll fetch all.
+                            if (friend.isGroup) {
+                                const req = store.getAll();
+                                req.onsuccess = () => resolve(req.result);
+                                req.onerror = () => resolve([]);
+                            } else {
+                                const req = index.getAll(friend.id);
+                                req.onsuccess = () => resolve(req.result);
+                                req.onerror = () => resolve([]);
+                            }
                         } catch(e) {
                             resolve([]);
                         }
@@ -9385,7 +10809,61 @@
                     });
                 });
 
-                    const systemPrompt = buildSystemPrompt(friend, userPersona, aiStickers, visiblePosts);
+                    let systemPrompt = "";
+                    let allFriendsList = await new Promise(res => dbGetAll('friends', res));
+                    let groupMembers = [];
+                    
+                    if (friend.isGroup) {
+                        groupMembers = allFriendsList.filter(f => (friend.members || []).includes(f.id));
+                        systemPrompt = `【系统提示】这是一个群聊。群名称：${friend.name}。\n群成员如下：\n`;
+                        
+                        for (const member of groupMembers) {
+                            systemPrompt += `--- \n姓名：${member.name}\n人设：${member.persona || '无'}\n`;
+                            
+                            // Inject Member's Stickers
+                            const memberStickers = aiStickers.filter(s => s.friendId === member.id);
+                            if (memberStickers.length > 0) {
+                                systemPrompt += `【${member.name}的专属表情包】（请在发言时通过 <sticker>表情包ID</sticker> 使用）：\n`;
+                                memberStickers.forEach((sticker, index) => {
+                                    const desc = sticker.description ? ` (含义：${sticker.description})` : '';
+                                    systemPrompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
+                                });
+                            }
+
+                            // 记忆互通
+                            if (friend.memoryInterop && (friend.memoryInteropRoles || []).includes(member.id)) {
+                                const personalHistory = await new Promise(res => {
+                                    const tx = db.transaction(['chat_history'], 'readonly');
+                                    const store = tx.objectStore('chat_history');
+                                    const idx = store.index('friendId');
+                                    const req = idx.getAll(member.id);
+                                    req.onsuccess = () => res(req.result.slice(-10));
+                                });
+                                if (personalHistory.length > 0) {
+                                    systemPrompt += `[${member.name}最近与用户的私聊记忆（记忆互通）]：\n`;
+                                    personalHistory.forEach(m => {
+                                        const sender = m.type === 'sent' ? '用户' : member.name;
+                                        const txt = m.isSticker ? '[图片/表情]' : m.text;
+                                        systemPrompt += `${sender}: ${txt}\n`;
+                                    });
+                                }
+                            }
+                        }
+                        
+                        systemPrompt += `--- \n请根据群聊当前的上下文，决定接下来由哪些群成员发言。为了还原真实的群聊氛围，你可以让多个不同角色互相附和、抢答，也可以让同一个角色连续发送多条消息（断句发送）。
+请严格按照以下格式输出成员的发言内容（每行代表一条独立的气泡，必须以成员名字开头，加英文冒号）：
+角色A的名字: 他的第一句话
+角色A的名字: 他的第二句话（连续发送）
+角色B的名字: 她的回复
+角色C的名字: 插入话题
+
+如果你需要发送表情包，可以在发言内容中包含对应角色的专属表情包 <sticker>表情包ID</sticker>。
+如果你想让某个角色扔骰子，请在发言内容中包含：<dice></dice>。系统会自动将其转换为一个随机骰子动画。
+如果你认为此时不需要任何人发言，请直接输出“无”。严禁代替用户发言，严禁输出用户的动作。`;
+                    } else {
+                        systemPrompt = buildSystemPrompt(friend, userPersona, aiStickers, visiblePosts);
+                    }
+
                     const shortTermCount = parseInt(friend.shortTermMemory || '20', 10);
 
                     const transaction = db.transaction(['chat_history'], 'readonly');
@@ -9395,7 +10873,18 @@
 
                     request.onsuccess = async () => {
                         let history = request.result;
-                        history = history.slice(-shortTermCount);
+                        if (!friend.isGroup) {
+                            history = history.slice(-shortTermCount);
+                        } else {
+                            // 群聊取最近30条
+                            history = history.slice(-30);
+                            // 将群聊记录包装成 LLM 容易理解的格式
+                            history = history.map(msg => {
+                                const sender = msg.type === 'sent' ? '用户' : (msg.senderName || '未知成员');
+                                const txt = msg.isSticker ? (msg.text.startsWith('dice:') ? '[骰子]' : '[图片/表情]') : msg.text;
+                                return { type: msg.type, text: `${sender}: ${txt}` };
+                            });
+                        }
 
                         if (isContinue) {
                             const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
@@ -9451,7 +10940,131 @@
                             aiResponseText = await applyRegexRules(aiResponseText, friend.id, friend.group || '默认分组');
                             const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
 
-                            if (isOfflineMode) {
+                            if (friend.isGroup) {
+                                hideTypingIndicator(friend.id);
+                                const lines = aiResponseText.split('\n').map(s => s.trim()).filter(s => s !== '');
+                                for (const line of lines) {
+                                    if (line === '无' || line === '') continue;
+                                    
+                                    const match = line.match(/^([^:：]+)[:：]\s*(.*)$/);
+                                    if (match) {
+                                        const senderName = match[1].trim();
+                                        let text = match[2].trim();
+                                        
+                                        const senderMember = groupMembers.find(m => m.name === senderName || m.realName === senderName);
+                                        if (senderMember) {
+                                            const stickerRegex = /<sticker>(.*?)<\/sticker>/;
+                                            const stickerMatch = text.match(stickerRegex);
+                                            let stickerUrl = null;
+                                            if (stickerMatch) {
+                                                const stickerId = stickerMatch[1].trim();
+                                                const allStickers = await new Promise(res => {
+                                                    try {
+                                                        const tx = db.transaction(['ai_stickers'], 'readonly');
+                                                        const store = tx.objectStore('ai_stickers');
+                                                        const req = store.getAll();
+                                                        req.onsuccess = () => res(req.result);
+                                                        req.onerror = () => res([]);
+                                                    } catch(e) { res([]); }
+                                                });
+                                                const s = allStickers.find(st => String(st.id) === stickerId && st.friendId === senderMember.id);
+                                                if (s) {
+                                                    stickerUrl = s.src;
+                                                } else {
+                                                    stickerUrl = stickerId;
+                                                }
+                                                text = text.replace(stickerRegex, '').trim();
+                                            }
+
+                                            let hasDice = false;
+                                            if (text.includes('<dice></dice>')) {
+                                                hasDice = true;
+                                                text = text.replace(/<dice><\/dice>/g, '').trim();
+                                            }
+
+                                            if (text) {
+                                                const msgObj = {
+                                                    friendId: friend.id,
+                                                    senderId: senderMember.id,
+                                                    senderName: senderMember.name,
+                                                    senderAvatar: senderMember.avatar,
+                                                    text: text,
+                                                    type: 'received',
+                                                    timestamp: Date.now()
+                                                };
+                                                await new Promise(res => dbAdd('chat_history', msgObj, res));
+                                                if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                                    addMessageToUI(msgObj);
+                                                }
+                                            }
+
+                                            if (stickerUrl) {
+                                                const msgObj = {
+                                                    friendId: friend.id,
+                                                    senderId: senderMember.id,
+                                                    senderName: senderMember.name,
+                                                    senderAvatar: senderMember.avatar,
+                                                    text: stickerUrl,
+                                                    isSticker: true,
+                                                    type: 'received',
+                                                    timestamp: Date.now() + 10
+                                                };
+                                                await new Promise(res => dbAdd('chat_history', msgObj, res));
+                                                if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                                    addMessageToUI(msgObj);
+                                                }
+                                            }
+
+                                            if (hasDice) {
+                                                const diceMsg = {
+                                                    friendId: friend.id,
+                                                    senderId: senderMember.id,
+                                                    senderName: senderMember.name,
+                                                    senderAvatar: senderMember.avatar,
+                                                    text: 'dice:rolling',
+                                                    type: 'received',
+                                                    timestamp: Date.now() + 20,
+                                                    isSticker: true,
+                                                    isDice: true
+                                                };
+                                                let bubble;
+                                                if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                                    bubble = addMessageToUI(diceMsg);
+                                                }
+                                                
+                                                await new Promise(res => setTimeout(res, 1200));
+                                                const result = Math.floor(Math.random() * 6) + 1;
+                                                if (bubble) {
+                                                    const cube = bubble.querySelector('.cube');
+                                                    if (cube) {
+                                                        cube.classList.remove('rolling');
+                                                        cube.classList.add('show-' + result);
+                                                    }
+                                                }
+                                                diceMsg.text = 'dice:' + result;
+                                                await new Promise(resolve => dbAdd('chat_history', diceMsg, resolve));
+                                            }
+
+                                            let lastMsgPreview = text;
+                                            if (!lastMsgPreview) {
+                                                if (stickerUrl) lastMsgPreview = '[表情包]';
+                                                if (hasDice) lastMsgPreview = '[骰子]';
+                                            }
+                                            friend.lastMsg = `${senderMember.name}: ${lastMsgPreview}`;
+                                            friend.lastTime = getCurrentTimeStr();
+                                            await new Promise(res => dbUpdate('friends', friend, res));
+                                            
+                                            if (document.getElementById('wechat-page').classList.contains('active')) {
+                                                renderChatList();
+                                            }
+
+                                            showTypingIndicator(friend.id);
+                                            await new Promise(res => setTimeout(res, 1500));
+                                            hideTypingIndicator(friend.id);
+                                        }
+                                    }
+                                }
+                            } else if (isOfflineMode) {
                                 // Offline mode: handle as a single message
                                 hideTypingIndicator(friend.id);
                                 const responseMsg = {
@@ -9911,11 +11524,21 @@
             }
 
             if (visiblePosts && visiblePosts.length > 0) {
-                prompt += `【最近的朋友圈动态】\n这些是你能在朋友圈看到的用户最新动态：\n`;
+                prompt += `【最近的朋友圈动态】\n这些是你能在朋友圈看到的最新动态：\n`;
                 visiblePosts.forEach((post, index) => {
                     const date = new Date(post.timestamp);
                     const timeStr = `${date.getMonth()+1}-${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-                    prompt += `${index + 1}. [${timeStr}] 用户发布：${post.text || '无文字'}\n`;
+                    
+                    let authorLine = '';
+                    if (post.authorId === 'main_user') {
+                        authorLine = '用户(User)发布了动态：';
+                    } else if (post.authorId === friend.id) {
+                        authorLine = '你(你自己)发布了动态：';
+                    } else {
+                        authorLine = `好友/群友 [${post.authorName}] 发布了动态：`;
+                    }
+
+                    prompt += `${index + 1}. [${timeStr}] ${authorLine}${post.text || '无文字'}\n`;
                     if (post.images && post.images.length > 0) prompt += `   (附带了 ${post.images.length} 张图片)\n`;
                 });
                 prompt += `你可以根据这些动态在聊天中主动找话题或顺应聊天。\n\n`;
@@ -11413,10 +13036,39 @@ ${historyText}`;
         function renderContactsList() {
             const listContainer = document.getElementById('contacts-list');
             listContainer.innerHTML = ''; // Clear existing list
-            
+
             dbGetAll('friends', friends => {
+                const groupChats = friends.filter(f => f.isGroup);
+                const individualFriends = friends.filter(f => !f.isGroup);
+
+                // 1. Render Group Chats
+                if (groupChats.length > 0) {
+                    const groupHeader = document.createElement('div');
+                    groupHeader.style.padding = '4px 15px';
+                    groupHeader.style.backgroundColor = '#f7f7f7';
+                    groupHeader.style.color = '#888';
+                    groupHeader.style.fontSize = '13px';
+                    groupHeader.textContent = '群聊';
+                    listContainer.appendChild(groupHeader);
+
+                    groupChats.forEach(group => {
+                        const item = document.createElement('div');
+                        item.className = 'chat-item';
+                        item.innerHTML = `
+                            <img class="chat-avatar" src="${group.avatar}" alt="${group.name}">
+                            <div class="chat-info" style="justify-content: center;">
+                                <span class="chat-name">${group.name}</span>
+                            </div>
+                        `;
+                        item.style.cursor = 'pointer';
+                        item.addEventListener('click', () => openChat(group.id));
+                        listContainer.appendChild(item);
+                    });
+                }
+
+                // 2. Render Individual Friends, grouped
                 const groupedFriends = {};
-                friends.forEach(friend => {
+                individualFriends.forEach(friend => {
                     const group = friend.group || '默认分组';
                     if (!groupedFriends[group]) {
                         groupedFriends[group] = [];
@@ -11576,7 +13228,7 @@ ${historyText}`;
             contactsListDiv.innerHTML = '';
             
             dbGetAll('friends', friends => {
-                const friendsInGroup = friends.filter(f => (f.group || '默认分组') === groupName);
+                const friendsInGroup = friends.filter(f => !f.isGroup && (f.group || '默认分组') === groupName);
 
                 if (friendsInGroup.length === 0) {
                     contactsListDiv.innerHTML = '<div style="text-align:center; color:#999; font-size:13px;">该分组下没有角色</div>';
@@ -11972,83 +13624,300 @@ ${historyText}`;
                 if (friend) {
                     // Update UI with friend details
                     document.getElementById('chat-info-avatar').src = friend.avatar;
-                    document.getElementById('chat-info-remark').value = friend.name;
                     
-                    // If realName doesn't exist (legacy data), default to name
-                    if (!friend.realName) {
-                        friend.realName = friend.name;
-                        // Silently update DB to migrate data
-                        dbUpdate('friends', friend);
-                    }
-                    document.getElementById('chat-info-realname').value = friend.realName;
+                    if (friend.isGroup) {
+                        document.getElementById('chat-info-personal-section').style.display = 'none';
+                        document.getElementById('chat-info-my-avatar-section').style.display = 'none';
+                        document.getElementById('chat-info-ai-settings-section').style.display = 'none';
+                        document.getElementById('chat-info-active-chat-section').style.display = 'none';
+                        document.getElementById('chat-info-thought-section').style.display = 'none';
+                        document.getElementById('chat-info-group-section').style.display = 'block';
+                        
+                        document.getElementById('group-info-name').value = friend.name;
+                        
+                        // Render Group Members
+                        const membersDisplay = document.getElementById('group-members-display');
+                        membersDisplay.innerHTML = '';
+                        dbGetAll('friends', allFriends => {
+                            const groupMembers = allFriends.filter(f => (friend.members || []).includes(f.id));
+                            groupMembers.forEach(member => {
+                                const mDiv = document.createElement('div');
+                                mDiv.className = 'group-member-item';
+                                mDiv.innerHTML = `
+                                    <img src="${member.avatar}" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
+                                    <div style="font-size: 10px; color: #666; text-align: center; margin-top: 4px; width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${member.name}</div>
+                                `;
+                                membersDisplay.appendChild(mDiv);
+                            });
+                            
+                            // Add +/- buttons
+                            membersDisplay.innerHTML += `
+                                <div class="group-member-item" onclick="openAddGroupMemberModal()">
+                                    <div style="width: 40px; height: 40px; border-radius: 4px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #999;">+</div>
+                                    <div style="font-size: 10px; color: #666; text-align: center; margin-top: 4px; width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">邀请</div>
+                                </div>
+                                <div class="group-member-item" onclick="openRemoveGroupMemberModal()">
+                                    <div style="width: 40px; height: 40px; border-radius: 4px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #999;">-</div>
+                                    <div style="font-size: 10px; color: #666; text-align: center; margin-top: 4px; width: 40px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">移除</div>
+                                </div>
+                            `;
 
-                    document.getElementById('chat-info-persona').value = friend.persona || '';
-
-                    // My Avatar in this chat
-                    if (friend.myAvatar) {
-                        document.getElementById('my-chat-avatar').src = friend.myAvatar;
-                    } else {
-                        // Default to global avatar
-                        dbGet('user_profile', 'main_user', profile => {
-                            if (profile && profile.avatar) {
-                                document.getElementById('my-chat-avatar').src = profile.avatar;
-                            } else {
-                                document.getElementById('my-chat-avatar').src = 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me';
-                            }
+                            // Render Memory Interop roles
+                            const interopToggle = document.getElementById('group-memory-interop-toggle');
+                            interopToggle.checked = friend.memoryInterop || false;
+                            
+                            const interopListContainer = document.getElementById('group-memory-interop-roles');
+                            interopListContainer.style.display = friend.memoryInterop ? 'block' : 'none';
+                            
+                            const interopList = document.getElementById('group-memory-interop-list');
+                            interopList.innerHTML = '';
+                            groupMembers.forEach(member => {
+                                const label = document.createElement('label');
+                                label.className = 'preset-checkbox-item';
+                                label.style.padding = '5px 0';
+                                label.innerHTML = `
+                                    <input type="checkbox" value="${member.id}" ${(friend.memoryInteropRoles || []).includes(member.id) ? 'checked' : ''}>
+                                    <div class="custom-checkbox"></div>
+                                    <img src="${member.avatar}" style="width: 24px; height: 24px; border-radius: 4px; margin-right: 5px; object-fit: cover;">
+                                    <span>${member.name}</span>
+                                `;
+                                interopList.appendChild(label);
+                            });
                         });
+
+                    } else {
+                        document.getElementById('chat-info-personal-section').style.display = 'block';
+                        document.getElementById('chat-info-my-avatar-section').style.display = 'flex';
+                        document.getElementById('chat-info-ai-settings-section').style.display = 'flex';
+                        document.getElementById('chat-info-active-chat-section').style.display = 'flex';
+                        document.getElementById('chat-info-thought-section').style.display = 'flex';
+                        document.getElementById('chat-info-group-section').style.display = 'none';
+                        
+                        document.getElementById('chat-info-remark').value = friend.name;
+                        
+                        if (!friend.realName) {
+                            friend.realName = friend.name;
+                            dbUpdate('friends', friend);
+                        }
+                        document.getElementById('chat-info-realname').value = friend.realName;
+                        document.getElementById('chat-info-persona').value = friend.persona || '';
+
+                        if (friend.myAvatar) {
+                            document.getElementById('my-chat-avatar').src = friend.myAvatar;
+                        } else {
+                            dbGet('user_profile', 'main_user', profile => {
+                                if (profile && profile.avatar) {
+                                    document.getElementById('my-chat-avatar').src = profile.avatar;
+                                } else {
+                                    document.getElementById('my-chat-avatar').src = 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me';
+                                }
+                            });
+                        }
+
+                        if (friend.myPersonaId) {
+                            dbGet('my_personas', friend.myPersonaId, persona => {
+                                document.getElementById('my-chat-persona-text').textContent = persona ? persona.name : '默认人设';
+                            });
+                        } else {
+                            document.getElementById('my-chat-persona-text').textContent = '默认人设';
+                        }
+                        
+                        updateBindWorldBookText(friend.boundWorldBooks);
+                        
+                        const enableThoughts = friend.enableThoughts || false;
+                        document.getElementById('enable-thought-toggle').checked = enableThoughts;
+                        
+                        const thoughtSubContainer = document.getElementById('thought-sub-settings');
+                        if (thoughtSubContainer) {
+                            thoughtSubContainer.style.display = enableThoughts ? 'block' : 'none';
+                        }
+                        
+                        document.getElementById('show-thought-text-toggle').checked = friend.showThoughtText !== false;
+                        
+                        const isActiveChat = friend.activeChat || false;
+                        document.getElementById('active-chat-toggle').checked = isActiveChat;
+                        
+                        const intervalContainer = document.getElementById('active-chat-interval-container');
+                        if (intervalContainer) {
+                            intervalContainer.style.display = isActiveChat ? 'block' : 'none';
+                        }
+
+                        document.getElementById('sync-reality-toggle').checked = friend.syncReality || false;
+                        document.getElementById('message-interval-input').value = friend.messageInterval || '';
+                        document.getElementById('short-term-memory-input').value = friend.shortTermMemory || '';
+                        
+                        const autoSummarize = friend.autoSummarizeMemory || false;
+                        document.getElementById('auto-summarize-memory-toggle').checked = autoSummarize;
+                        const summarizeContainer = document.getElementById('auto-summarize-interval-container');
+                        if (summarizeContainer) {
+                            summarizeContainer.style.display = autoSummarize ? 'block' : 'none';
+                        }
+                        document.getElementById('summarize-interval-input').value = friend.summarizeInterval || '';
                     }
 
-                    // My Persona in this chat
-                    if (friend.myPersonaId) {
-                        dbGet('my_personas', friend.myPersonaId, persona => {
-                            document.getElementById('my-chat-persona-text').textContent = persona ? persona.name : '默认人设';
-                        });
-                    } else {
-                        document.getElementById('my-chat-persona-text').textContent = '默认人设';
-                    }
-                    
-                    // Bound World Books
-                    updateBindWorldBookText(friend.boundWorldBooks);
-                    
-                    // Avatar Display
+                    // Avatar Display (Both)
                     const avatarDisplaySelect = document.getElementById('avatar-display-select');
                     avatarDisplaySelect.value = friend.avatarDisplay || 'show_all';
                     refreshCustomSelect(avatarDisplaySelect);
 
-                    // Thought Feature Settings
-                    const enableThoughts = friend.enableThoughts || false;
-                    document.getElementById('enable-thought-toggle').checked = enableThoughts;
-                    
-                    const thoughtSubContainer = document.getElementById('thought-sub-settings');
-                    if (thoughtSubContainer) {
-                        thoughtSubContainer.style.display = enableThoughts ? 'block' : 'none';
-                    }
-                    
-                    document.getElementById('show-thought-text-toggle').checked = friend.showThoughtText !== false; // Default true if enabled
-                    
-                    // AI Behavior Settings
-                    const isActiveChat = friend.activeChat || false;
-                    document.getElementById('active-chat-toggle').checked = isActiveChat;
-                    
-                    const intervalContainer = document.getElementById('active-chat-interval-container');
-                    if (intervalContainer) {
-                        intervalContainer.style.display = isActiveChat ? 'block' : 'none';
-                    }
-
-                    document.getElementById('sync-reality-toggle').checked = friend.syncReality || false;
-                    document.getElementById('message-interval-input').value = friend.messageInterval || '';
-                    document.getElementById('short-term-memory-input').value = friend.shortTermMemory || '';
-                    
-                    const autoSummarize = friend.autoSummarizeMemory || false;
-                    document.getElementById('auto-summarize-memory-toggle').checked = autoSummarize;
-                    const summarizeContainer = document.getElementById('auto-summarize-interval-container');
-                    if (summarizeContainer) {
-                        summarizeContainer.style.display = autoSummarize ? 'block' : 'none';
-                    }
-                    document.getElementById('summarize-interval-input').value = friend.summarizeInterval || '';
-
                     showPage('chat-info-page');
                 }
+            });
+        }
+
+        function toggleGroupMemoryInterop(isChecked) {
+            const container = document.getElementById('group-memory-interop-roles');
+            if (container) {
+                container.style.display = isChecked ? 'block' : 'none';
+            }
+        }
+
+        function openAddGroupMemberModal() {
+            if (!currentChatFriendId) return;
+            document.getElementById('role-selection-title').textContent = '邀请新成员';
+            document.getElementById('role-search-input').value = '';
+            
+            const listContainer = document.getElementById('role-selection-list');
+            listContainer.innerHTML = '';
+            document.getElementById('role-selection-modal').style.display = 'flex';
+
+            dbGet('friends', currentChatFriendId, group => {
+                dbGetAll('friends', allFriends => {
+                    const nonGroupFriends = allFriends.filter(f => !f.isGroup);
+                    nonGroupFriends.forEach(friend => {
+                        const isAlreadyMember = (group.members || []).includes(friend.id);
+                        
+                        const label = document.createElement('label');
+                        label.className = 'gm-contact-item';
+                        label.style.padding = '10px 0';
+                        label.style.borderBottom = '1px solid #f0f0f0';
+                        label.dataset.name = friend.name.toLowerCase();
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = friend.id;
+                        checkbox.dataset.friendName = friend.name;
+                        
+                        if (isAlreadyMember) {
+                            checkbox.checked = true;
+                            checkbox.disabled = true; // Cannot unselect existing members here
+                        }
+                        
+                        const customCheck = document.createElement('div');
+                        customCheck.className = 'round-checkbox';
+                        if (isAlreadyMember) {
+                            customCheck.style.backgroundColor = '#f0f0f0';
+                            customCheck.style.borderColor = '#ccc';
+                        }
+                        customCheck.innerHTML = '<div class="inner-dot"></div>';
+                        
+                        const avatar = document.createElement('img');
+                        avatar.src = friend.avatar;
+                        avatar.style.width = '36px';
+                        avatar.style.height = '36px';
+                        avatar.style.borderRadius = '4px';
+                        avatar.style.objectFit = 'cover';
+                        avatar.style.marginLeft = '10px';
+
+                        const span = document.createElement('span');
+                        span.textContent = friend.name;
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(customCheck);
+                        label.appendChild(avatar);
+                        label.appendChild(span);
+                        listContainer.appendChild(label);
+                    });
+
+                    // Override confirm button for add member
+                    const confirmBtn = document.querySelector('#role-selection-modal button');
+                    confirmBtn.onclick = () => {
+                        const checkboxes = document.querySelectorAll('#role-selection-list input[type="checkbox"]:checked:not(:disabled)');
+                        const newMemberIds = Array.from(checkboxes).map(cb => cb.value);
+                        
+                        if (newMemberIds.length > 0) {
+                            group.members = [...(group.members || []), ...newMemberIds];
+                            dbUpdate('friends', group, () => {
+                                closeRoleSelectionModal();
+                                openChatInfo(); // refresh
+                                showToast('已邀请新成员');
+                            });
+                        } else {
+                            closeRoleSelectionModal();
+                        }
+                    };
+                });
+            });
+        }
+
+        function openRemoveGroupMemberModal() {
+            if (!currentChatFriendId) return;
+            document.getElementById('role-selection-title').textContent = '移除群成员';
+            document.getElementById('role-search-input').value = '';
+            
+            const listContainer = document.getElementById('role-selection-list');
+            listContainer.innerHTML = '';
+            document.getElementById('role-selection-modal').style.display = 'flex';
+
+            dbGet('friends', currentChatFriendId, group => {
+                dbGetAll('friends', allFriends => {
+                    const currentMembers = allFriends.filter(f => (group.members || []).includes(f.id));
+                    currentMembers.forEach(friend => {
+                        const label = document.createElement('label');
+                        label.className = 'gm-contact-item';
+                        label.style.padding = '10px 0';
+                        label.style.borderBottom = '1px solid #f0f0f0';
+                        label.dataset.name = friend.name.toLowerCase();
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.value = friend.id;
+                        
+                        const customCheck = document.createElement('div');
+                        customCheck.className = 'round-checkbox';
+                        customCheck.innerHTML = '<div class="inner-dot"></div>';
+                        
+                        const avatar = document.createElement('img');
+                        avatar.src = friend.avatar;
+                        avatar.style.width = '36px';
+                        avatar.style.height = '36px';
+                        avatar.style.borderRadius = '4px';
+                        avatar.style.objectFit = 'cover';
+                        avatar.style.marginLeft = '10px';
+
+                        const span = document.createElement('span');
+                        span.textContent = friend.name;
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(customCheck);
+                        label.appendChild(avatar);
+                        label.appendChild(span);
+                        listContainer.appendChild(label);
+                    });
+
+                    // Override confirm button for remove member
+                    const confirmBtn = document.querySelector('#role-selection-modal button');
+                    confirmBtn.onclick = () => {
+                        const checkboxes = document.querySelectorAll('#role-selection-list input[type="checkbox"]:checked');
+                        const removeMemberIds = Array.from(checkboxes).map(cb => cb.value);
+                        
+                        if (removeMemberIds.length > 0) {
+                            showCustomConfirm(`确定要移除选中的 ${removeMemberIds.length} 个成员吗？`, () => {
+                                group.members = (group.members || []).filter(id => !removeMemberIds.includes(id));
+                                // Also remove from memoryInteropRoles if present
+                                group.memoryInteropRoles = (group.memoryInteropRoles || []).filter(id => !removeMemberIds.includes(id));
+                                
+                                dbUpdate('friends', group, () => {
+                                    closeRoleSelectionModal();
+                                    openChatInfo(); // refresh
+                                    showToast('已移除成员');
+                                });
+                            }, '移除成员');
+                        } else {
+                            closeRoleSelectionModal();
+                        }
+                    };
+                });
             });
         }
 
@@ -12321,11 +14190,18 @@ ${historyText}`;
             if (!currentChatFriendId) return;
             dbGet('friends', currentChatFriendId, friend => {
                 if (friend) {
-                    friend.name = document.getElementById('chat-info-remark').value.trim();
-                    friend.realName = document.getElementById('chat-info-realname').value.trim();
-                    friend.persona = document.getElementById('chat-info-persona').value.trim();
-                    friend.shortTermMemory = document.getElementById('short-term-memory-input').value;
-                    friend.autoSummarizeMemory = document.getElementById('auto-summarize-memory-toggle').checked;
+                    if (friend.isGroup) {
+                        friend.name = document.getElementById('group-info-name').value.trim();
+                        friend.realName = friend.name;
+                        const checkboxes = document.querySelectorAll('#group-memory-interop-list input[type="checkbox"]:checked');
+                        friend.memoryInteropRoles = Array.from(checkboxes).map(cb => cb.value);
+                    } else {
+                        friend.name = document.getElementById('chat-info-remark').value.trim();
+                        friend.realName = document.getElementById('chat-info-realname').value.trim();
+                        friend.persona = document.getElementById('chat-info-persona').value.trim();
+                        friend.shortTermMemory = document.getElementById('short-term-memory-input').value;
+                        friend.autoSummarizeMemory = document.getElementById('auto-summarize-memory-toggle').checked;
+                    }
                     dbUpdate('friends', friend, () => {
                         showToast('保存成功');
                         document.getElementById('chat-interface-title').textContent = friend.name;
@@ -12910,13 +14786,15 @@ ${historyText}`;
             dbGetAll('friends', friends => {
                 select.innerHTML = '';
                 
-                if (!friends || friends.length === 0) {
+                const nonGroupFriends = (friends || []).filter(f => !f.isGroup);
+
+                if (nonGroupFriends.length === 0) {
                     const defaultOption = document.createElement('option');
                     defaultOption.value = "";
                     defaultOption.textContent = "暂无角色";
                     select.appendChild(defaultOption);
                 } else {
-                    friends.forEach(friend => {
+                    nonGroupFriends.forEach(friend => {
                         const option = document.createElement('option');
                         option.value = friend.id;
                         option.textContent = friend.name;
@@ -12927,7 +14805,7 @@ ${historyText}`;
                     });
                     
                     // Auto-select first if no selection restored or valid
-                    if ((!lastSelectedEmojiCharacter || !friends.find(f => f.id === lastSelectedEmojiCharacter)) && select.options.length > 0) {
+                    if ((!lastSelectedEmojiCharacter || !nonGroupFriends.find(f => f.id === lastSelectedEmojiCharacter)) && select.options.length > 0) {
                         select.options[0].selected = true;
                         lastSelectedEmojiCharacter = select.value;
                     }
@@ -13305,17 +15183,24 @@ ${historyText}`;
             const file = input.files[0];
             if (!file) return;
 
-            showCustomConfirm('导入数据将覆盖当前所有数据（包括聊天记录和设置），确认导入吗？', () => {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const fileContent = e.target.result;
+                input.value = ''; // Reset input after reading
+
+                showCustomConfirm('导入数据将覆盖当前所有数据（包括聊天记录和设置），确认导入吗？', async () => {
                     try {
-                        const data = JSON.parse(e.target.result);
+                        const data = JSON.parse(fileContent);
                         
                         // 1. Import LocalStorage
                         if (data.localStorage) {
                             localStorage.clear();
                             for (const key in data.localStorage) {
-                                localStorage.setItem(key, data.localStorage[key]);
+                                try {
+                                    localStorage.setItem(key, data.localStorage[key]);
+                                } catch (e) {
+                                    console.warn(`Failed to set localStorage item ${key}:`, e);
+                                }
                             }
                         }
 
@@ -13334,15 +15219,27 @@ ${historyText}`;
                                         clearReq.onerror = (err) => reject(err.target.error);
                                     });
 
-                                    // Add new items
+                                    // Add new items in chunks to prevent iOS Safari transaction aborts
                                     if (items && items.length > 0) {
-                                        await new Promise((resolve, reject) => {
-                                            const tx = db.transaction([storeName], 'readwrite');
-                                            const store = tx.objectStore(storeName);
-                                            tx.oncomplete = () => resolve();
-                                            tx.onerror = (err) => reject(err.target.error);
-                                            items.forEach(item => store.put(item));
-                                        });
+                                        const chunkSize = 200;
+                                        for (let i = 0; i < items.length; i += chunkSize) {
+                                            const chunk = items.slice(i, i + chunkSize);
+                                            await new Promise((resolve, reject) => {
+                                                const tx = db.transaction([storeName], 'readwrite');
+                                                const store = tx.objectStore(storeName);
+                                                tx.oncomplete = () => resolve();
+                                                tx.onerror = (err) => reject(tx.error || err.target.error);
+                                                tx.onabort = () => reject(tx.error || new Error('Transaction aborted'));
+                                                
+                                                chunk.forEach(item => {
+                                                    try {
+                                                        store.put(item);
+                                                    } catch (e) {
+                                                        console.warn(`Failed to put item in ${storeName}:`, e);
+                                                    }
+                                                });
+                                            });
+                                        }
                                     }
                                 }
                             }
@@ -13353,13 +15250,15 @@ ${historyText}`;
 
                     } catch (error) {
                         console.error('Import failed:', error);
-                        showToast('导入失败：文件格式错误或数据损坏');
+                        let errorMsg = error.message || '未知错误';
+                        if (error.name === 'QuotaExceededError') {
+                            errorMsg = '存储空间不足';
+                        }
+                        showToast('导入失败：' + errorMsg);
                     }
-                };
-                reader.readAsText(file);
-            }, '确认导入');
-            
-            input.value = ''; // Reset input
+                }, '确认导入');
+            };
+            reader.readAsText(file);
         }
 
         // Initial Load
