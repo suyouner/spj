@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
     <title>蒜皮叽</title>
     <meta name="theme-color" content="#e0e5ec">
     <meta name="mobile-web-app-capable" content="yes">
@@ -1375,6 +1375,9 @@
         }
 
         /* Custom Confirm Modal */
+        #custom-confirm-modal {
+            z-index: 900;
+        }
         #custom-confirm-modal .confirm-modal-content {
             background: #ffffff;
             padding: 25px;
@@ -1636,53 +1639,58 @@
         .message-bubble.sent {
             background-color: var(--bubble-sent-bg-color, #a9e979);
             border: var(--bubble-sent-border, none);
-            box-shadow: var(--bubble-sent-shadow, none);
+            filter: var(--bubble-sent-shadow, none);
+            box-shadow: var(--bubble-sent-box-shadow, none);
+            background-image: var(--bubble-sent-bg-image, none);
             color: var(--bubble-sent-text-color, #000);
+            border-radius: var(--bubble-sent-radius, 8px);
         }
         .message-bubble.received {
             background-color: var(--bubble-recv-bg-color, #fff);
             border: var(--bubble-recv-border, none);
-            box-shadow: var(--bubble-recv-shadow, none);
+            filter: var(--bubble-recv-shadow, none);
+            box-shadow: var(--bubble-recv-box-shadow, none);
+            background-image: var(--bubble-recv-bg-image, none);
             color: var(--bubble-recv-text-color, #000);
+            border-radius: var(--bubble-recv-radius, 8px);
         }
 
         .message-bubble:after {
             content: '';
             position: absolute;
-            width: 0;
-            height: 0;
-            border-style: solid;
             top: 14px;
         }
 
         .message-bubble.sent:after {
-            border-width: 6px 0 6px 5px;
-            border-color: transparent transparent transparent var(--bubble-sent-tail-color, var(--bubble-sent-bg-color, #a9e979));
+            border-width: var(--bubble-sent-tail-bw, 6px 0 6px 5px);
+            border-style: var(--bubble-sent-tail-bs, solid);
+            border-color: var(--bubble-sent-tail-color, transparent transparent transparent var(--bubble-sent-bg-color, #a9e979));
             right: -4px;
             display: var(--bubble-sent-triangle, block);
+            
+            width: var(--bubble-sent-tail-w, 0px);
+            height: var(--bubble-sent-tail-h, 0px);
+            background-image: var(--bubble-sent-tail-image, none);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transform: translate(var(--bubble-sent-tail-x, 0px), var(--bubble-sent-tail-y, 0px)) rotate(var(--bubble-sent-tail-rot, 0deg));
         }
 
         .message-bubble.received:after {
-            border-width: 6px 5px 6px 0;
-            border-color: transparent var(--bubble-recv-tail-color, var(--bubble-recv-bg-color, #fff)) transparent transparent;
+            border-width: var(--bubble-recv-tail-bw, 6px 5px 6px 0);
+            border-style: var(--bubble-recv-tail-bs, solid);
+            border-color: var(--bubble-recv-tail-color, transparent var(--bubble-recv-bg-color, #fff) transparent transparent);
             left: -4px;
             display: var(--bubble-recv-triangle, block);
-        }
-
-        .message-bubble.sent::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background-image: var(--bubble-sent-bg-image, none);
-            background-size: cover; border-radius: inherit;
-            opacity: var(--bubble-sent-bg-image-opacity, 1);
-            z-index: -1; pointer-events: none;
-        }
-        
-        .message-bubble.received::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background-image: var(--bubble-recv-bg-image, none);
-            background-size: cover; border-radius: inherit;
-            opacity: var(--bubble-recv-bg-image-opacity, 1);
-            z-index: -1; pointer-events: none;
+            
+            width: var(--bubble-recv-tail-w, 0px);
+            height: var(--bubble-recv-tail-h, 0px);
+            background-image: var(--bubble-recv-tail-image, none);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            transform: translate(var(--bubble-recv-tail-x, 0px), var(--bubble-recv-tail-y, 0px)) rotate(var(--bubble-recv-tail-rot, 0deg));
         }
 
         /* Bubble Corner Decorators */
@@ -3338,6 +3346,26 @@
         .activation-btn:active {
             background-color: #555;
         }
+
+        #bubble-preset-modal .preset-actions[style*="grid"] button {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background-color: #f5f5f5;
+            color: #333;
+            transition: background-color 0.2s;
+        }
+
+        #bubble-preset-modal .preset-actions[style*="grid"] button:hover {
+            background-color: #e9e9e9;
+        }
+
+        #bubble-preset-modal .preset-actions[style*="grid"] button[style*="background-color"] {
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -3441,8 +3469,11 @@
 
         <div id="chat-theme-page" class="page">
             <div class="theme-header"><span class="back-arrow" onclick="showPage('theme-page')"><</span><span class="title">聊天界面美化</span></div>
-            <div style="padding: 15px; flex-shrink: 0; background-color: #fff; border-bottom: 1px solid #eee; position: relative; z-index: 10;">
-                <select id="chat-theme-character-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; background: white;"></select>
+            <div style="padding: 15px; flex-shrink: 0; background-color: #fff; border-bottom: 1px solid #eee; position: relative; z-index: 10; display: flex; gap: 10px; align-items: center;">
+                <div style="flex: 1; min-width: 0;" class="custom-select-wrapper">
+                    <select id="chat-theme-character-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; background: white;"></select>
+                </div>
+                <button onclick="openChatThemePresetModal()" style="padding: 10px 15px; border-radius: 8px; border: 1px solid #ddd; background-color: #f5f5f5; cursor: pointer; font-weight: 500;">预设</button>
             </div>
             <div class="theme-options">
                 <div class="theme-option-item">
@@ -3560,10 +3591,16 @@
                     </div>
                 </div>
                 
-                <div style="width: 100%; display: flex; align-items: flex-start; padding: 15px; background: transparent; justify-content: center; position: relative;">
-                    <div id="bubble-preview-container" class="message-bubble sent" style="width: 200px; padding: 10px 12px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; z-index: 1;">
-                        <span class="bubble-content">这是一条预览消息，可以在下方调整样式。</span>
-                        <div class="bubble-corner tl"></div><div class="bubble-corner tr"></div><div class="bubble-corner bl"></div><div class="bubble-corner br"></div>
+                <div style="width: 100%; display: flex; align-items: flex-start; padding: 15px; background: transparent; justify-content: center; position: relative; overflow: hidden;">
+                    <div id="bubble-preview-wrapper" class="message-bubble-wrapper sent" style="width: 100%; justify-content: center;">
+                        <img id="bubble-preview-avatar-recv" class="chat-avatar-placeholder" src="https://via.placeholder.com/150/FFB7B2/ffffff?text=You" style="display: none;">
+                        <div id="bubble-preview-content-group" class="message-content-group" style="align-items: flex-end; margin-left: 10px;">
+                            <div id="bubble-preview-container" class="message-bubble sent" style="width: 200px; padding: 10px 12px; font-size: 15px; line-height: 1.4; position: relative; word-wrap: break-word; z-index: 1;">
+                                <span class="bubble-content">这是一条预览消息，可以在下方调整样式。</span>
+                                <div class="bubble-corner tl"></div><div class="bubble-corner tr"></div><div class="bubble-corner bl"></div><div class="bubble-corner br"></div>
+                            </div>
+                        </div>
+                        <img id="bubble-preview-avatar-sent" class="chat-avatar-placeholder" src="https://via.placeholder.com/150/B5EAD7/ffffff?text=Me" style="display: block; margin-left: 10px;">
                     </div>
                     <div style="position: absolute; right: 15px; top: 15px; font-size: 12px; color: #666; cursor: pointer; text-decoration: underline;" onclick="openBubblePresetModal()">预设</div>
                 </div>
@@ -3586,22 +3623,33 @@
                         </div>
                     </div>
                     <div class="settings-item" style="width: 100%;">
-                        <label>背景图片</label>
-                        <button class="upload-button" onclick="triggerBubbleUpload('bg_image')">上传背景图</button>
-                        <button class="upload-button" onclick="updateBubbleThemeValue('bg_image', '')" style="margin-top:5px; background:#f5f5f5; color:#333; border:1px solid #ddd;">清除背景图</button>
+                        <label>字体颜色</label>
+                        <input type="text" id="bubble-text-color" placeholder="#000000" onchange="updateBubbleThemeValue('text_color', this.value)">
+                    </div>
+                </div>
+
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <p style="font-weight: 600;">气泡圆角与位移</p>
+                    <div class="settings-item" style="width: 100%; flex-direction: row; gap: 10px; display: flex;">
+                        <div style="flex:1"><label>圆角(px)</label><input type="text" id="bubble-radius" placeholder="8" onchange="updateBubbleThemeValue('radius', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
                     </div>
                     <div class="settings-item" style="width: 100%;">
                         <div class="settings-item-header">
-                            <label>图片透明度</label>
-                            <span id="bubble-bg-img-opacity-val">1</span>
+                            <label>气泡X偏移 (左右)</label>
+                            <span id="bubble-offset-x-val">0px</span>
                         </div>
                         <div class="temperature-slider">
-                            <input type="range" id="bubble-bg-img-opacity" min="0" max="1" step="0.05" value="1" oninput="updateBubbleThemeValue('bg_img_opacity', this.value); document.getElementById('bubble-bg-img-opacity-val').textContent=this.value;">
+                            <input type="range" id="bubble-offset-x" min="-100" max="100" step="1" value="0" oninput="updateBubbleThemeValue('offset_x', this.value); document.getElementById('bubble-offset-x-val').textContent=this.value+'px';">
                         </div>
                     </div>
                     <div class="settings-item" style="width: 100%;">
-                        <label>字体颜色</label>
-                        <input type="text" id="bubble-text-color" placeholder="#000000" onchange="updateBubbleThemeValue('text_color', this.value)">
+                        <div class="settings-item-header">
+                            <label>气泡Y偏移 (上下)</label>
+                            <span id="bubble-offset-y-val">0px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-offset-y" min="-100" max="100" step="1" value="0" oninput="updateBubbleThemeValue('offset_y', this.value); document.getElementById('bubble-offset-y-val').textContent=this.value+'px';">
+                        </div>
                     </div>
                 </div>
 
@@ -3621,20 +3669,108 @@
                         </div>
                     </div>
                     <div class="settings-item" style="width: 100%;">
-                        <label>阴影 (类似 0px 2px 5px rgba(0,0,0,0.1))</label>
-                        <input type="text" id="bubble-shadow" placeholder="留空则无阴影" onchange="updateBubbleThemeValue('shadow', this.value)">
+                        <label style="font-weight: 600; color: #555; margin-top: 10px;">气泡阴影设置</label>
+                    </div>
+                    <div class="settings-item" style="width: 100%; flex-direction: row; gap: 10px; display: flex;">
+                        <div style="flex:1"><label>阴影颜色</label><input type="text" id="bubble-shadow-color" placeholder="#000000" onchange="updateBubbleThemeValue('shadow_color', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
                     </div>
                     <div class="settings-item" style="width: 100%;">
-                        <label>小尾巴颜色 (Hex)</label>
-                        <input type="text" id="bubble-tail-color" placeholder="留空则跟随背景色" onchange="updateBubbleThemeValue('tail_color', this.value)">
+                        <div class="settings-item-header">
+                            <label>阴影透明度</label>
+                            <span id="bubble-shadow-opacity-val">0</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-shadow-opacity" min="0" max="1" step="0.05" value="0" oninput="updateBubbleThemeValue('shadow_opacity', this.value); document.getElementById('bubble-shadow-opacity-val').textContent=this.value;">
+                        </div>
                     </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>阴影X偏移 (左右)</label>
+                            <span id="bubble-shadow-x-val">0px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-shadow-x" min="-50" max="50" step="1" value="0" oninput="updateBubbleThemeValue('shadow_x', this.value); document.getElementById('bubble-shadow-x-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>阴影Y偏移 (上下)</label>
+                            <span id="bubble-shadow-y-val">0px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-shadow-y" min="-50" max="50" step="1" value="0" oninput="updateBubbleThemeValue('shadow_y', this.value); document.getElementById('bubble-shadow-y-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>阴影模糊度</label>
+                            <span id="bubble-shadow-blur-val">0px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-shadow-blur" min="0" max="50" step="1" value="0" oninput="updateBubbleThemeValue('shadow_blur', this.value); document.getElementById('bubble-shadow-blur-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%; margin-top: 10px;">
+                        <div class="notification-toggle">
+                            <label style="font-weight: 600; color: #555;">3D 气泡效果</label>
+                            <label class="switch">
+                                <input type="checkbox" id="bubble-3d-effect" onchange="updateBubbleThemeValue('3d_effect', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 15px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <p style="font-weight: 600;">自定义小尾巴</p>
                     <div class="settings-item" style="width: 100%;">
                          <div class="notification-toggle">
-                            <label>隐藏默认小尾巴(三角形)</label>
+                            <label>隐藏小尾巴(含自定义图片)</label>
                             <label class="switch">
                                 <input type="checkbox" id="bubble-hide-triangle" onchange="updateBubbleThemeValue('hide_triangle', this.checked)">
                                 <span class="slider"></span>
                             </label>
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <label>默认尾巴颜色 (Hex)</label>
+                        <input type="text" id="bubble-tail-color" placeholder="留空则跟随背景色" onchange="updateBubbleThemeValue('tail_color', this.value)">
+                    </div>
+                    <hr style="width: 100%; border: 0; border-top: 1px solid #ddd; margin: 5px 0;">
+                    <div class="settings-item" style="width: 100%;">
+                        <label>图片尾巴</label>
+                        <button class="upload-button" onclick="triggerBubbleUpload('tail_image')">上传图片</button>
+                        <button class="upload-button" onclick="updateBubbleThemeValue('tail_image', '')" style="margin-top:5px; background:#f5f5f5; color:#333; border:1px solid #ddd;">清除图片</button>
+                    </div>
+                    <div class="settings-item" style="width: 100%; flex-direction: row; gap: 10px; display: flex;">
+                        <div style="flex:1"><label>宽度(px)</label><input type="number" id="bubble-tail-width" placeholder="20" onchange="updateBubbleThemeValue('tail_width', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
+                        <div style="flex:1"><label>高度(px)</label><input type="number" id="bubble-tail-height" placeholder="20" onchange="updateBubbleThemeValue('tail_height', this.value)" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white; box-sizing: border-box;"></div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>X偏移 (左右)</label>
+                            <span id="bubble-tail-x-val">0px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-tail-x" min="-100" max="100" step="1" value="0" oninput="updateBubbleThemeValue('tail_x', this.value); document.getElementById('bubble-tail-x-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>Y偏移 (上下)</label>
+                            <span id="bubble-tail-y-val">0px</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-tail-y" min="-100" max="100" step="1" value="0" oninput="updateBubbleThemeValue('tail_y', this.value); document.getElementById('bubble-tail-y-val').textContent=this.value+'px';">
+                        </div>
+                    </div>
+                    <div class="settings-item" style="width: 100%;">
+                        <div class="settings-item-header">
+                            <label>旋转角度</label>
+                            <span id="bubble-tail-rot-val">0deg</span>
+                        </div>
+                        <div class="temperature-slider">
+                            <input type="range" id="bubble-tail-rot" min="-180" max="180" step="1" value="0" oninput="updateBubbleThemeValue('tail_rot', this.value); document.getElementById('bubble-tail-rot-val').textContent=this.value+'deg';">
                         </div>
                     </div>
                 </div>
@@ -3694,25 +3830,68 @@
         
         <!-- Bubble Theme Preset Modal -->
         <div class="modal-overlay" id="bubble-preset-modal" style="z-index: 800;">
-            <div class="modal-content" style="width: 300px;">
-                <h3 style="text-align: center; margin-bottom: 10px;">气泡预设管理</h3>
+            <div class="modal-content" style="width: 320px; padding: 20px;">
+                <h3 style="text-align: center; margin-bottom: 20px; font-weight: 600;">气泡预设管理</h3>
+                
                 <div class="settings-item">
-                    <label>加载预设</label>
+                    <label style="font-weight: 500;">保存当前样式为新预设</label>
                     <div style="display: flex; gap: 10px;">
-                        <select id="bubble-preset-select" style="flex: 1;"></select>
-                        <button class="upload-button" style="width: auto; padding: 10px 15px;" onclick="loadBubblePreset()">加载</button>
+                        <input type="text" id="bubble-preset-name-input" placeholder="输入预设名称" style="flex: 1;">
+                        <button class="upload-button" style="width: auto; padding: 10px 15px;" onclick="saveBubblePreset()">保存</button>
                     </div>
                 </div>
-                <div class="settings-item" style="margin-top: 10px;">
-                    <label>保存当前样式为新预设</label>
-                    <input type="text" id="bubble-preset-name-input" placeholder="输入预设名称">
-                    <button class="upload-button" style="margin-top: 5px;" onclick="saveBubblePreset()">保存</button>
+
+                <div class="settings-item" style="margin-top: 20px;">
+                    <label style="font-weight: 500;">预设列表</label>
+                    <div id="bubble-preset-list" class="preset-list" style="max-height: 180px;">
+                        <!-- Presets with checkboxes will be generated here -->
+                    </div>
                 </div>
-                <div class="settings-item" style="margin-top: 10px;">
-                    <button class="upload-button" style="background-color: #ff3b30;" onclick="deleteBubblePreset()">删除选中预设</button>
+
+                <div class="preset-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <button onclick="loadBubblePreset()">加载</button>
+                    <button onclick="deleteBubblePreset()" style="background-color: #ff3b30; color: white;">删除</button>
+                    <button onclick="exportBubblePresets()">导出</button>
+                    <button onclick="document.getElementById('import-bubble-preset-input').click()">导入</button>
+                    <input type="file" id="import-bubble-preset-input" accept=".json" style="display: none;" onchange="importBubblePresets(this)">
                 </div>
-                <div class="modal-actions" style="margin-top: 15px;">
+
+                <div class="modal-actions" style="margin-top: 20px;">
                     <button class="cancel-btn" style="width: 100%;" onclick="closeBubblePresetModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Theme Preset Modal -->
+        <div class="modal-overlay" id="chat-theme-preset-modal" style="z-index: 800;">
+            <div class="modal-content" style="width: 320px; padding: 20px;">
+                <h3 style="text-align: center; margin-bottom: 20px; font-weight: 600;">聊天界面预设管理</h3>
+                
+                <div class="settings-item">
+                    <label style="font-weight: 500;">保存当前样式为新预设</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="chat-theme-preset-name-input" placeholder="输入预设名称" style="flex: 1;">
+                        <button class="upload-button" style="width: auto; padding: 10px 15px;" onclick="saveChatThemePreset()">保存</button>
+                    </div>
+                </div>
+
+                <div class="settings-item" style="margin-top: 20px;">
+                    <label style="font-weight: 500;">预设列表</label>
+                    <div id="chat-theme-preset-list" class="preset-list" style="max-height: 180px;">
+                        <!-- Presets with checkboxes will be generated here -->
+                    </div>
+                </div>
+
+                <div class="preset-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <button onclick="loadChatThemePreset()">加载</button>
+                    <button onclick="deleteChatThemePreset()" style="background-color: #ff3b30; color: white;">删除</button>
+                    <button onclick="exportChatThemePresets()">导出</button>
+                    <button onclick="document.getElementById('import-chat-theme-preset-input').click()">导入</button>
+                    <input type="file" id="import-chat-theme-preset-input" accept=".json" style="display: none;" onchange="importChatThemePresets(this)">
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button class="cancel-btn" style="width: 100%;" onclick="closeChatThemePresetModal()">关闭</button>
                 </div>
             </div>
         </div>
@@ -5574,10 +5753,38 @@
 
             const side = document.getElementById('bubble-theme-side-select').value;
             const container = document.getElementById('bubble-preview-container');
+            const wrapper = document.getElementById('bubble-preview-wrapper');
+            const contentGroup = document.getElementById('bubble-preview-content-group');
+            const avatarRecv = document.getElementById('bubble-preview-avatar-recv');
+            const avatarSent = document.getElementById('bubble-preview-avatar-sent');
             
             // For preview purposes, if 'both' is selected, we'll just preview as 'sent'
             const previewSide = side === 'both' ? 'sent' : side;
             container.className = `message-bubble ${previewSide}`;
+            if (wrapper) wrapper.className = `message-bubble-wrapper ${previewSide}`;
+            
+            if (wrapper && contentGroup && avatarRecv && avatarSent) {
+                // 预览头像改为纯黑
+                const blackGif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                avatarRecv.src = blackGif;
+                avatarRecv.style.backgroundColor = '#000';
+                avatarSent.src = blackGif;
+                avatarSent.style.backgroundColor = '#000';
+
+                if (previewSide === 'sent') {
+                    contentGroup.style.alignItems = 'flex-end';
+                    contentGroup.style.marginLeft = '10px';
+                    contentGroup.style.marginRight = '0';
+                    avatarRecv.style.display = 'none';
+                    avatarSent.style.display = 'block';
+                } else {
+                    contentGroup.style.alignItems = 'flex-start';
+                    contentGroup.style.marginLeft = '0';
+                    contentGroup.style.marginRight = '10px';
+                    avatarRecv.style.display = 'block';
+                    avatarSent.style.display = 'none';
+                }
+            }
 
             const applySettings = (friend) => {
                 const prefix = previewSide === 'sent' ? 'bubble_sent_' : 'bubble_recv_';
@@ -5590,25 +5797,69 @@
                 const borderColor = getBubbleSetting(prefix + 'border_color', friend, 'transparent');
                 const borderWidth = getBubbleSetting(prefix + 'border_width', friend, '0');
                 const borderOpacity = getBubbleSetting(prefix + 'border_opacity', friend, '1');
-                const shadow = getBubbleSetting(prefix + 'shadow', friend, 'none');
+                const shadowColor = getBubbleSetting(prefix + 'shadow_color', friend, '#000000');
+                const shadowOpacity = getBubbleSetting(prefix + 'shadow_opacity', friend, '0');
+                const shadowX = getBubbleSetting(prefix + 'shadow_x', friend, '0');
+                const shadowY = getBubbleSetting(prefix + 'shadow_y', friend, '0');
+                const shadowBlur = getBubbleSetting(prefix + 'shadow_blur', friend, '0');
                 const tailColor = getBubbleSetting(prefix + 'tail_color', friend, '');
                 const hideTriangleRaw = getBubbleSetting(prefix + 'hide_triangle', friend, 'false');
                 const hideTriangle = hideTriangleRaw === 'true' || hideTriangleRaw === true;
+                const radius = getBubbleSetting(prefix + 'radius', friend, '8');
+                
+                const offsetX = getBubbleSetting(prefix + 'offset_x', friend, '0');
+                const offsetY = getBubbleSetting(prefix + 'offset_y', friend, '0');
+
+                const tailImage = getBubbleSetting(prefix + 'tail_image', friend, '');
+                const tailWidth = getBubbleSetting(prefix + 'tail_width', friend, '20');
+                const tailHeight = getBubbleSetting(prefix + 'tail_height', friend, '20');
+                const tailX = getBubbleSetting(prefix + 'tail_x', friend, '0');
+                const tailY = getBubbleSetting(prefix + 'tail_y', friend, '0');
+                const tailRot = getBubbleSetting(prefix + 'tail_rot', friend, '0');
+                
+                const effect3dRaw = getBubbleSetting(prefix + '3d_effect', friend, 'false');
+                const effect3d = effect3dRaw === 'true' || effect3dRaw === true;
 
                 // Update UI controls to reflect current values
                 document.getElementById('bubble-bg-color').value = bgColor;
                 document.getElementById('bubble-bg-opacity').value = bgOpacity;
                 document.getElementById('bubble-bg-opacity-val').textContent = bgOpacity;
-                document.getElementById('bubble-bg-img-opacity').value = bgImageOpacity;
-                document.getElementById('bubble-bg-img-opacity-val').textContent = bgImageOpacity;
                 document.getElementById('bubble-text-color').value = textColor;
                 document.getElementById('bubble-border-color').value = borderColor;
                 document.getElementById('bubble-border-width').value = borderWidth;
                 document.getElementById('bubble-border-opacity').value = borderOpacity;
                 document.getElementById('bubble-border-opacity-val').textContent = borderOpacity;
-                document.getElementById('bubble-shadow').value = shadow === 'none' ? '' : shadow;
+                document.getElementById('bubble-shadow-color').value = shadowColor;
+                document.getElementById('bubble-shadow-opacity').value = shadowOpacity;
+                document.getElementById('bubble-shadow-opacity-val').textContent = shadowOpacity;
+                document.getElementById('bubble-shadow-x').value = shadowX;
+                document.getElementById('bubble-shadow-x-val').textContent = shadowX + 'px';
+                document.getElementById('bubble-shadow-y').value = shadowY;
+                document.getElementById('bubble-shadow-y-val').textContent = shadowY + 'px';
+                document.getElementById('bubble-shadow-blur').value = shadowBlur;
+                document.getElementById('bubble-shadow-blur-val').textContent = shadowBlur + 'px';
                 document.getElementById('bubble-tail-color').value = tailColor;
                 document.getElementById('bubble-hide-triangle').checked = hideTriangle;
+                document.getElementById('bubble-radius').value = radius === null ? '' : radius;
+                
+                const offsetXEl = document.getElementById('bubble-offset-x');
+                if (offsetXEl) { offsetXEl.value = offsetX; document.getElementById('bubble-offset-x-val').textContent = offsetX + 'px'; }
+                const offsetYEl = document.getElementById('bubble-offset-y');
+                if (offsetYEl) { offsetYEl.value = offsetY; document.getElementById('bubble-offset-y-val').textContent = offsetY + 'px'; }
+
+                const tailWidthEl = document.getElementById('bubble-tail-width');
+                if (tailWidthEl) tailWidthEl.value = tailWidth;
+                const tailHeightEl = document.getElementById('bubble-tail-height');
+                if (tailHeightEl) tailHeightEl.value = tailHeight;
+                const tailXEl = document.getElementById('bubble-tail-x');
+                if (tailXEl) { tailXEl.value = tailX; document.getElementById('bubble-tail-x-val').textContent = tailX + 'px'; }
+                const tailYEl = document.getElementById('bubble-tail-y');
+                if (tailYEl) { tailYEl.value = tailY; document.getElementById('bubble-tail-y-val').textContent = tailY + 'px'; }
+                const tailRotEl = document.getElementById('bubble-tail-rot');
+                if (tailRotEl) { tailRotEl.value = tailRot; document.getElementById('bubble-tail-rot-val').textContent = tailRot + 'deg'; }
+                
+                const effect3dEl = document.getElementById('bubble-3d-effect');
+                if (effect3dEl) effect3dEl.checked = effect3d;
 
                 const hexToRgba = (hex, alpha) => {
                     if (!hex || hex === 'transparent') return 'transparent';
@@ -5629,27 +5880,56 @@
                 const finalBgColor = hexToRgba(bgColor, bgOpacity);
                 const finalBorderColor = hexToRgba(borderColor, borderOpacity);
                 const finalTailColor = tailColor ? tailColor : finalBgColor;
+                const finalShadowColor = hexToRgba(shadowColor, shadowOpacity);
+                
+                let filterShadow = 'none';
+                if (parseFloat(shadowOpacity) > 0 || parseInt(shadowBlur) > 0 || parseInt(shadowX) !== 0 || parseInt(shadowY) !== 0) {
+                    filterShadow = `drop-shadow(${shadowX}px ${shadowY}px ${shadowBlur}px ${finalShadowColor})`;
+                }
+
+                const formatUnit = (val) => {
+                    if (val === null || val === undefined || val === '') return 'auto';
+                    if (!isNaN(val) && val !== '') return val + 'px';
+                    return val;
+                };
+                let fRadius = formatUnit(radius);
+                if(fRadius === 'auto') fRadius = '8px';
+                
+                let boxShadow = 'none';
+                let backgroundImage = 'none';
+                if (effect3d) {
+                    boxShadow = 'inset 0 4px 6px rgba(255,255,255,0.4), inset 0 -4px 6px rgba(0,0,0,0.1)';
+                    backgroundImage = 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.05) 100%)';
+                }
 
                 let css = `
                     #bubble-preview-container {
                         background-color: ${finalBgColor};
                         color: ${textColor};
                         border: ${borderWidth}px solid ${finalBorderColor};
-                        box-shadow: ${shadow};
-                    }
-                    #bubble-preview-container::before {
-                        background-image: ${bgImage ? `url(${bgImage})` : 'none'};
-                        opacity: ${bgImageOpacity};
+                        filter: ${filterShadow};
+                        border-radius: ${fRadius};
+                        box-shadow: ${boxShadow};
+                        background-image: ${backgroundImage};
+                        transform: translate(${offsetX}px, ${offsetY}px);
                     }
                     #bubble-preview-container.${previewSide}::after {
                         display: ${hideTriangle ? 'none' : 'block'};
                         border-color: ${previewSide === 'sent' ? `transparent transparent transparent ${finalTailColor}` : `transparent ${finalTailColor} transparent transparent`};
+                        width: ${tailImage ? tailWidth + 'px' : '0px'};
+                        height: ${tailImage ? tailHeight + 'px' : '0px'};
+                        background-image: ${tailImage ? `url(${tailImage})` : 'none'};
+                        background-size: contain;
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        transform: translate(${tailX}px, ${tailY}px) rotate(${tailRot}deg);
+                        ${tailImage ? 'border-color: transparent !important;' : ''}
                     }
                 `;
 
                 // Corners
                 ['tl', 'tr', 'bl', 'br'].forEach(corner => {
-                    const cPrefix = `${previewSide}_${corner}_`;
+                    const cPrefix = `bubble_${previewSide}_${corner}_`;
                     const img = getBubbleSetting(cPrefix + 'img', friend, '');
                     const op = getBubbleSetting(cPrefix + 'op', friend, '1');
                     const x = getBubbleSetting(cPrefix + 'x', friend, '-15');
@@ -5743,12 +6023,12 @@
             const sidesToUpdate = side === 'both' ? ['sent', 'recv'] : [side];
 
             sidesToUpdate.forEach(s => {
-                const fullKey = `${s}_${corner}_${key}`;
+                const fullKey = `bubble_${s}_${corner}_${key}`;
                 tempBubbleSettings[fullKey] = value;
             });
             
             // Just update the preview, don't save yet
-            loadCornerSettings();
+            updateBubbleThemePreview();
         }
 
         
@@ -5781,20 +6061,40 @@
         
         // --- Bubble Presets Logic ---
         function openBubblePresetModal() {
-            const select = document.getElementById('bubble-preset-select');
-            select.innerHTML = '<option value="">选择预设...</option>';
-            
+            const listContainer = document.getElementById('bubble-preset-list');
+            listContainer.innerHTML = '';
+            let hasPresets = false;
+
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key.startsWith('bubble_preset_')) {
+                    hasPresets = true;
                     const name = key.replace('bubble_preset_', '');
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    select.appendChild(option);
+                    
+                    const item = document.createElement('label');
+                    item.className = 'preset-checkbox-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = name;
+                    
+                    const customCheck = document.createElement('div');
+                    customCheck.className = 'custom-checkbox';
+                    
+                    const span = document.createElement('span');
+                    span.textContent = name;
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(customCheck);
+                    item.appendChild(span);
+                    listContainer.appendChild(item);
                 }
             }
-            refreshCustomSelect(select);
+
+            if (!hasPresets) {
+                listContainer.innerHTML = '<div style="text-align:center; color:#999; padding:10px; font-size: 13px;">暂无预设</div>';
+            }
+
             document.getElementById('bubble-preset-name-input').value = '';
             document.getElementById('bubble-preset-modal').style.display = 'flex';
         }
@@ -5811,7 +6111,7 @@
             }
 
             const bubbleKeys = [
-                'bg_color', 'bg_opacity', 'bg_image', 'text_color', 'border_color', 'border_width', 'border_opacity', 'shadow', 'tail_color', 'hide_triangle'
+                'bg_color', 'bg_opacity', 'bg_image', 'text_color', 'border_color', 'border_width', 'border_opacity', 'shadow_color', 'shadow_opacity', 'shadow_x', 'shadow_y', 'shadow_blur', 'tail_color', 'hide_triangle', 'radius'
             ];
             const cornerKeys = ['img', 'op', 'x', 'y', 'w', 'h'];
             const sides = ['sent', 'recv'];
@@ -5852,55 +6152,102 @@
         }
 
         function loadBubblePreset() {
-            const name = document.getElementById('bubble-preset-select').value;
-            if (!name) {
-                showToast('请选择一个预设');
+            const checked = document.querySelectorAll('#bubble-preset-list input[type="checkbox"]:checked');
+            if (checked.length !== 1) {
+                showToast('请选择一个预设进行加载');
                 return;
             }
+            const name = checked[0].value;
 
             const dataStr = localStorage.getItem(`bubble_preset_${name}`);
             if (!dataStr) return;
             const presetData = JSON.parse(dataStr);
 
-            if (currentBubbleThemeFriendId) {
-                dbGet('friends', currentBubbleThemeFriendId, friend => {
-                    if (friend) {
-                        Object.assign(friend, presetData);
-                        dbUpdate('friends', friend, () => {
-                            updateBubbleThemePreview();
-                            loadCornerSettings();
-                            showToast(`已加载预设：${name}`);
-                            closeBubblePresetModal();
-                        });
-                    }
-                });
-            } else {
-                for (const key in presetData) {
-                    if (presetData[key] !== null && presetData[key] !== undefined) {
-                        localStorage.setItem(key, presetData[key]);
-                    } else {
-                        localStorage.removeItem(key);
-                    }
-                }
-                updateBubbleThemePreview();
-                loadCornerSettings();
-                showToast(`已加载预设：${name}`);
-                closeBubblePresetModal();
-            }
+            // Clear temp settings and apply loaded preset directly
+            tempBubbleSettings = {};
+            Object.assign(tempBubbleSettings, presetData);
+
+            updateBubbleThemePreview();
+            loadCornerSettings();
+            showToast(`已加载预设：${name}`);
+            closeBubblePresetModal();
         }
 
         function deleteBubblePreset() {
-            const name = document.getElementById('bubble-preset-select').value;
-            if (!name) {
+            const checked = document.querySelectorAll('#bubble-preset-list input[type="checkbox"]:checked');
+            if (checked.length === 0) {
                 showToast('请选择要删除的预设');
                 return;
             }
             
-            showCustomConfirm(`确定要删除预设 "${name}" 吗？`, () => {
-                localStorage.removeItem(`bubble_preset_${name}`);
+            const namesToDelete = Array.from(checked).map(cb => cb.value);
+            
+            showCustomConfirm(`确定要删除选中的 ${namesToDelete.length} 个预设吗？`, () => {
+                namesToDelete.forEach(name => {
+                    localStorage.removeItem(`bubble_preset_${name}`);
+                });
                 showToast('预设已删除');
                 openBubblePresetModal(); // Refresh list
             }, '删除预设');
+        }
+
+        function exportBubblePresets() {
+            const checked = document.querySelectorAll('#bubble-preset-list input[type="checkbox"]:checked');
+            if (checked.length === 0) {
+                showToast('请选择要导出的预设');
+                return;
+            }
+
+            const presetsToExport = {};
+            Array.from(checked).forEach(cb => {
+                const name = cb.value;
+                const data = localStorage.getItem(`bubble_preset_${name}`);
+                if (data) {
+                    presetsToExport[name] = JSON.parse(data);
+                }
+            });
+
+            if (Object.keys(presetsToExport).length === 0) {
+                showToast('没有找到可导出的预设数据');
+                return;
+            }
+
+            const jsonStr = JSON.stringify(presetsToExport, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'bubble_presets_backup.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importBubblePresets(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    let importCount = 0;
+                    for (const name in importedData) {
+                        if (typeof importedData[name] === 'object') {
+                            localStorage.setItem(`bubble_preset_${name}`, JSON.stringify(importedData[name]));
+                            importCount++;
+                        }
+                    }
+                    showToast(`成功导入 ${importCount} 个预设`);
+                    openBubblePresetModal(); // Refresh list
+                } catch (err) {
+                    showToast('导入失败，文件格式错误');
+                    console.error('Preset import error:', err);
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset input
         }
 
         let currentBubbleUploadType = null;
@@ -5929,6 +6276,8 @@
                         updateBubbleThemeValue('bg_image', compressedSrc);
                     } else if (currentBubbleUploadType === 'page_bg_image') {
                         updateBubbleThemeValue('page_bg_image', compressedSrc);
+                    } else if (currentBubbleUploadType === 'tail_image') {
+                        updateBubbleThemeValue('tail_image', compressedSrc);
                     }
                 });
             }
@@ -5967,6 +6316,210 @@
                 loadCornerSettings();
                 showToast('全局设置已恢复默认');
             }
+        }
+
+        // --- Chat Theme Presets Logic ---
+        function openChatThemePresetModal() {
+            const listContainer = document.getElementById('chat-theme-preset-list');
+            listContainer.innerHTML = '';
+            let hasPresets = false;
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('chat_theme_preset_')) {
+                    hasPresets = true;
+                    const name = key.replace('chat_theme_preset_', '');
+                    
+                    const item = document.createElement('label');
+                    item.className = 'preset-checkbox-item';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = name;
+                    
+                    const customCheck = document.createElement('div');
+                    customCheck.className = 'custom-checkbox';
+                    
+                    const span = document.createElement('span');
+                    span.textContent = name;
+                    
+                    item.appendChild(checkbox);
+                    item.appendChild(customCheck);
+                    item.appendChild(span);
+                    listContainer.appendChild(item);
+                }
+            }
+
+            if (!hasPresets) {
+                listContainer.innerHTML = '<div style="text-align:center; color:#999; padding:10px; font-size: 13px;">暂无预设</div>';
+            }
+
+            document.getElementById('chat-theme-preset-name-input').value = '';
+            document.getElementById('chat-theme-preset-modal').style.display = 'flex';
+        }
+
+        function closeChatThemePresetModal() {
+            document.getElementById('chat-theme-preset-modal').style.display = 'none';
+        }
+
+        function saveChatThemePreset() {
+            const name = document.getElementById('chat-theme-preset-name-input').value.trim();
+            if (!name) {
+                showToast('请输入预设名称');
+                return;
+            }
+
+            const chatThemeKeys = [
+                'chat_wallpaper', 'chat_header_bg', 'chat_input_bg', 
+                'chat_back_icon', 'chat_options_icon', 'chat_voice_icon', 
+                'chat_emoji_icon', 'chat_plus_icon', 'chat_send_icon', 
+                'chat_avatar_size', 'chat_avatar_radius'
+            ];
+
+            const presetData = {};
+
+            const extractData = (source, isGlobal) => {
+                chatThemeKeys.forEach(key => {
+                    const value = isGlobal ? localStorage.getItem(key) : source[key];
+                    if (value !== null && value !== undefined) {
+                        presetData[key] = value;
+                    }
+                });
+            };
+
+            if (currentChatThemeFriendId) {
+                dbGet('friends', currentChatThemeFriendId, friend => {
+                    if (friend) {
+                        extractData(friend, false);
+                        localStorage.setItem(`chat_theme_preset_${name}`, JSON.stringify(presetData));
+                        showToast('聊天界面预设保存成功');
+                        closeChatThemePresetModal();
+                    }
+                });
+            } else {
+                extractData(localStorage, true);
+                localStorage.setItem(`chat_theme_preset_${name}`, JSON.stringify(presetData));
+                showToast('聊天界面预设保存成功');
+                closeChatThemePresetModal();
+            }
+        }
+
+        function loadChatThemePreset() {
+            const checked = document.querySelectorAll('#chat-theme-preset-list input[type="checkbox"]:checked');
+            if (checked.length !== 1) {
+                showToast('请选择一个预设进行加载');
+                return;
+            }
+            const name = checked[0].value;
+
+            const dataStr = localStorage.getItem(`chat_theme_preset_${name}`);
+            if (!dataStr) return;
+            const presetData = JSON.parse(dataStr);
+
+            const applyPreset = (target, isGlobal) => {
+                for (const key in presetData) {
+                    if (isGlobal) {
+                        localStorage.setItem(key, presetData[key]);
+                    } else {
+                        target[key] = presetData[key];
+                    }
+                }
+            };
+
+            if (currentChatThemeFriendId) {
+                dbGet('friends', currentChatThemeFriendId, friend => {
+                    if (friend) {
+                        applyPreset(friend, false);
+                        dbUpdate('friends', friend, () => {
+                            updateChatThemePreview();
+                            showToast(`已为当前角色加载预设：${name}`);
+                            closeChatThemePresetModal();
+                        });
+                    }
+                });
+            } else {
+                applyPreset(localStorage, true);
+                updateChatThemePreview();
+                showToast(`已加载全局预设：${name}`);
+                closeChatThemePresetModal();
+            }
+        }
+
+        function deleteChatThemePreset() {
+            const checked = document.querySelectorAll('#chat-theme-preset-list input[type="checkbox"]:checked');
+            if (checked.length === 0) {
+                showToast('请选择要删除的预设');
+                return;
+            }
+            
+            const namesToDelete = Array.from(checked).map(cb => cb.value);
+            
+            showCustomConfirm(`确定要删除选中的 ${namesToDelete.length} 个预设吗？`, () => {
+                namesToDelete.forEach(name => {
+                    localStorage.removeItem(`chat_theme_preset_${name}`);
+                });
+                showToast('预设已删除');
+                openChatThemePresetModal(); // Refresh list
+            }, '删除预设');
+        }
+
+        function exportChatThemePresets() {
+            const checked = document.querySelectorAll('#chat-theme-preset-list input[type="checkbox"]:checked');
+            if (checked.length === 0) {
+                showToast('请选择要导出的预设');
+                return;
+            }
+
+            const presetsToExport = {};
+            Array.from(checked).forEach(cb => {
+                const name = cb.value;
+                const data = localStorage.getItem(`chat_theme_preset_${name}`);
+                if (data) {
+                    presetsToExport[name] = JSON.parse(data);
+                }
+            });
+
+            if (Object.keys(presetsToExport).length === 0) {
+                showToast('没有找到可导出的预设数据');
+                return;
+            }
+
+            const jsonStr = JSON.stringify(presetsToExport, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'chat_theme_presets_backup.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importChatThemePresets(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    let importCount = 0;
+                    for (const name in importedData) {
+                        if (typeof importedData[name] === 'object') {
+                            localStorage.setItem(`chat_theme_preset_${name}`, JSON.stringify(importedData[name]));
+                            importCount++;
+                        }
+                    }
+                    showToast(`成功导入 ${importCount} 个预设`);
+                    openChatThemePresetModal(); // Refresh list
+                } catch (err) {
+                    showToast('导入失败，文件格式错误');
+                    console.error('Preset import error:', err);
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset input
         }
 
         let currentFontData = { type: null, value: null, name: null, file: null };
@@ -10605,16 +11158,29 @@
                 
                 const bgColor = getSetting(prefix + 'bg_color', side === 'sent' ? '#a9e979' : '#ffffff');
                 const bgOpacity = getSetting(prefix + 'bg_opacity', '1');
-                const bgImage = getSetting(prefix + 'bg_image', '');
                 const textColor = getSetting(prefix + 'text_color', '#000000');
                 const borderColor = getSetting(prefix + 'border_color', 'transparent');
                 const borderWidth = getSetting(prefix + 'border_width', '0');
                 const borderOpacity = getSetting(prefix + 'border_opacity', '1');
-                const shadow = getSetting(prefix + 'shadow', 'none');
+                const shadowColor = getSetting(prefix + 'shadow_color', '#000000');
+                const shadowOpacity = getSetting(prefix + 'shadow_opacity', '0');
+                const shadowX = getSetting(prefix + 'shadow_x', '0');
+                const shadowY = getSetting(prefix + 'shadow_y', '0');
+                const shadowBlur = getSetting(prefix + 'shadow_blur', '0');
                 const tailColor = getSetting(prefix + 'tail_color', '');
-                const bgImageOpacity = getSetting(prefix + 'bg_img_opacity', '1');
                 const hideTriangleRaw = getSetting(prefix + 'hide_triangle', 'false');
                 const hideTriangle = hideTriangleRaw === 'true' || hideTriangleRaw === true;
+                const radius = getSetting(prefix + 'radius', '8');
+
+                const tailImage = getSetting(prefix + 'tail_image', '');
+                const tailWidth = getSetting(prefix + 'tail_width', '20');
+                const tailHeight = getSetting(prefix + 'tail_height', '20');
+                const tailX = getSetting(prefix + 'tail_x', '0');
+                const tailY = getSetting(prefix + 'tail_y', '0');
+                const tailRot = getSetting(prefix + 'tail_rot', '0');
+                
+                const effect3dRaw = getSetting(prefix + '3d_effect', 'false');
+                const effect3d = effect3dRaw === 'true' || effect3dRaw === true;
 
                 const hexToRgba = (hex, alpha) => {
                     if (!hex || hex === 'transparent') return 'transparent';
@@ -10639,27 +11205,68 @@
 
                 document.documentElement.style.setProperty(`--bubble-${side}-bg-color`, finalBgColor);
                 document.documentElement.style.setProperty(`--bubble-${side}-text-color`, textColor);
-                if (bgImage) {
-                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image`, `url(${bgImage})`);
-                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image-opacity`, bgImageOpacity);
-                } else {
-                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image`, 'none');
-                    document.documentElement.style.setProperty(`--bubble-${side}-bg-image-opacity`, '1');
-                }
-                document.documentElement.style.setProperty(`--bubble-${side}-border`, `${borderWidth}px solid ${finalBorderColor}`);
-                document.documentElement.style.setProperty(`--bubble-${side}-shadow`, shadow);
                 
-                if (tailColor) {
-                    document.documentElement.style.setProperty(`--bubble-${side}-tail-color`, tailColor);
-                } else {
-                    document.documentElement.style.setProperty(`--bubble-${side}-tail-color`, finalBgColor);
+                let boxShadow = 'none';
+                let backgroundImage = 'none';
+                if (effect3d) {
+                    boxShadow = 'inset 0 4px 6px rgba(255,255,255,0.4), inset 0 -4px 6px rgba(0,0,0,0.1)';
+                    backgroundImage = 'linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.05) 100%)';
+                }
+                
+                document.documentElement.style.setProperty(`--bubble-${side}-bg-image`, backgroundImage);
+                document.documentElement.style.setProperty(`--bubble-${side}-bg-image-opacity`, '1');
+                
+                const finalShadowColor = hexToRgba(shadowColor, shadowOpacity);
+                let filterShadow = 'none';
+                if (parseFloat(shadowOpacity) > 0 || parseInt(shadowBlur) > 0 || parseInt(shadowX) !== 0 || parseInt(shadowY) !== 0) {
+                    filterShadow = `drop-shadow(${shadowX}px ${shadowY}px ${shadowBlur}px ${finalShadowColor})`;
+                }
+                
+                if (effect3d) {
+                    if (filterShadow === 'none') {
+                        // Keep shadow logic simple, if 3d is on we apply inset shadow directly to bubble
+                    }
                 }
 
+                document.documentElement.style.setProperty(`--bubble-${side}-border`, `${borderWidth}px solid ${finalBorderColor}`);
+                if (effect3d) {
+                    // Use a special property to pass box-shadow to CSS since filter is drop-shadow
+                    document.documentElement.style.setProperty(`--bubble-${side}-box-shadow`, boxShadow);
+                } else {
+                    document.documentElement.style.setProperty(`--bubble-${side}-box-shadow`, 'none');
+                }
+                document.documentElement.style.setProperty(`--bubble-${side}-shadow`, filterShadow);
+                
+                const finalTailColor = tailColor ? tailColor : finalBgColor;
+                const tailBorderColor = side === 'sent' ? `transparent transparent transparent ${finalTailColor}` : `transparent ${finalTailColor} transparent transparent`;
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-color`, tailBorderColor);
+
                 document.documentElement.style.setProperty(`--bubble-${side}-triangle`, hideTriangle ? 'none' : 'block');
+                
+                // Set Tail Variables
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-image`, tailImage ? `url(${tailImage})` : 'none');
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-w`, tailImage ? tailWidth + 'px' : '0px');
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-h`, tailImage ? tailHeight + 'px' : '0px');
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-x`, tailX + 'px');
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-y`, tailY + 'px');
+                document.documentElement.style.setProperty(`--bubble-${side}-tail-rot`, tailRot + 'deg');
+                if (tailImage) {
+                    document.documentElement.style.setProperty(`--bubble-${side}-tail-color`, 'transparent');
+                }
+
+                const formatUnit = (val) => {
+                    if (val === null || val === undefined || val === '') return 'auto';
+                    if (!isNaN(val) && val !== '') return val + 'px';
+                    return val;
+                };
+                let fRadius = formatUnit(radius);
+                if(fRadius === 'auto') fRadius = '8px';
+
+                document.documentElement.style.setProperty(`--bubble-${side}-radius`, fRadius);
 
                 // Apply Corners
                 ['tl', 'tr', 'bl', 'br'].forEach(corner => {
-                    const cPrefix = `${side}_${corner}_`;
+                    const cPrefix = `bubble_${side}_${corner}_`;
                     const cImg = getSetting(cPrefix + 'img', '');
                     const cOp = getSetting(cPrefix + 'op', '1');
                     const cx = getSetting(cPrefix + 'x', '-15');
@@ -11002,6 +11609,11 @@
                         if (aiResponseText) {
                             // Fix literal <br> tags
                             aiResponseText = aiResponseText.replace(/<br\s*\/?>/gi, '\n');
+                            
+                            // Sanitize thought tags immediately to standardize various bracket forms to <thought>
+                            aiResponseText = sanitizeThoughtTags(aiResponseText);
+
+                            const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
 
                             // Parse Thought Feature Tags
                             let mood = null;
@@ -11017,9 +11629,13 @@
                                 aiResponseText = aiResponseText.replace(moodRegex, '').trim();
                             }
 
-                            // Handle Thought - support multiple, concatenate them, remove all
-                            // Updated to catch both <inner_thought> and <thought> globally
-                            const thoughtRegex = /<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/gis;
+                            // Handle Thought
+                            // Offline mode: DO NOT remove <thought> from text, only extract <inner_thought>
+                            // Online mode: extract BOTH and remove from text
+                            const thoughtRegex = isOfflineMode 
+                                ? /<inner_thought>(.*?)<\/inner_thought>/gis 
+                                : /<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/gis;
+                                
                             let thoughtMatches = [...aiResponseText.matchAll(thoughtRegex)];
                             
                             if (thoughtMatches.length > 0) {
@@ -11036,7 +11652,6 @@
                             }
 
                             aiResponseText = await applyRegexRules(aiResponseText, friend.id, friend.group || '默认分组');
-                            const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
 
                             if (friend.isGroup) {
                                 hideTypingIndicator(friend.id);
@@ -11680,8 +12295,8 @@
                 prompt += `    - 用户的视角是【${settings.yourPerspective === 'second_person' ? '第二人称 (你)' : '第一人称 (我)'}】。\n`;
 
             } else {
-                prompt += `\n【系统提示】重要：请完全模拟真实人类在微信聊天的习惯。根据你的角色性格，灵活决定是否将一段话拆分为多条短消息发送以增加活人感。你可以根据语义、情绪和停顿，在任何地方（如逗号、句号、感叹号后，甚至一句话的中间）使用【换行符（回车）】来分隔消息。系统会自动将每一行识别为一条独立的消息发出。\n`;
-                prompt += `\n【严禁】：\n1. **严禁输出动作描写**：不要在正文中包含如 *看着你*、(叹气) 等动作或状态描写。\n2. **严禁输出心理标签**：不要在正文中输出 <thought> 标签，心理活动请严格使用 <inner_thought> 标签包裹（系统会自动提取，不会显示在气泡中）。\n3. **严禁输出 HTML 标签**：不要输出 <br> 等 HTML 代码，换行请直接使用回车键。\n`;
+                prompt += `\n【系统提示】重要：当前是普通的【微信线上聊天模式】，请完全模拟真实人类在微信聊天的习惯。根据你的角色性格，灵活决定是否将一段话拆分为多条短消息发送以增加活人感。你可以根据语义、情绪和停顿，在任何地方（如逗号、句号、感叹号后，甚至一句话的中间）使用【换行符（回车）】来分隔消息。系统会自动将每一行识别为一条独立的消息发出。\n`;
+                prompt += `\n【！！！格式强力阻断警告！！！】：\n无论你们之前的聊天记录是什么格式（即使有小说般的动作或心理描写），**从现在起，请必须切换回纯粹的微信聊天格式**！\n1. **严禁任何动作描写**：聊天正文中绝对不能出现如 *看着你*、(叹气)、走过去、微笑着说 等任何形式的动作、神态描述或旁白。\n2. **严禁在正文输出心理标签**：不要在正文中输出 <thought> 标签。心理活动请严格使用 <inner_thought> 标签包裹（且只能放在最后），不要在对话中间穿插。\n3. **只需要说话的内容**：除了符合角色身份的话语，不要加任何多余的文字修饰和引号，直接输出语言！严禁输出 <br> 等 HTML 代码。\n`;
                 prompt += `\n            【例如】，对于“你好呀，今天天气真不错！吃饭了吗？”，你可以灵活地回复为：\n\n            - **方案一:**\n              你好呀\n              今天天气真不错！\n              吃饭了吗？\n\n            - **方案二:**\n              你好呀，今天天气真不错！\n              吃饭了吗？\n\n            - **方案三:**\n              你好呀\n              今天天气真不错！吃饭了吗？\n\n            请根据你的角色性格和当前对话的节奏，自然地选择如何断句。\n            \n【功能指令】：\n1. 引用回复：如果你想引用对方（用户）的某句话进行针对性回复，请在这条消息中使用格式 <quote>被引用的对方的话</quote>。
 2. 发起转账：如果你想给对方（用户）转账，请输出单独的一行：<transfer amount="金额">备注说明</transfer>。例如：<transfer amount="52.00">请你喝奶茶</transfer>。
 3. 接收转账：如果对方（用户）给你转账了，你想接收，请在回复中包含：[已接收]。系统会自动将其转换为确认收款的卡片。
