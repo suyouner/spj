@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>蒜皮叽</title>
     <meta name="theme-color" content="#e0e5ec">
     <meta name="mobile-web-app-capable" content="yes">
@@ -3240,6 +3240,13 @@
 
         /* Mobile & PWA Full Screen Adjustments */
         @media (max-width: 600px), (display-mode: fullscreen), (display-mode: standalone) {
+            html, body {
+                height: 100%;
+                height: 100dvh;
+            }
+            body, input, textarea, select {
+                font-size: 16px; /* 防止 iOS 聚焦时自动缩放 */
+            }
             body {
                 background-color: var(--phone-bg);
                 overflow: hidden;
@@ -4887,7 +4894,7 @@
     <!-- Music Player Page -->
     <div id="music-player-page" class="page" style="background-color: #2b2b2b; flex-direction: column; overflow: hidden; position: relative;">
         <!-- Header -->
-        <div style="height: auto; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; padding: 2px 15px 12px 15px; flex-shrink: 0; position: relative; z-index: 10;">
+        <div id="music-player-header" style="height: auto; display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; padding: calc(max(34px, env(safe-area-inset-top)) + 2px) 15px 12px 15px; flex-shrink: 0; position: relative; z-index: 10;">
             <svg style="cursor: pointer; padding: 5px;" onclick="closeMusicPlayer()" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div id="music-title-display" contenteditable="true" onblur="handleMusicMetadataEdit()" style="font-size: 16px; color: #fff; font-weight: 500; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; outline: none; border-bottom: 1px dashed rgba(255,255,255,0.3);">无底洞</div>
@@ -7310,6 +7317,16 @@
                     chatHeader.style.paddingTop = 'max(2px, env(safe-area-inset-top))';
                 }
             }
+
+            // Special handling for music player header
+            const musicHeader = document.getElementById('music-player-header');
+            if (musicHeader) {
+                if (isVisible) {
+                    musicHeader.style.paddingTop = 'calc(max(34px, env(safe-area-inset-top)) + 2px)';
+                } else {
+                    musicHeader.style.paddingTop = 'max(2px, env(safe-area-inset-top))';
+                }
+            }
         }
 
         function loadTheme() {
@@ -9009,6 +9026,7 @@
                     type: 'sent',
                     timestamp: Date.now(),
                     isSticker: true,
+                    isPhoto: true,
                     fileUris: []
                 };
 
@@ -9239,7 +9257,7 @@
                             exitStickerEditMode();
                         } else {
                             // 正常模式下，发送表情
-                            sendSticker(sticker.src);
+                            sendSticker(sticker.src, sticker.description);
                         }
                     };
 
@@ -11617,18 +11635,30 @@
                     } else {
                         if (fileUris.length === 0) { // Only use inline data if no file URI
                             if (src.startsWith('data:image')) {
-                                images.push(src);
-                                text = `[发送了一张图片${idTag}${desc}]`; 
-                            } else {
-                                if (isGeminiDirect) {
-                                    text = `[发送了一张图片${idTag}: ${src} ${desc}]`;
-                                } else {
+                                if (msg.isPhoto) {
                                     images.push(src);
-                                    text = `[发送了一张图片${idTag}${desc}]`;
+                                    text = `[发送了一张图片${idTag}${desc}]`; 
+                                } else {
+                                    text = `[发送了一张表情包${desc}]`;
+                                }
+                            } else {
+                                if (msg.isPhoto) {
+                                    if (isGeminiDirect) {
+                                        text = `[发送了一张图片${idTag}: ${src} ${desc}]`;
+                                    } else {
+                                        images.push(src);
+                                        text = `[发送了一张图片${idTag}${desc}]`;
+                                    }
+                                } else {
+                                    text = `[发送了一张表情包${msg.stickerDescription ? ` (含义: ${msg.stickerDescription})` : ` (含义: ${src})`}]`;
                                 }
                             }
                         } else {
-                             text = `[发送了一张图片${idTag}${desc}]`;
+                            if (msg.isPhoto) {
+                                text = `[发送了一张图片${idTag}${desc}]`;
+                            } else {
+                                text = `[发送了一张表情包${msg.stickerDescription ? ` (含义: ${msg.stickerDescription})` : ''}]`;
+                            }
                         }
                     }
                 } else if (msg.isTransfer) {

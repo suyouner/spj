@@ -2084,6 +2084,7 @@
                     type: 'sent',
                     timestamp: Date.now(),
                     isSticker: true,
+                    isPhoto: true,
                     fileUris: []
                 };
 
@@ -2314,7 +2315,7 @@
                             exitStickerEditMode();
                         } else {
                             // 正常模式下，发送表情
-                            sendSticker(sticker.src);
+                            sendSticker(sticker.src, sticker.description);
                         }
                     };
 
@@ -4026,12 +4027,12 @@
 
                 if (msg.isSticker) {
                     const src = msg.text;
-                    const desc = msg.stickerDescription ? `(含义: ${msg.stickerDescription})` : '';
+                    const desc = msg.stickerDescription ? ` (含义: ${msg.stickerDescription})` : '';
                     const idTag = msg.timestamp ? ` (ID: ${msg.timestamp})` : '';
                     
                     if (src.startsWith('dice:')) {
                          text = `[骰子结果: ${src.split(':')[1]}]`;
-                    } else {
+                    } else if (msg.isPhoto) {
                         if (fileUris.length === 0) { // Only use inline data if no file URI
                             if (src.startsWith('data:image')) {
                                 images.push(src);
@@ -4047,6 +4048,8 @@
                         } else {
                              text = `[发送了一张图片${idTag}${desc}]`;
                         }
+                    } else {
+                        text = `[发送了一张表情包${desc}]`;
                     }
                 } else if (msg.isTransfer) {
                      if (msg.isReceipt) {
