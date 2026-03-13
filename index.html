@@ -119,6 +119,27 @@
             background: currentColor;
         }
 
+        .signal-icon[style*="background-image"] .bar,
+        .battery-icon[style*="background-image"] .battery-level,
+        .battery-icon[style*="background-image"]::after {
+            display: none;
+        }
+        .battery-icon[style*="background-image"] {
+            border: none;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 30px;
+            height: 15px;
+        }
+        .signal-icon[style*="background-image"] {
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 24px; /* Provide a default width */
+            height: 14px; /* Provide a default height */
+        }
+
         .page {
             flex-grow: 1;
             display: flex;
@@ -1604,6 +1625,8 @@
             border-radius: var(--chat-avatar-radius, 6px);
             flex-shrink: 0;
             object-fit: cover;
+            animation: none !important;
+            transition: none !important;
         }
         .message-bubble-wrapper.received .chat-avatar-placeholder {
             margin-right: 10px;
@@ -3445,6 +3468,33 @@
                         </label>
                     </div>
                 </div>
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 20px;">
+                    <p style="font-weight: 500; width: 100%;">状态栏图标</p>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 100%; text-align: center;">
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">信号图标</p>
+                            <div class="icon-preview-box" id="signal-icon-preview" style="border:none; display:flex; align-items:center; justify-content:center;">
+                                <span class="signal-icon" style="height: 16px;"><span class="bar" style="height: 4px;"></span><span class="bar" style="height: 8px;"></span><span class="bar" style="height: 12px;"></span><span class="bar" style="height: 16px;"></span></span>
+                            </div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerStatusBarIconUpload('signal')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetStatusBarIcon('signal')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">电池图标</p>
+                            <div class="icon-preview-box" id="battery-icon-preview" style="border:none; display:flex; align-items:center; justify-content:center;">
+                                <div class="battery-icon" style="width: 28px; height: 14px;"><div class="battery-level" style="width: 75%;"></div></div>
+                            </div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerStatusBarIconUpload('battery')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetStatusBarIcon('battery')">默认</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="theme-option-item">
+                    <div style="width:100%; display: flex; justify-content: space-between; align-items: center;">
+                        <p>状态栏时间颜色</p>
+                        <input type="color" id="status-bar-time-color-picker" oninput="updateStatusBarTimeColor(this.value)">
+                    </div>
+                </div>
                 <div class="theme-option-item">
                     <div style="width:100%; display: flex; flex-direction: column;">
                         <p>主屏幕壁纸</p>
@@ -5268,6 +5318,14 @@
                 </label>
             </div>
 
+            <div class="settings-item" style="flex-direction: row; justify-content: space-between; align-items: center; margin-top: 15px;">
+                <label style="font-weight: 600;">显示角色动态删除键</label>
+                <label class="switch">
+                    <input type="checkbox" id="role-moment-delete-toggle" onchange="toggleRoleMomentDelete(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
             <div style="display: flex; gap: 10px; margin-top: 15px; align-items: stretch; position: relative; z-index: 50;">
                 <div style="flex: 1; min-width: 0;">
                     <select id="single-manual-role-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; background: white;"></select>
@@ -5444,6 +5502,10 @@
             const settingsHeader = document.querySelector('.settings-header');
             const settingsPage = document.getElementById('settings-page');
 
+            if (pageId === 'desktop-theme-page') {
+                generateIconPreviews();
+            }
+
             if (pageId === 'theme-page' || pageId === 'desktop-theme-page' || pageId === 'chat-theme-page' || pageId === 'bubble-theme-page' || pageId === 'global-font-page' || pageId === 'world-book-page' || pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'persona-management-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'emoji-library-page' || pageId === 'search-detail-page' || pageId === 'regex-app-page') {
                 statusBar.style.backgroundColor = (pageId === 'wechat-page' || pageId === 'wechat-contacts-page' || pageId === 'wechat-me-page' || pageId === 'friend-profile-page' || pageId === 'memory-management-page' || pageId === 'search-detail-page') ? '#ededed' : 'white';
                 statusBar.style.color = '#333';
@@ -5460,17 +5522,12 @@
                 } else {
                     statusBar.style.color = 'white';
                 }
-            } else {
+            } else if (pageId === 'main-page') {
                 statusBar.style.backgroundColor = 'transparent';
-                statusBar.style.color = '#333';
-            }
-
-            if (pageId === 'desktop-theme-page') {
-                generateIconPreviews();
-            }
-            if (pageId === 'world-book-page') {
-                renderWbTabs();
-                renderWbList();
+                statusBar.style.color = '#333'; // Assuming default wallpaper is light, restore default color
+            } else if (pageId === 'chat-interface-page') {
+                // This is mostly handled in openChat, but as a fallback, ensure transparency
+                statusBar.style.backgroundColor = 'transparent';
             }
             if (pageId === 'wechat-page') {
                 const searchInput = document.getElementById('global-search-input');
@@ -6759,11 +6816,22 @@
             }, 300);
         }
 
+        function toggleRoleMomentDelete(isChecked) {
+            localStorage.setItem('show_role_moment_delete', isChecked);
+            if (document.getElementById('wechat-discover-page').classList.contains('active')) {
+                renderDiscoverFeed();
+            }
+        }
+
         function openRoleMomentsModal() {
             document.getElementById('role-moments-modal').style.display = 'flex';
             const toggle = document.getElementById('role-auto-post-toggle');
             const isEnabled = localStorage.getItem('global_auto_post_moments') === 'true';
             toggle.checked = isEnabled;
+
+            const deleteToggle = document.getElementById('role-moment-delete-toggle');
+            const isDeleteEnabled = localStorage.getItem('show_role_moment_delete') === 'true';
+            deleteToggle.checked = isDeleteEnabled;
             
             const listContainer = document.getElementById('role-auto-post-list-container');
             listContainer.style.display = isEnabled ? 'flex' : 'none';
@@ -6839,7 +6907,7 @@
                 return;
             }
 
-            showToast('开始生成朋友圈，请稍候...');
+            closeRoleMomentsModal();
             btn.disabled = true;
             btn.textContent = '生成中...';
 
@@ -6847,7 +6915,7 @@
                 if (friend) {
                     try {
                         await generateMomentForCharacter(friend, config);
-                        showToast(`已成功为 ${friend.name} 生成朋友圈`);
+                        showToast(`${friend.name}发了一条朋友圈。`);
                         if (document.getElementById('wechat-discover-page').classList.contains('active')) {
                             renderDiscoverFeed();
                         }
@@ -7286,7 +7354,8 @@
                     });
                     prompt += `\n${chatContextStr}\n`;
 
-                    prompt += `\n【当前场景：朋友圈动态互动】\n用户发布了一条动态：\n内容：${post.text || '无'}\n`;
+                    const authorName = post.authorId === 'main_user' ? '用户' : post.authorName;
+                    prompt += `\n【当前场景：朋友圈动态互动】\n[${authorName}] 发布了一条动态：\n内容：${post.text || '无'}\n`;
                     if (post.images && post.images.length > 0) {
                         prompt += `附带了 ${post.images.length} 张图片。\n`;
                     }
@@ -7350,39 +7419,47 @@
 
                         let newComments = [];
                         if (action.comment && typeof action.comment === 'string' && action.comment.trim() !== '' && action.comment !== 'null') {
-                            if (!post.comments) post.comments = [];
-                            let depth = 0;
-                            let shouldBlock = false;
-
-                            if (action.replyToId && action.replyToId !== 'null') {
-                                const targetComment = post.comments.find(c => String(c.id) === String(action.replyToId));
-                                if (targetComment) {
-                                    // 强制拦截非法回复
-                                    if (targetComment.authorId !== 'main_user' && (myReplyCounts[targetComment.authorId] || 0) >= 2) {
-                                        shouldBlock = true;
-                                    } else {
-                                        depth = (targetComment.depth || 0) + 1;
-                                    }
-                                } else {
-                                    action.replyToId = null;
-                                    action.replyToName = null;
-                                }
+                            const allComments = action.comment.split('\n').map(c => c.trim()).filter(c => c);
+                            let finalCommentText = null;
+                            if (allComments.length > 0) {
+                                finalCommentText = allComments[Math.floor(Math.random() * allComments.length)];
                             }
-                            
-                            if (!shouldBlock) {
-                                const newComment = {
-                                    id: Date.now().toString() + Math.floor(Math.random()*1000),
-                                    authorId: friend.id,
-                                    authorName: friend.realName,
-                                    text: action.comment.trim(),
-                                    replyTo: action.replyToName && action.replyToName !== 'null' ? action.replyToName : null,
-                                    replyToId: action.replyToId,
-                                    timestamp: Date.now(),
-                                    depth: depth
-                                };
-                                post.comments.push(newComment);
-                                newComments.push(newComment);
-                                updated = true;
+
+                            if (finalCommentText) {
+                                if (!post.comments) post.comments = [];
+                                let depth = 0;
+                                let shouldBlock = false;
+
+                                if (action.replyToId && action.replyToId !== 'null') {
+                                    const targetComment = post.comments.find(c => String(c.id) === String(action.replyToId));
+                                    if (targetComment) {
+                                        // 强制拦截非法回复
+                                        if (targetComment.authorId !== 'main_user' && (myReplyCounts[targetComment.authorId] || 0) >= 2) {
+                                            shouldBlock = true;
+                                        } else {
+                                            depth = (targetComment.depth || 0) + 1;
+                                        }
+                                    } else {
+                                        action.replyToId = null;
+                                        action.replyToName = null;
+                                    }
+                                }
+                                
+                                if (!shouldBlock) {
+                                    const newComment = {
+                                        id: Date.now().toString() + Math.floor(Math.random()*1000),
+                                        authorId: friend.id,
+                                        authorName: friend.realName,
+                                        text: finalCommentText,
+                                        replyTo: action.replyToName && action.replyToName !== 'null' ? action.replyToName : null,
+                                        replyToId: action.replyToId,
+                                        timestamp: Date.now(),
+                                        depth: depth
+                                    };
+                                    post.comments.push(newComment);
+                                    newComments.push(newComment);
+                                    updated = true;
+                                }
                             }
                         }
 
@@ -7541,7 +7618,9 @@
                             }
 
                             let deleteHtml = '';
-                            if (post.authorId === 'main_user') {
+                            const showRoleDelete = localStorage.getItem('show_role_moment_delete') === 'true';
+
+                            if (post.authorId === 'main_user' || showRoleDelete) {
                                 deleteHtml = `<span class="discover-post-delete" onclick="deleteDiscoverPost('${post.id}')">删除</span>`;
                             }
 
@@ -7809,6 +7888,8 @@
                         dbUpdate('discover_posts', post, () => {
                             closeCommentDrawer();
                             renderDiscoverFeed();
+                            // Trigger bot interaction after user comments
+                            triggerBotInteractionsForPost(post.id);
                         });
                     }
                 });
@@ -7818,9 +7899,8 @@
         function handleFileUpload(event, type, id) {
             const file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const imageUrl = e.target.result;
+            
+            compressImage(file, 0.7, (imageUrl) => {
                 if (type === 'wallpaper') {
                     document.getElementById('main-page').style.backgroundImage = `url(${imageUrl})`;
                     document.getElementById('wallpaper-preview').style.backgroundImage = `url(${imageUrl})`;
@@ -7847,8 +7927,7 @@
                     localStorage.setItem(id, imageUrl);
                     generateIconPreviews(); // Refresh previews
                 }
-            }
-            reader.readAsDataURL(file);
+            });
         }
         
         function triggerUpload(inputId) {
@@ -7962,7 +8041,113 @@
             }
         }
 
+        function triggerStatusBarIconUpload(type) {
+            let input = document.getElementById('statusbar-icon-upload');
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'file';
+                input.id = 'statusbar-icon-upload';
+                input.accept = 'image/*';
+                input.style.display = 'none';
+                document.body.appendChild(input);
+            }
+            input.onchange = (event) => handleStatusBarIconUpload(event, type);
+            input.click();
+        }
+
+        function handleStatusBarIconUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            compressImage(file, 0.7, (imageUrl) => {
+                const key = `statusbar_${type}_icon`;
+                localStorage.setItem(key, imageUrl);
+                applyStatusBarIcons();
+            });
+        }
+
+        function resetStatusBarIcon(type) {
+            const key = `statusbar_${type}_icon`;
+            localStorage.removeItem(key);
+            applyStatusBarIcons();
+        }
+
+        function updateStatusBarTimeColor(color) {
+            localStorage.setItem('statusbar_time_color', color);
+            applyStatusBarTimeColor();
+        }
+
+        function applyStatusBarIcons() {
+            const signalIconUrl = localStorage.getItem('statusbar_signal_icon');
+            const batteryIconUrl = localStorage.getItem('statusbar_battery_icon');
+
+            const signalIconEl = document.querySelector('.status-bar .signal-icon');
+            const batteryIconEl = document.querySelector('.status-bar .battery-icon');
+            const signalPreviewEl = document.getElementById('signal-icon-preview');
+            const batteryPreviewEl = document.getElementById('battery-icon-preview');
+
+            if (signalIconEl) {
+                if (signalIconUrl) {
+                    signalIconEl.style.backgroundImage = `url(${signalIconUrl})`;
+                } else {
+                    signalIconEl.style.backgroundImage = '';
+                }
+            }
+            if (signalPreviewEl) {
+                if (signalIconUrl) {
+                    signalPreviewEl.style.backgroundImage = `url(${signalIconUrl})`;
+                    signalPreviewEl.style.backgroundSize = 'contain';
+                    signalPreviewEl.style.backgroundRepeat = 'no-repeat';
+                    signalPreviewEl.style.backgroundPosition = 'center';
+                    signalPreviewEl.innerHTML = '';
+                } else {
+                    signalPreviewEl.style.backgroundImage = '';
+                    signalPreviewEl.innerHTML = '<span class="signal-icon" style="height: 16px;"><span class="bar" style="height: 4px;"></span><span class="bar" style="height: 8px;"></span><span class="bar" style="height: 12px;"></span><span class="bar" style="height: 16px;"></span></span>';
+                }
+            }
+
+            if (batteryIconEl) {
+                if (batteryIconUrl) {
+                    batteryIconEl.style.backgroundImage = `url(${batteryIconUrl})`;
+                } else {
+                    batteryIconEl.style.backgroundImage = '';
+                }
+            }
+            if (batteryPreviewEl) {
+                if (batteryIconUrl) {
+                    batteryPreviewEl.style.backgroundImage = `url(${batteryIconUrl})`;
+                    batteryPreviewEl.style.backgroundSize = 'contain';
+                    batteryPreviewEl.style.backgroundRepeat = 'no-repeat';
+                    batteryPreviewEl.style.backgroundPosition = 'center';
+                    batteryPreviewEl.innerHTML = '';
+                } else {
+                    batteryPreviewEl.style.backgroundImage = '';
+                    batteryPreviewEl.innerHTML = '<div class="battery-icon" style="width: 28px; height: 14px;"><div class="battery-level" style="width: 75%;"></div></div>';
+                }
+            }
+        }
+
+        function applyStatusBarTimeColor() {
+            const timeColor = localStorage.getItem('statusbar_time_color');
+            const timeEl = document.querySelector('.status-bar .time');
+            const colorPicker = document.getElementById('status-bar-time-color-picker');
+
+            if (timeEl) {
+                if (timeColor) {
+                    timeEl.style.color = timeColor;
+                } else {
+                    // Revert to CSS default by removing the inline style
+                    timeEl.style.color = ''; 
+                }
+            }
+            if (colorPicker && timeColor) {
+                colorPicker.value = timeColor;
+            }
+        }
+
         function loadTheme() {
+            applyStatusBarIcons();
+            applyStatusBarTimeColor();
             const showStatusBar = localStorage.getItem('show_status_bar') !== 'false'; // Default to true
             const statusBarToggle = document.getElementById('status-bar-toggle');
             if (statusBarToggle) {
