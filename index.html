@@ -5690,9 +5690,7 @@
             }
         }
 
-        let currentChatThemeUploadType = null;
         function triggerChatThemeUpload(type) {
-            currentChatThemeUploadType = type;
             let input = document.getElementById('chat-theme-file-input');
             if (!input) {
                 input = document.createElement('input');
@@ -5700,20 +5698,20 @@
                 input.id = 'chat-theme-file-input';
                 input.accept = 'image/*';
                 input.style.display = 'none';
-                input.onchange = (e) => handleChatThemeUpload(e.target);
                 document.body.appendChild(input);
             }
+            input.onchange = (e) => handleChatThemeUpload(e.target, type);
             input.click();
         }
 
-        function handleChatThemeUpload(input) {
+        function handleChatThemeUpload(input, type) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 compressImage(file, 0.7, (compressedSrc) => {
                     if (currentChatThemeFriendId) {
                         dbGet('friends', currentChatThemeFriendId, friend => {
                             if (friend) {
-                                friend[currentChatThemeUploadType] = compressedSrc;
+                                friend[type] = compressedSrc;
                                 dbUpdate('friends', friend, () => {
                                     updateChatThemePreview();
                                     showToast('已保存专属设置');
@@ -5721,7 +5719,7 @@
                             }
                         });
                     } else {
-                        localStorage.setItem(currentChatThemeUploadType, compressedSrc);
+                        localStorage.setItem(type, compressedSrc);
                         updateChatThemePreview();
                         showToast('已保存全局设置');
                     }
