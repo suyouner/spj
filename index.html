@@ -89,6 +89,9 @@
             background: currentColor;
             border-radius: 1px;
         }
+        .battery-icon.image-mode::after {
+            display: none;
+        }
 
         .status-bar-right {
             display: flex;
@@ -3462,6 +3465,28 @@
                     <div style="width:100%">
                         <p>更换底部导航图标</p>
                         <div class="icon-preview-grid" id="dock-icon-preview"></div>
+                    </div>
+                </div>
+                <div class="theme-option-item" style="flex-direction: column; align-items: flex-start; gap: 20px;">
+                    <p style="font-weight: 500; width: 100%;">状态栏</p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; text-align: center; align-items: center;">
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">电池图标</p>
+                            <div class="icon-preview-box" id="desktop-battery-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerDesktopThemeUpload('desktop_battery_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetDesktopTheme('desktop_battery_icon')">默认</button>
+                        </div>
+                        <div>
+                            <p style="font-size: 14px; margin-bottom: 8px;">信号图标</p>
+                            <div class="icon-preview-box" id="desktop-signal-icon-preview"></div>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px;" onclick="triggerDesktopThemeUpload('desktop_signal_icon')">上传</button>
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetDesktopTheme('desktop_signal_icon')">默认</button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; align-items: center;">
+                            <p style="font-size: 14px;">时间颜色</p>
+                            <input type="color" id="status-bar-time-color-picker" oninput="changeStatusBarTimeColor(this.value)" style="width: 50px; height: 50px; border-radius: 8px; border: 1px solid #ddd; padding: 4px;">
+                            <button class="upload-button" style="font-size: 12px; padding: 8px; margin-top: 5px; background-color: #f5f5f5; color: #333; border: 1px solid #ddd;" onclick="resetDesktopTheme('desktop_time_color')">默认</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -7915,19 +7940,19 @@
                 fakeStatusBar.style.display = isVisible ? 'flex' : 'none';
             }
             
-    // Adjust padding for pages that rely on status bar height
-    document.querySelectorAll('.page').forEach(page => {
-        if (page.id === 'wechat-discover-page' || page.id === 'music-player-page' || page.id === 'chat-interface-page') {
-            page.style.paddingTop = '0px';
-            return;
-        }
-        
-        if (isVisible) {
-            page.style.paddingTop = 'max(34px, env(safe-area-inset-top))';
-        } else {
-            page.style.paddingTop = 'env(safe-area-inset-top)';
-        }
-    });
+            // Adjust padding for pages that rely on status bar height
+            document.querySelectorAll('.page').forEach(page => {
+                if (page.id === 'wechat-discover-page' || page.id === 'music-player-page' || page.id === 'chat-interface-page') {
+                    page.style.paddingTop = '0px';
+                    return;
+                }
+                
+                if (isVisible) {
+                    page.style.paddingTop = 'max(34px, env(safe-area-inset-top))';
+                } else {
+                    page.style.paddingTop = 'env(safe-area-inset-top)';
+                }
+            });
             
             // Special handling for discover page sticky header
             const discoverHeader = document.getElementById('discover-sticky-header');
@@ -7959,6 +7984,121 @@
                 } else {
                     musicHeader.style.paddingTop = 'max(2px, env(safe-area-inset-top))';
                 }
+            }
+        }
+
+        let currentDesktopThemeUploadType = null;
+        function triggerDesktopThemeUpload(type) {
+            currentDesktopThemeUploadType = type;
+            let input = document.getElementById('desktop-theme-file-input');
+            if (!input) {
+                input = document.createElement('input');
+                input.type = 'file';
+                input.id = 'desktop-theme-file-input';
+                input.accept = 'image/*';
+                input.style.display = 'none';
+                input.onchange = (e) => handleDesktopThemeUpload(e.target);
+                document.body.appendChild(input);
+            }
+            input.click();
+        }
+
+        function handleDesktopThemeUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                compressImage(file, 0.7, (compressedSrc) => {
+                    localStorage.setItem(currentDesktopThemeUploadType, compressedSrc);
+                    applyDesktopTheme();
+                    showToast('已保存设置');
+                });
+            }
+            input.value = '';
+        }
+
+        function resetDesktopTheme(type) {
+            localStorage.removeItem(type);
+            applyDesktopTheme();
+            if (type === 'desktop_time_color') {
+                const colorPicker = document.getElementById('status-bar-time-color-picker');
+                if (colorPicker) colorPicker.value = '#000000';
+            }
+            showToast('已恢复默认');
+        }
+
+        function changeStatusBarTimeColor(color) {
+            localStorage.setItem('desktop_time_color', color);
+            applyDesktopTheme();
+        }
+
+        function applyDesktopTheme() {
+            const batteryIconUrl = localStorage.getItem('desktop_battery_icon');
+            const signalIconUrl = localStorage.getItem('desktop_signal_icon');
+            const timeColor = localStorage.getItem('desktop_time_color');
+
+            const batteryIconEl = document.querySelector('.battery-icon');
+            const signalIconEl = document.querySelector('.signal-icon');
+            const timeEl = document.querySelector('.status-bar .time');
+
+            // Previews
+            const batteryPreview = document.getElementById('desktop-battery-icon-preview');
+            const signalPreview = document.getElementById('desktop-signal-icon-preview');
+            const colorPicker = document.getElementById('status-bar-time-color-picker');
+
+            if (batteryIconEl) {
+                if (batteryIconUrl) {
+                    batteryIconEl.classList.add('image-mode');
+                    batteryIconEl.style.backgroundImage = `url(${batteryIconUrl})`;
+                    batteryIconEl.style.backgroundSize = 'contain';
+                    batteryIconEl.style.backgroundRepeat = 'no-repeat';
+                    batteryIconEl.style.backgroundPosition = 'center';
+                    batteryIconEl.style.border = 'none';
+                    const level = batteryIconEl.querySelector('.battery-level');
+                    if (level) level.style.display = 'none';
+                } else {
+                    batteryIconEl.classList.remove('image-mode');
+                    batteryIconEl.style.backgroundImage = '';
+                    batteryIconEl.style.border = '1px solid currentColor';
+                    const level = batteryIconEl.querySelector('.battery-level');
+                    if (level) {
+                        level.style.display = 'block';
+                    } else {
+                        batteryIconEl.innerHTML = '<div class="battery-level"></div>';
+                    }
+                }
+            }
+            if (batteryPreview) {
+                batteryPreview.style.backgroundImage = batteryIconUrl ? `url(${batteryIconUrl})` : '';
+            }
+
+            if (signalIconEl) {
+                if (signalIconUrl) {
+                    signalIconEl.style.backgroundImage = `url(${signalIconUrl})`;
+                    signalIconEl.style.backgroundSize = 'contain';
+                    signalIconEl.style.backgroundRepeat = 'no-repeat';
+                    signalIconEl.style.backgroundPosition = 'center';
+                    signalIconEl.innerHTML = ''; // Clear bars
+                    signalIconEl.style.width = '24px'; // Give it a width
+                } else {
+                    signalIconEl.style.backgroundImage = '';
+                    if (!signalIconEl.querySelector('.bar')) {
+                        signalIconEl.innerHTML = '<span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span>';
+                    }
+                    signalIconEl.style.width = '';
+                }
+            }
+            if (signalPreview) {
+                signalPreview.style.backgroundImage = signalIconUrl ? `url(${signalIconUrl})` : '';
+            }
+
+            if (timeEl) {
+                if (timeColor) {
+                    timeEl.style.color = timeColor;
+                } else {
+                    timeEl.style.color = ''; // Revert to stylesheet color
+                }
+            }
+            if (colorPicker) {
+                colorPicker.value = timeColor || '#000000';
             }
         }
 
@@ -8008,6 +8148,7 @@
                 }
             });
             loadGlobalFont();
+            applyDesktopTheme();
         }
 
         function updateDate() {
