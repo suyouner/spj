@@ -5690,7 +5690,10 @@
             }
         }
 
+        let currentChatUploadType = null;
+
         function triggerChatThemeUpload(type) {
+            currentChatUploadType = type;
             let input = document.getElementById('chat-theme-file-input');
             if (!input) {
                 input = document.createElement('input');
@@ -5698,16 +5701,19 @@
                 input.id = 'chat-theme-file-input';
                 input.accept = 'image/*';
                 input.style.display = 'none';
+                input.onchange = (e) => handleChatThemeUpload(e.target);
                 document.body.appendChild(input);
             }
-            input.onchange = (e) => handleChatThemeUpload(e.target, type);
             input.click();
         }
 
-        function handleChatThemeUpload(input, type) {
+        function handleChatThemeUpload(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 compressImage(file, 0.7, (compressedSrc) => {
+                    const type = currentChatUploadType;
+                    if (!type) return;
+
                     if (currentChatThemeFriendId) {
                         dbGet('friends', currentChatThemeFriendId, friend => {
                             if (friend) {
