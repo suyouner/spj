@@ -5692,6 +5692,8 @@
 
         let currentChatUploadType = null;
 
+        let currentChatUploadType = null;
+
         function triggerChatThemeUpload(type) {
             currentChatUploadType = type;
             let input = document.getElementById('chat-theme-file-input');
@@ -5729,6 +5731,10 @@
                         updateChatThemePreview();
                         showToast('已保存全局设置');
                     }
+                });
+            }
+            input.value = '';
+        }
                 });
             }
             input.value = '';
