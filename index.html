@@ -16177,11 +16177,13 @@ ${historyText}`;
             }
         });
 
-        async function exportData() {
+        function exportData() {
+            const stores = ['friends', 'chat_history', 'user_profile', 'ai_stickers', 'stickers', 'my_personas', 'discover_posts', 'regex_rules', 'global_playlist', 'discover_notifications', 'theme_settings', 'world_books', 'wb_settings'];
             const data = {
                 indexedDB: {},
                 localStorage: {}
             };
+            let promises = [];
 
             // 1. Export LocalStorage
             for (let i = 0; i < localStorage.length; i++) {
@@ -16190,28 +16192,29 @@ ${historyText}`;
             }
 
             // 2. Export IndexedDB
-            const stores = ['friends', 'chat_history', 'user_profile', 'ai_stickers', 'stickers', 'my_personas', 'discover_posts', 'regex_rules', 'global_playlist', 'discover_notifications', 'theme_settings', 'world_books', 'wb_settings'];
-            
-            try {
-                for (const storeName of stores) {
-                    if (db.objectStoreNames.contains(storeName)) {
-                        data.indexedDB[storeName] = await new Promise((resolve, reject) => {
-                            const transaction = db.transaction([storeName], 'readonly');
-                            const store = transaction.objectStore(storeName);
-                            const request = store.getAll();
-                            request.onsuccess = () => resolve(request.result);
-                            request.onerror = (e) => reject(e.target.error);
-                        });
-                    }
+            for (const storeName of stores) {
+                if (db.objectStoreNames.contains(storeName)) {
+                    promises.push(new Promise((resolve, reject) => {
+                        const transaction = db.transaction([storeName], 'readonly');
+                        const store = transaction.objectStore(storeName);
+                        const request = store.getAll();
+                        request.onsuccess = () => {
+                            data.indexedDB[storeName] = request.result;
+                            resolve();
+                        };
+                        request.onerror = (e) => reject(e.target.error);
+                    }));
                 }
+            }
 
+            Promise.all(promises).then(async () => {
                 const jsonStr = JSON.stringify(data);
                 const blob = new Blob([jsonStr], { type: 'application/json' });
                 const dateStr = new Date().toISOString().split('T')[0];
                 const fileName = `suanpiji_backup_${dateStr}.json`;
 
-                // New Method: File System Access API
-                if ('showSaveFilePicker' in window) {
+                // New Method: File System Access API (with proper checks)
+                if (window.isSecureContext && 'showSaveFilePicker' in window) {
                     try {
                         const handle = await window.showSaveFilePicker({
                             suggestedName: fileName,
@@ -16226,12 +16229,12 @@ ${historyText}`;
                         showToast('导出成功');
                         return;
                     } catch (err) {
-                        if (err.name !== 'AbortError') {
-                            console.error('showSaveFilePicker error:', err);
-                        } else {
-                            // User cancelled the save dialog
+                        if (err.name === 'AbortError') {
+                            // User cancelled, do nothing.
                             return;
                         }
+                        // If it fails for other reasons, it will proceed to the fallback.
+                        console.error('showSaveFilePicker error, trying fallback:', err);
                     }
                 }
 
@@ -16250,11 +16253,10 @@ ${historyText}`;
                      console.error('Fallback export failed:', fallbackError);
                      showToast('导出失败，浏览器或应用环境不支持该操作');
                 }
-
-            } catch (error) {
+            }).catch(error => {
                 console.error('Export failed:', error);
                 showToast('导出失败');
-            }
+            });
         }
 
         function importData(input) {
