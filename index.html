@@ -5168,7 +5168,8 @@
             <textarea id="export-data-textarea" readonly style="width: 100%; height: 200px; resize: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px;"></textarea>
             <div class="modal-actions" style="margin-top: 15px;">
                 <button class="cancel-btn" onclick="document.getElementById('export-data-modal').style.display='none'">关闭</button>
-                <button class="save-btn" onclick="copyExportData()">一键复制</button>
+                <button class="save-btn" id="save-export-file-btn" style="display: none;">保存到文件</button>
+                <button class="save-btn" id="copy-export-btn" onclick="copyExportData()">一键复制</button>
             </div>
         </div>
     </div>
@@ -16215,8 +16216,57 @@ ${historyText}`;
             }
         });
 
+        async function saveExportDataToFile(jsonStr) {
+            const dateStr = new Date().toISOString().split('T')[0];
+            const fileName = `suanpiji_backup_${dateStr}.json`;
+            
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{
+                        description: 'JSON Files',
+                        accept: { 'application/json': ['.json'] },
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(jsonStr);
+                await writable.close();
+                showToast('文件已保存');
+                document.getElementById('export-data-modal').style.display = 'none';
+            } catch (err) {
+                // AbortError is expected if the user cancels the save dialog.
+                if (err.name !== 'AbortError') {
+                    console.error('Save file error:', err);
+                    showToast('保存文件失败');
+                }
+            }
+        }
+
         function showExportDataModal(jsonStr) {
-            document.getElementById('export-data-textarea').value = jsonStr;
+            const saveBtn = document.getElementById('save-export-file-btn');
+            const copyBtn = document.getElementById('copy-export-btn');
+            const textarea = document.getElementById('export-data-textarea');
+            const description = document.querySelector('#export-data-modal p');
+
+            if ('showSaveFilePicker' in window) {
+                saveBtn.style.display = 'block';
+                copyBtn.style.display = 'none';
+                textarea.style.display = 'none';
+                description.textContent = '检测到您的环境支持直接保存文件，请点击下方按钮保存。';
+                
+                // Remove old listener and add new one to prevent duplicates
+                const newSaveBtn = saveBtn.cloneNode(true);
+                saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+                newSaveBtn.addEventListener('click', () => saveExportDataToFile(jsonStr));
+
+            } else {
+                saveBtn.style.display = 'none';
+                copyBtn.style.display = 'block';
+                textarea.style.display = 'block';
+                description.textContent = '由于环境限制，无法直接下载。请复制以下所有文本，并手动保存为.json文件。';
+                textarea.value = jsonStr;
+            }
+            
             document.getElementById('export-data-modal').style.display = 'flex';
         }
 
