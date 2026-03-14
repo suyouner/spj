@@ -5164,10 +5164,18 @@
     <div class="modal-overlay" id="export-data-modal" style="z-index: 3000;">
         <div class="modal-content" style="width: 90%; max-width: 400px; text-align: left;">
             <h3 style="text-align: center;">导出数据</h3>
-            <p style="font-size: 13px; color: #666; margin-bottom: 15px; text-align: center;">由于环境限制，无法直接下载。请复制以下所有文本，并手动保存为.json文件。</p>
+            <p id="export-data-description" style="font-size: 13px; color: #666; margin-bottom: 15px; text-align: center;">由于环境限制，无法直接下载。请复制以下所有文本，并手动保存为.json文件。</p>
             <textarea id="export-data-textarea" readonly style="width: 100%; height: 200px; resize: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px;"></textarea>
+            
+            <div id="export-link-container" style="display: none;">
+                <p style="font-size: 12px; color: #888; margin-top: 15px;">复制下面的长链接，粘贴到任何现代浏览器地址栏即可下载：</p>
+                <textarea id="export-data-url-textarea" readonly style="width: 100%; height: 100px; resize: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px;"></textarea>
+                <button class="save-btn" onclick="copyDataUrl()" style="width:100%; margin-top:10px;">复制链接</button>
+            </div>
+
             <div class="modal-actions" style="margin-top: 15px;">
                 <button class="cancel-btn" onclick="document.getElementById('export-data-modal').style.display='none'">关闭</button>
+                <button class="save-btn" id="generate-link-btn" style="display: none;" >生成链接</button>
                 <button class="save-btn" id="save-export-file-btn" style="display: none;">保存到文件</button>
                 <button class="save-btn" id="copy-export-btn" onclick="copyExportData()">一键复制</button>
             </div>
@@ -16245,26 +16253,44 @@ ${historyText}`;
         function showExportDataModal(jsonStr) {
             const saveBtn = document.getElementById('save-export-file-btn');
             const copyBtn = document.getElementById('copy-export-btn');
+            const generateLinkBtn = document.getElementById('generate-link-btn');
             const textarea = document.getElementById('export-data-textarea');
-            const description = document.querySelector('#export-data-modal p');
+            const description = document.getElementById('export-data-description');
+            const linkContainer = document.getElementById('export-link-container');
 
+            // Reset state
+            linkContainer.style.display = 'none';
+            
             if ('showSaveFilePicker' in window) {
                 saveBtn.style.display = 'block';
                 copyBtn.style.display = 'none';
+                generateLinkBtn.style.display = 'none';
                 textarea.style.display = 'none';
                 description.textContent = '检测到您的环境支持直接保存文件，请点击下方按钮保存。';
                 
-                // Remove old listener and add new one to prevent duplicates
                 const newSaveBtn = saveBtn.cloneNode(true);
                 saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
                 newSaveBtn.addEventListener('click', () => saveExportDataToFile(jsonStr));
 
             } else {
                 saveBtn.style.display = 'none';
-                copyBtn.style.display = 'block';
+                copyBtn.style.display = 'none';
+                generateLinkBtn.style.display = 'block';
                 textarea.style.display = 'block';
-                description.textContent = '由于环境限制，无法直接下载。请复制以下所有文本，并手动保存为.json文件。';
+                description.textContent = '您的环境不支持直接保存。您可以生成一个下载链接，或手动复制下面的文本。';
                 textarea.value = jsonStr;
+
+                const newGenerateLinkBtn = generateLinkBtn.cloneNode(true);
+                generateLinkBtn.parentNode.replaceChild(newGenerateLinkBtn, generateLinkBtn);
+                newGenerateLinkBtn.addEventListener('click', () => {
+                    showToast('正在生成链接...');
+                    setTimeout(() => {
+                        const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+                        document.getElementById('export-data-url-textarea').value = dataUrl;
+                        linkContainer.style.display = 'block';
+                        showToast('链接已生成！');
+                    }, 50);
+                });
             }
             
             document.getElementById('export-data-modal').style.display = 'flex';
@@ -16275,6 +16301,13 @@ ${historyText}`;
             textarea.select();
             document.execCommand('copy');
             showToast('已复制到剪贴板');
+        }
+
+        function copyDataUrl() {
+            const textarea = document.getElementById('export-data-url-textarea');
+            textarea.select();
+            document.execCommand('copy');
+            showToast('下载链接已复制');
         }
 
         function openExportActionSheet() {
