@@ -16298,7 +16298,7 @@ ${historyText}`;
                 }
 
                 const jsonStr = JSON.stringify(data, null, 2);
-                const blob = new Blob([jsonStr], { type: 'application/json' });
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
                 const dateStr = new Date().toISOString().split('T')[0];
                 const fileName = `suanpiji_backup_${dateStr}.json`;
 
