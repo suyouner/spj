@@ -16190,7 +16190,7 @@ ${historyText}`;
             }
 
             // 2. Export IndexedDB
-            const stores = ['friends', 'chat_history', 'user_profile', 'ai_stickers', 'stickers', 'my_personas', 'discover_posts'];
+            const stores = ['friends', 'chat_history', 'user_profile', 'ai_stickers', 'stickers', 'my_personas', 'discover_posts', 'regex_rules', 'global_playlist', 'discover_notifications', 'theme_settings', 'world_books', 'wb_settings'];
             
             try {
                 for (const storeName of stores) {
@@ -16205,19 +16205,52 @@ ${historyText}`;
                     }
                 }
 
-                // Create and download file
                 const jsonStr = JSON.stringify(data);
                 const blob = new Blob([jsonStr], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
                 const dateStr = new Date().toISOString().split('T')[0];
-                a.download = `suanpiji_backup_${dateStr}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-                showToast('导出成功');
+                const fileName = `suanpiji_backup_${dateStr}.json`;
+
+                // New Method: File System Access API
+                if ('showSaveFilePicker' in window) {
+                    try {
+                        const handle = await window.showSaveFilePicker({
+                            suggestedName: fileName,
+                            types: [{
+                                description: 'JSON Files',
+                                accept: { 'application/json': ['.json'] },
+                            }],
+                        });
+                        const writable = await handle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        showToast('导出成功');
+                        return;
+                    } catch (err) {
+                        if (err.name !== 'AbortError') {
+                            console.error('showSaveFilePicker error:', err);
+                        } else {
+                            // User cancelled the save dialog
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback Method: Original a.click()
+                try {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('导出成功');
+                } catch (fallbackError) {
+                     console.error('Fallback export failed:', fallbackError);
+                     showToast('导出失败，浏览器或应用环境不支持该操作');
+                }
+
             } catch (error) {
                 console.error('Export failed:', error);
                 showToast('导出失败');
