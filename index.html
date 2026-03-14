@@ -4010,7 +4010,7 @@
                     <div class="settings-item">
                         <label>数据备份</label>
                         <div class="preset-actions" style="margin-top: 5px;">
-                            <button onclick="openExportActionSheet()" style="flex: 1;">导出数据</button>
+                            <button onclick="exportData()" style="flex: 1;">导出数据</button>
                             <button onclick="document.getElementById('import-file-input').click()" style="flex: 1; background-color: #ffffff; color: #333; border: 1px solid #ddd;">导入数据</button>
                             <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="importData(this)">
                         </div>
@@ -5131,27 +5131,6 @@
                 <div class="action-sheet-item" onclick="handleMusicAction('local')">本地导入</div>
                 <div class="action-sheet-item" onclick="handleMusicAction('clear')" style="color: #ff3b30;">清空歌单</div>
             </div>
-        </div>
-    </div>
-
-    <!-- Export Action Sheet -->
-    <div class="action-sheet-overlay" id="export-action-sheet-overlay" onclick="closeExportActionSheet(event)" style="z-index: 2100;">
-        <div class="action-sheet" id="export-action-sheet">
-            <div class="action-sheet-menu">
-                <div class="action-sheet-item" onclick="executeExportData('share')" style="display: flex; flex-direction: column; line-height: 1.2;">
-                    <span>系统分享 (推荐手机端)</span>
-                    <span style="font-size: 11px; color: #888; margin-top: 4px;">分享到微信/保存到文件，绕过壳子限制</span>
-                </div>
-                <div class="action-sheet-item" onclick="executeExportData('blob')" style="display: flex; flex-direction: column; line-height: 1.2;">
-                    <span>默认下载 (推荐电脑端)</span>
-                    <span style="font-size: 11px; color: #888; margin-top: 4px;">使用标准浏览器下载机制</span>
-                </div>
-                <div class="action-sheet-item" onclick="executeExportData('dataurl')" style="display: flex; flex-direction: column; line-height: 1.2;">
-                    <span>兼容模式下载 (仅作备用)</span>
-                    <span style="font-size: 11px; color: #888; margin-top: 4px;">适用于部分无法下载的网页转应用壳</span>
-                </div>
-            </div>
-            <div class="action-sheet-cancel" onclick="closeExportActionSheet()">取消</div>
         </div>
     </div>
     <input type="file" id="local-music-input" accept="audio/*" multiple style="display: none;" onchange="handleLocalMusicUpload(this)">
@@ -16198,28 +16177,7 @@ ${historyText}`;
             }
         });
 
-        function openExportActionSheet() {
-            const overlay = document.getElementById('export-action-sheet-overlay');
-            overlay.style.display = 'block';
-            void overlay.offsetWidth;
-            overlay.classList.add('show');
-        }
-
-        function closeExportActionSheet(e) {
-            if (e && e.target !== document.getElementById('export-action-sheet-overlay')) {
-                return;
-            }
-            const overlay = document.getElementById('export-action-sheet-overlay');
-            overlay.classList.remove('show');
-            setTimeout(() => {
-                overlay.style.display = 'none';
-            }, 300);
-        }
-
-        async function executeExportData(method) {
-            closeExportActionSheet();
-            showToast('正在准备数据...');
-
+        async function exportData() {
             const data = {
                 indexedDB: {},
                 localStorage: {}
@@ -16247,62 +16205,22 @@ ${historyText}`;
                     }
                 }
 
+                // Create and download file
                 const jsonStr = JSON.stringify(data);
                 const blob = new Blob([jsonStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
                 const dateStr = new Date().toISOString().split('T')[0];
-                const fileName = `suanpiji_backup_${dateStr}.json`;
-
-                if (method === 'share') {
-                    const file = new File([blob], fileName, { type: 'application/json' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: '蒜皮叽数据备份',
-                                text: '请保存您的数据备份文件'
-                            });
-                            showToast('操作成功');
-                        } catch (err) {
-                            console.log('Share error:', err);
-                            if (err.name !== 'AbortError') {
-                                showToast('分享失败，请尝试其他导出方式');
-                            }
-                        }
-                    } else {
-                        showToast('当前环境不支持分享文件，请尝试其他导出方式');
-                    }
-                } else if (method === 'dataurl') {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const dataUrl = e.target.result;
-                        const a = document.createElement('a');
-                        a.href = dataUrl;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        showToast('正在尝试兼容模式下载...');
-                    };
-                    reader.onerror = function() {
-                        showToast('兼容模式数据转换失败');
-                    };
-                    reader.readAsDataURL(blob);
-                } else {
-                    // Default to blob
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showToast('正在尝试默认下载...');
-                }
-
+                a.download = `suanpiji_backup_${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast('导出成功');
             } catch (error) {
                 console.error('Export failed:', error);
-                showToast('导出数据准备失败');
+                showToast('导出失败');
             }
         }
 
