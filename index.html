@@ -5160,6 +5160,19 @@
     </div>
     <input type="file" id="local-music-input" accept="audio/*" multiple style="display: none;" onchange="handleLocalMusicUpload(this)">
 
+    <!-- Export Data Modal -->
+    <div class="modal-overlay" id="export-data-modal" style="z-index: 3000;">
+        <div class="modal-content" style="width: 90%; max-width: 400px; text-align: left;">
+            <h3 style="text-align: center;">导出数据</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 15px; text-align: center;">由于环境限制，无法直接下载。请复制以下所有文本，并手动保存为.json文件。</p>
+            <textarea id="export-data-textarea" readonly style="width: 100%; height: 200px; resize: none; border: 1px solid #ddd; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 12px;"></textarea>
+            <div class="modal-actions" style="margin-top: 15px;">
+                <button class="cancel-btn" onclick="document.getElementById('export-data-modal').style.display='none'">关闭</button>
+                <button class="save-btn" onclick="copyExportData()">一键复制</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Music Import Modal -->
     <div class="modal-overlay" id="music-import-modal" onclick="if(event.target===this) this.style.display='none'" style="z-index: 2200;">
         <div class="modal-content" style="width: 300px; padding: 25px;">
@@ -16202,6 +16215,18 @@ ${historyText}`;
             }
         });
 
+        function showExportDataModal(jsonStr) {
+            document.getElementById('export-data-textarea').value = jsonStr;
+            document.getElementById('export-data-modal').style.display = 'flex';
+        }
+
+        function copyExportData() {
+            const textarea = document.getElementById('export-data-textarea');
+            textarea.select();
+            document.execCommand('copy');
+            showToast('已复制到剪贴板');
+        }
+
         function openExportActionSheet() {
             const overlay = document.getElementById('export-action-sheet-overlay');
             overlay.style.display = 'block';
@@ -16236,7 +16261,7 @@ ${historyText}`;
             }
 
             // 2. Export IndexedDB
-            const stores = ['friends', 'chat_history', 'user_profile', 'ai_stickers', 'stickers', 'my_personas', 'discover_posts'];
+            const stores = ['friends', 'chat_history', 'user_profile', 'ai_stickers', 'stickers', 'my_personas', 'discover_posts', 'regex_rules', 'global_playlist', 'discover_notifications', 'theme_settings', 'world_books', 'wb_settings'];
             
             try {
                 for (const storeName of stores) {
@@ -16251,78 +16276,58 @@ ${historyText}`;
                     }
                 }
 
-                const jsonStr = JSON.stringify(data);
+                const jsonStr = JSON.stringify(data, null, 2);
                 const blob = new Blob([jsonStr], { type: 'application/json' });
                 const dateStr = new Date().toISOString().split('T')[0];
                 const fileName = `suanpiji_backup_${dateStr}.json`;
 
-                if (method === 'share') {
-                    const file = new File([blob], fileName, { type: 'application/json' });
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
+                try {
+                    if (method === 'share') {
+                        const file = new File([blob], fileName, { type: 'application/json' });
+                        if (navigator.canShare && navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 files: [file],
                                 title: '蒜皮叽数据备份',
                                 text: '请保存您的数据备份文件'
                             });
-                            showToast('操作成功');
-                        } catch (err) {
-                            console.log('Share error:', err);
-                            if (err.name !== 'AbortError') {
-                                showToast('分享失败，请尝试其他导出方式');
-                            }
-                        }
-                    } else {
-                        showToast('当前环境不支持分享文件，请尝试其他导出方式');
-                    }
-                } else if (method === 'force_download') {
-                    const octetBlob = new Blob([jsonStr], { type: 'application/octet-stream' });
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        window.location.href = e.target.result;
-                        showToast('正在尝试强制跳转下载...');
-                    };
-                    reader.onerror = function() {
-                        showToast('数据转换失败');
-                    };
-                    reader.readAsDataURL(octetBlob);
-                } else if (method === 'new_tab') {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const dataUrl = e.target.result;
-                        const w = window.open();
-                        if (w) {
-                            w.document.write(`
-                                <html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
-                                <body style="text-align:center; padding:50px; font-family:-apple-system, sans-serif; background:#f7f7f7;">
-                                    <h3 style="color:#333;">备份文件已生成</h3>
-                                    <p style="color:#666; font-size:14px; margin-bottom:30px;">如果系统没有自动弹出下载，请手动点击下方按钮：</p>
-                                    <a id="dl-btn" href="${dataUrl}" download="${fileName}" style="display:inline-block; padding:15px 30px; background:#000; color:#fff; text-decoration:none; border-radius:8px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.2);">点击下载数据</a>
-                                    <script>setTimeout(() => document.getElementById('dl-btn').click(), 500);<\/script>
-                                </body></html>
-                            `);
-                            w.document.close();
-                            showToast('已尝试在新标签页中打开');
+                            showToast('已调用系统分享');
                         } else {
-                            // 极少数连 window.open 都拦截的壳子
-                            window.location.href = dataUrl;
+                            throw new Error('分享功能不可用');
                         }
-                    };
-                    reader.onerror = function() {
-                        showToast('数据转换失败');
-                    };
-                    reader.readAsDataURL(blob);
-                } else {
-                    // Default to blob
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    showToast('正在尝试默认下载...');
+                    } else if (method === 'force_download') {
+                        const octetBlob = new Blob([jsonStr], { type: 'application/octet-stream' });
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            window.location.href = e.target.result;
+                        };
+                        reader.readAsDataURL(octetBlob);
+                    } else if (method === 'new_tab') {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const dataUrl = e.target.result;
+                            const w = window.open();
+                            if (w) {
+                                w.document.write(`<html><body><a href="${dataUrl}" download="${fileName}">下载</a></body></html>`);
+                                w.document.close();
+                            } else {
+                                throw new Error('无法打开新标签页');
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    } else { // Default to 'blob'
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }
+                } catch (downloadError) {
+                    console.error('Download/Share method failed:', downloadError);
+                    showToast('自动下载失败，请手动复制。');
+                    showExportDataModal(jsonStr);
                 }
 
             } catch (error) {
