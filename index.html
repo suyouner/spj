@@ -16226,21 +16226,26 @@ ${historyText}`;
             document.getElementById('export-data-modal').style.display = 'flex';
         }
 
-        function copyExportLink() {
+        async function copyExportLink() {
             if (!exportJsonStr) return;
             
             showToast('正在生成链接...');
-            setTimeout(() => {
-                const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(exportJsonStr);
-                const textarea = document.getElementById('export-data-url-textarea');
-                textarea.value = dataUrl;
-                textarea.style.display = 'block'; // Must be visible to select
-                textarea.select();
-                document.execCommand('copy');
-                textarea.style.display = 'none'; // Hide it again
+            
+            const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(exportJsonStr);
+            
+            try {
+                await navigator.clipboard.writeText(dataUrl);
                 showToast('下载链接已复制');
                 document.getElementById('export-data-modal').style.display = 'none';
-            }, 50);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                showToast('复制失败，请手动复制');
+                // Fallback for manual copy
+                const textarea = document.getElementById('export-data-url-textarea');
+                textarea.value = dataUrl;
+                textarea.style.display = 'block';
+                textarea.select();
+            }
         }
 
         function openExportActionSheet() {
