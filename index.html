@@ -16298,13 +16298,13 @@ ${historyText}`;
                 }
 
                 const jsonStr = JSON.stringify(data, null, 2);
-                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+                const blob = new Blob([jsonStr], { type: 'application/octet-stream' });
                 const dateStr = new Date().toISOString().split('T')[0];
                 const fileName = `suanpiji_backup_${dateStr}.json`;
 
                 try {
                     if (method === 'share') {
-                        const file = new File([blob], fileName, { type: 'application/json' });
+                        const file = new File([blob], fileName, { type: 'application/octet-stream' });
                         if (navigator.canShare && navigator.canShare({ files: [file] })) {
                             await navigator.share({
                                 files: [file],
