@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suanpiji-v12';
+const CACHE_NAME = 'suanpiji-v11';
 const urlsToCache = [
   './',
   './index.html',
@@ -35,6 +35,11 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // 新增的判断：如果是 blob URL，直接返回，不进行缓存处理
+  if (event.request.url.startsWith('blob:')) {
+    return;
+  }
+  
   // 只处理 GET 请求的缓存
   if (event.request.method !== 'GET') return;
 
