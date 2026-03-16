@@ -1,4 +1,4 @@
-const CACHE_NAME = 'suanpiji-v28';
+const CACHE_NAME = 'suanpiji-v10';
 const urlsToCache = [
   './',
   './index.html',
