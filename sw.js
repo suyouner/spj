@@ -1,9 +1,10 @@
-const CACHE_NAME = 'suanpiji-v10';
+const CACHE_NAME = 'suanpiji-v11';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './timer-worker.js'
 ];
 
 self.addEventListener('install', event => {
