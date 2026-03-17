@@ -15391,20 +15391,18 @@ ${historyText}`;
                     document.getElementById('chat-info-avatar').src = imageUrl;
                     
                     if (currentChatFriendId) {
-            dbGet('friends', currentChatFriendId, friend => {
-                if (friend) {
-                    friend.lastMsg = messageText;
-                    friend.lastTime = getCurrentTimeStr();
-                    friend.lastActivityTimestamp = Date.now();
-                    dbUpdate('friends', friend, () => {
-                        if (document.getElementById('wechat-page').classList.contains('active')) {
-                            renderChatList();
-                        }
-                    });
-                }
-            });
+                        dbGet('friends', currentChatFriendId, friend => {
+                            if (friend) {
+                                friend.avatar = imageUrl;
+                                dbUpdate('friends', friend, () => {
+                                    renderMessages(currentChatFriendId);
+                                    renderChatList();
+                                    renderContactsList();
+                                });
+                            }
+                        });
                     }
-                }
+                };
                 reader.readAsDataURL(input.files[0]);
             }
         }
