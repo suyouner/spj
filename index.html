@@ -1039,6 +1039,47 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex-grow: 1;
+        }
+
+        .chat-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-list-unread-count {
+            background-color: #b2b2b2;
+            color: white;
+            border-radius: 10px;
+            padding: 0 5px;
+            font-size: 11px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            margin-left: 10px;
+        }
+
+        .unread-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background-color: #ff3b30;
+            color: white;
+            border-radius: 10px;
+            padding: 0 4px;
+            font-size: 11px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 0 0 1px #fff;
+            z-index: 10;
         }
 
         .wechat-footer {
@@ -5911,9 +5952,10 @@
                     }
                 });
             } else {
-                localStorage.removeItem(type);
-                updateChatThemePreview();
-                showToast('全局设置已恢复默认');
+                dbDeleteSetting(type).then(() => {
+                    updateChatThemePreview();
+                    showToast('全局设置已恢复默认');
+                });
             }
         }
 
@@ -9587,7 +9629,12 @@
                 visibleFriends.sort((a, b) => {
                     if (a.isPinned && !b.isPinned) return -1;
                     if (!a.isPinned && b.isPinned) return 1;
-                    return b.id.localeCompare(a.id); // Sort by newest first
+
+                    // Fallback to id if lastActivityTimestamp is missing
+                    const timeA = a.lastActivityTimestamp || (a.id.includes('_') ? parseInt(a.id.split('_').pop()) : parseInt(a.id)) || 0;
+                    const timeB = b.lastActivityTimestamp || (b.id.includes('_') ? parseInt(b.id.split('_').pop()) : parseInt(b.id)) || 0;
+
+                    return timeB - timeA;
                 });
                 
                 visibleFriends.forEach(friend => {
@@ -9598,14 +9645,21 @@
                         item.style.backgroundColor = '#f5f5f5';
                     }
 
+                    const unreadBottomHtml = friend.unreadCount ? `<div class="chat-list-unread-count">${friend.unreadCount > 99 ? '99+' : friend.unreadCount}</div>` : '';
+
                     item.innerHTML = `
-                        <img class="chat-avatar" src="${friend.avatar}" alt="${friend.name}">
+                        <div style="position: relative; width: 48px; height: 48px; flex-shrink: 0;">
+                            <img class="chat-avatar" src="${friend.avatar}" alt="${friend.name}">
+                        </div>
                         <div class="chat-info">
                             <div class="chat-top">
                                 <span class="chat-name">${friend.name}</span>
                                 <span class="chat-time">${friend.lastTime}</span>
                             </div>
-                            <div class="chat-preview">${friend.lastMsg}</div>
+                            <div class="chat-bottom">
+                                <div class="chat-preview">${friend.lastMsg}</div>
+                                ${unreadBottomHtml}
+                            </div>
                         </div>
                     `;
 
@@ -9953,13 +10007,14 @@
                 addMessageToUI(messagePayload);
                 dbAdd('chat_history', messagePayload);
 
-                dbGet('friends', currentChatFriendId, friend => {
-                    if (friend) {
-                        friend.lastMsg = '[图片]';
-                        friend.lastTime = getCurrentTimeStr();
-                        dbUpdate('friends', friend, renderChatList);
-                    }
-                });
+            dbGet('friends', currentChatFriendId, friend => {
+                if (friend) {
+                    friend.lastMsg = '[图片]';
+                    friend.lastTime = getCurrentTimeStr();
+                    friend.lastActivityTimestamp = Date.now();
+                    dbUpdate('friends', friend, renderChatList);
+                }
+            });
             }
             e.target.value = ''; // Reset input
         });
@@ -11642,6 +11697,16 @@
             currentChatFriendId = friendId;
             dbGet('friends', friendId, friend => {
                 if (!friend) return;
+                
+                if (friend.unreadCount) {
+                    friend.unreadCount = 0;
+                    dbUpdate('friends', friend, () => {
+                        if (document.getElementById('wechat-page').classList.contains('active')) {
+                            renderChatList();
+                        }
+                    });
+                }
+
                 document.getElementById('chat-interface-title').textContent = friend.name;
                 showPage('chat-interface-page');
                 renderMessages(friendId, targetMsgId);
@@ -12117,6 +12182,13 @@
                                             }
                                             friend.lastMsg = `${senderMember.name}: ${lastMsgPreview}`;
                                             friend.lastTime = getCurrentTimeStr();
+                                            friend.lastActivityTimestamp = Date.now();
+                                            
+                                            const isChatActive = currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active');
+                                            if (!isChatActive) {
+                                                friend.unreadCount = (friend.unreadCount || 0) + 1;
+                                            }
+                                            
                                             await new Promise(res => dbUpdate('friends', friend, res));
                                             
                                             if (document.getElementById('wechat-page').classList.contains('active')) {
@@ -12149,6 +12221,13 @@
                                 const msgPreview = aiResponseText.split('\n')[0].replace(/「|」/g, '');
                                 friend.lastMsg = msgPreview; // Use first line as preview, remove quotes
                                 friend.lastTime = getCurrentTimeStr();
+                                friend.lastActivityTimestamp = Date.now();
+                                
+                                const isChatActive = currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active');
+                                if (!isChatActive) {
+                                    friend.unreadCount = (friend.unreadCount || 0) + 1;
+                                }
+
                                 await new Promise(resolve => dbUpdate('friends', friend, resolve));
 
                                 showBannerNotification(friend, msgPreview);
@@ -12471,6 +12550,13 @@
                                     }
 
                                     friend.lastTime = getCurrentTimeStr();
+                                    friend.lastActivityTimestamp = Date.now();
+                                    
+                                    const isChatActive = currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active');
+                                    if (!isChatActive) {
+                                        friend.unreadCount = (friend.unreadCount || 0) + 1;
+                                    }
+
                                     await new Promise(resolve => dbUpdate('friends', friend, resolve));
 
                                     if (document.getElementById('wechat-page').classList.contains('active')) {
@@ -13445,6 +13531,13 @@
                                 }
 
                                 friend.lastTime = getCurrentTimeStr();
+                                friend.lastActivityTimestamp = Date.now();
+                                
+                                const isChatActive = currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active');
+                                if (!isChatActive) {
+                                    friend.unreadCount = (friend.unreadCount || 0) + 1;
+                                }
+
                                 await new Promise(resolve => dbUpdate('friends', friend, resolve));
                                 
                                 if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
@@ -15298,17 +15391,18 @@ ${historyText}`;
                     document.getElementById('chat-info-avatar').src = imageUrl;
                     
                     if (currentChatFriendId) {
-                        dbGet('friends', currentChatFriendId, friend => {
-                            if (friend) {
-                                friend.avatar = imageUrl;
-                                dbUpdate('friends', friend, () => {
-                                    // Update Chat List and Chat Interface if needed
-                                    // Chat interface doesn't show avatar in header, but messages do.
-                                    // We should refresh the messages to show new avatar
-                                    renderMessages(currentChatFriendId);
-                                });
-                            }
-                        });
+            dbGet('friends', currentChatFriendId, friend => {
+                if (friend) {
+                    friend.lastMsg = messageText;
+                    friend.lastTime = getCurrentTimeStr();
+                    friend.lastActivityTimestamp = Date.now();
+                    dbUpdate('friends', friend, () => {
+                        if (document.getElementById('wechat-page').classList.contains('active')) {
+                            renderChatList();
+                        }
+                    });
+                }
+            });
                     }
                 }
                 reader.readAsDataURL(input.files[0]);
@@ -15906,6 +16000,7 @@ ${historyText}`;
                 if (friend) {
                     friend.lastMsg = `[转账]`;
                     friend.lastTime = getCurrentTimeStr();
+                    friend.lastActivityTimestamp = Date.now();
                     dbUpdate('friends', friend, () => {
                         if (document.getElementById('wechat-page').classList.contains('active')) {
                             renderChatList();
@@ -15970,6 +16065,7 @@ ${historyText}`;
                                 if (friend) {
                                     friend.lastMsg = `[转账] ${replyText}`;
                                     friend.lastTime = getCurrentTimeStr();
+                                    friend.lastActivityTimestamp = Date.now();
                                     dbUpdate('friends', friend);
                                 }
                             });
