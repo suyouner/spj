@@ -1555,6 +1555,8 @@
             /* position: absolute; removed to fix keyboard layout issues */
             z-index: 10;
             padding-top: 0 !important; /* Remove default page padding for immersive header */
+            padding-bottom: var(--keyboard-offset, 0px);
+            transition: padding-bottom 0.2s ease-out;
         }
 
         .chat-interface-header {
@@ -1621,6 +1623,7 @@
             flex: 1 1 0; /* Force flex item to shrink and respect container height */
             height: 0; /* Strict height constraint for flex scroll */
             overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scroll */
             padding: 20px 15px;
             display: flex;
             flex-direction: column;
@@ -12835,7 +12838,7 @@
                 prompt += `    - **动作**: 直接描述，不要加任何符号。\n`;
                 prompt += `    - **心理**: 必须用特殊标签 <thought>...</thought> 包裹。这是你内心的想法，系统会特殊渲染。\n`;
                 if (friend.enableThoughts) {
-                    prompt += `\n【心声生成要求】\n请在每次回复的末尾（最后面），附加当前的心情和心声，格式如下：\n<mood>这里仅允许填写一个Emoji表情或颜文字（例如：😊、(^_^)，严禁包含任何中文或文字描述）</mood>\n<inner_thought>这里写内心的真实想法或吐槽</inner_thought>\n请务必包含这两个标签，系统会将其提取并特殊处理，不要包含在正文中。\n`;
+                    prompt += `\n【心声生成要求】\n请在每次回复的末尾（最后面），附加当前的心情和心声，格式如下：\n<mood>这里仅允许填写一个日式颜文字（Kaomoji），例如 (^_^), (>_<), (T_T) 等。严禁使用任何 Emoji 表情（如 😊, 😂）</mood>\n<inner_thought>这里写内心的真实想法或吐槽</inner_thought>\n【重要】每次回复都【必须】生成 <mood> 标签，否则视为违规。\n`;
                 }
                 prompt += `2.  **内容要求**: \n`;
                 prompt += `    - 须根据场景自然地包含语言、动作和心理描写。\n`;
@@ -12858,7 +12861,7 @@
                 prompt += `3. **共同底线（无论何种人设都必须遵守）**：\n   - **严禁**使用书面语引号「」包裹对话。\n   - **严禁**在正文中出现任何动作、神态描写（如 *叹气*、(笑)、（摸头） 等）。\n   - **严禁**输出 <br> 等 HTML 代码。\n   - 直接输出你想说的话，就像你在用微信打字一样。\n`;
 
                 if (friend.enableThoughts) {
-                    prompt += `\n【心声功能特别强调】\n即便开启了心声功能，你在“线上模式”下的正文也【必须】保持纯粹的聊天格式，【严禁】任何形式的动作或心理描写。心声只能作为附加信息，使用 <mood> 和 <inner_thought> 标签包裹，并【必须】放在所有聊天消息的【最后面】。\n`;
+                    prompt += `\n【心声功能特别强调】\n即便开启了心声功能，你在“线上模式”下的正文也【必须】保持纯粹的聊天格式，【严禁】任何形式的动作或心理描写。心声只能作为附加信息，使用 <mood> 和 <inner_thought> 标签包裹，并【必须】放在所有聊天消息的【最后面】。\n<mood> 标签中仅允许填写一个日式颜文字（Kaomoji），例如 (^_^), (>_<), (T_T) 等。严禁使用任何 Emoji 表情（如 😊, 😂）。【重要】每次回复都【必须】生成 <mood> 标签，否则视为违规。\n`;
                 }
                 
                 prompt += `\n【消息发送机制】：\n你可以根据语义、情绪和停顿，在任何地方（如逗号后、句号后，甚至一句话的中间）使用【换行符（回车）】来分隔消息。系统会自动将每一行识别为一条独立的消息发出。请利用这个机制来控制你的说话节奏（刷屏还是长句）。\n`;
@@ -13061,7 +13064,8 @@
                 if (!url.endsWith('/')) url += '/';
                 
                 if (!url.includes('chat/completions')) {
-                    if (url.endsWith('v1/')) {
+                    // Check if URL ends with a version pattern like v1/, v4/, etc.
+                    if (/\/v\d+\/$/.test(url)) {
                         url += 'chat/completions';
                     } else {
                         url += 'v1/chat/completions';
@@ -13217,24 +13221,31 @@
                             // Parse Thought Feature Tags
                             let mood = null;
                             let innerThought = null;
-                            const moodRegex = /<mood>(.*?)<\/mood>/s;
-                            const thoughtRegex = /<inner_thought>(.*?)<\/inner_thought>/s;
-
-                            const moodMatch = aiResponseText.match(moodRegex);
-                            if (moodMatch) {
-                                mood = moodMatch[1].replace(/[\u4e00-\u9fa5]/g, '').trim();
+                            
+                            // Handle Mood - support multiple but take the last one, remove all
+                            const moodRegex = /<mood>(.*?)<\/mood>/gis;
+                            let moodMatches = [...aiResponseText.matchAll(moodRegex)];
+                            if (moodMatches.length > 0) {
+                                // Take the content of the last match
+                                mood = moodMatches[moodMatches.length - 1][1].replace(/[\u4e00-\u9fa5]/g, '').trim();
+                                // Remove all mood tags
                                 aiResponseText = aiResponseText.replace(moodRegex, '').trim();
                             }
 
-                            const thoughtMatch = aiResponseText.match(thoughtRegex);
-                            if (thoughtMatch) {
-                                innerThought = thoughtMatch[1].trim();
+                            // Handle Thought
+                            const thoughtRegex = /<(?:inner_thought|thought)>(.*?)<\/(?:inner_thought|thought)>/gis;
+                            let thoughtMatches = [...aiResponseText.matchAll(thoughtRegex)];
+                            
+                            if (thoughtMatches.length > 0) {
+                                // Concatenate all thoughts found
+                                innerThought = thoughtMatches.map(m => m[1].trim()).join(' ');
+                                // Remove all thought tags
                                 aiResponseText = aiResponseText.replace(thoughtRegex, '').trim();
                             }
 
                             if (mood || innerThought) {
-                                friend.latestMood = mood;
-                                friend.latestThought = innerThought;
+                                if (mood) friend.latestMood = mood;
+                                if (innerThought) friend.latestThought = innerThought;
                                 // Will be saved via dbUpdate later in this function
                             }
 
@@ -14694,7 +14705,7 @@ ${historyText}`;
                     let modelsUrl;
                     const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl; // Normalize URL by removing trailing slash
 
-                    if (baseUrl.endsWith('/v1')) {
+                    if (/\/v\d+$/.test(baseUrl)) {
                         // If user provided '.../v1', just add '/models'
                         modelsUrl = `${baseUrl}/models`;
                     } else {
@@ -16748,13 +16759,41 @@ ${historyText}`;
             });
         }
 
-        // The 'interactive-widget=resizes-content' meta tag now handles keyboard behavior natively.
-        // The custom handleViewportResize function has been removed to prevent conflicts and page jumping.
-
-        // 简化后的视口高度逻辑，依赖 CSS 100dvh 和 flex，避免双重垫高冲突
         const fixViewportHeight = () => {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+            if (isIOS && window.visualViewport) {
+                const vv = window.visualViewport;
+                const root = document.documentElement;
+
+                const handleResize = () => {
+                    const layoutHeight = window.innerHeight;
+                    const keyboardHeight = layoutHeight - vv.height;
+                    
+                    // A threshold to make sure it's the keyboard
+                    if (keyboardHeight > 80) {
+                        root.style.setProperty('--keyboard-offset', `${keyboardHeight}px`);
+                        const messagesContainer = document.getElementById('chat-messages-container');
+                        if (messagesContainer) {
+                            setTimeout(() => {
+                                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                            }, 100);
+                        }
+                    } else {
+                        root.style.setProperty('--keyboard-offset', '0px');
+                    }
+                };
+
+                vv.addEventListener('resize', handleResize);
+                
+                // On blur, explicitly reset the offset.
+                document.getElementById('chat-message-input').addEventListener('blur', () => {
+                    root.style.setProperty('--keyboard-offset', '0px');
+                });
+            }
+
+            // Keep the existing stability logic for all platforms
             if (window.visualViewport) {
-                // 监听系统自动滚动的尝试，并强制其归零
                 window.visualViewport.addEventListener('scroll', () => {
                     if (window.visualViewport.offsetTop > 0) {
                         window.scrollTo(0, 0);
@@ -16762,22 +16801,18 @@ ${historyText}`;
                 });
             }
             
-            // 为了在 focusout 时解决 iOS 键盘收起后页面可能产生的留白问题
             document.addEventListener('focusout', () => {
                 window.scrollTo(0, 0);
             });
             
-            // 全局禁止常规滚动，防止iOS弹簧效应把页面整体顶走
             window.addEventListener('scroll', () => {
                 window.scrollTo(0, 0);
             }, { passive: false });
 
-            // 为主页面锁定高度，防止键盘弹出时缩小或被顶起
             const setVh = () => {
                 document.documentElement.style.setProperty('--fixed-vh', `${window.innerHeight}px`);
             };
             setVh();
-            // 仅在宽度变化（如旋转屏幕）时更新高度，忽略由于键盘导致的单纯高度缩小
             let lastWidth = window.innerWidth;
             window.addEventListener('resize', () => {
                 if (window.innerWidth !== lastWidth) {
@@ -16852,7 +16887,18 @@ ${historyText}`;
         function showThoughtModal(friend) {
             const modal = document.getElementById('thought-modal');
             document.getElementById('thought-role-name').textContent = friend.name;
-            document.getElementById('thought-mood-content').textContent = friend.latestMood || '无';
+            
+            let moodContent = friend.latestMood;
+            if (!moodContent || moodContent.trim() === '') {
+                moodContent = '无';
+            } else {
+                // Sanitize mood to only show kaomoji, just in case
+                moodContent = String(moodContent).replace(/[\u4e00-\u9fa5,.，。]/g, '').trim();
+                if (moodContent === '') {
+                    moodContent = '无'; // Fallback if it becomes empty after sanitizing
+                }
+            }
+            document.getElementById('thought-mood-content').textContent = moodContent;
             
             const textSection = document.getElementById('thought-text-section');
             if (friend.showThoughtText !== false) { // Default true
