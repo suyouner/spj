@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
     <title>蒜皮叽</title>
     <meta name="theme-color" content="#e0e5ec">
     <meta name="mobile-web-app-capable" content="yes">
@@ -2208,6 +2208,58 @@
         .sticker-groups.edit-mode .sticker-group-tab:not(:first-child):not(:nth-child(2)) { /* Skip '全部' and '默认' ideally, but nth-child relies on order */
              /* We handle 'display' via JS/HTML structure, animation optional */
              animation: shake 0.3s infinite;
+        }
+
+        /* Emoji Library Batch Delete Styles */
+        .sticker-select-checkbox {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            z-index: 10;
+            pointer-events: none; /* Let parent click handle it */
+        }
+        
+        .sticker-grid-container.batch-edit-mode .sticker-select-checkbox {
+            display: block;
+        }
+
+        .sticker-select-checkbox.checked {
+            background: #07c160;
+            border-color: #07c160;
+        }
+
+        .sticker-select-checkbox.checked::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        /* Bottom button delete style */
+        .emoji-library-delete-btn {
+            background-color: #ff3b30 !important;
+            color: white !important;
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3) !important;
+        }
+        .emoji-library-delete-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .sticker-actions {
@@ -4878,6 +4930,7 @@
             <div class="theme-header">
                 <span class="back-arrow" onclick="showPage('main-page')"><</span>
                 <span class="title">表情库</span>
+                <span id="emoji-library-edit-btn" style="position: absolute; right: 20px; font-size: 16px; cursor: pointer; color: #333;" onclick="toggleEmojiLibraryEditMode(this)">编辑</span>
             </div>
             <div style="padding: 15px; flex-shrink: 0; background-color: #fff; border-bottom: 1px solid #eee; position: relative; z-index: 10;">
                 <select id="emoji-library-character-select" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 12px; font-size: 14px; background: white;"></select>
@@ -4885,7 +4938,7 @@
             <div class="sticker-grid-container" id="ai-sticker-grid" style="padding: 15px; padding-bottom: 80px; align-content: flex-start;">
                 <!-- AI stickers will be injected here -->
             </div>
-            <div style="position: absolute; bottom: 30px; right: 20px; width: 50px; height: 50px; background-color: white; color: black; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 300; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 20;" onclick="openAiStickerUploadModal()">+</div>
+            <div id="emoji-library-action-btn" style="position: absolute; bottom: 30px; right: 20px; width: 50px; height: 50px; background-color: white; color: black; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 300; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 20;" onclick="handleEmojiLibraryActionBtn()">+</div>
         </div>
 
         <!-- Regex App Page -->
@@ -11906,27 +11959,38 @@
                         userPersona = await new Promise(resolve => dbGet('my_personas', friend.myPersonaId, resolve));
                     }
 
-                    // Fetch AI stickers
-                    let aiStickers = await new Promise(resolve => {
+                    // Fetch AI stickers (specific and global)
+                    const friendStickers = await new Promise(resolve => {
                         try {
                             const transaction = db.transaction(['ai_stickers'], 'readonly');
                             const store = transaction.objectStore('ai_stickers');
                             const index = store.index('friendId');
-                            // If group, fetch all stickers or we fetch below. Actually let's fetch by friendId for normal chats,
-                            // but for group chats we'll fetch all.
-                            if (friend.isGroup) {
-                                const req = store.getAll();
-                                req.onsuccess = () => resolve(req.result);
-                                req.onerror = () => resolve([]);
-                            } else {
-                                const req = index.getAll(friend.id);
-                                req.onsuccess = () => resolve(req.result);
-                                req.onerror = () => resolve([]);
-                            }
+                            const req = index.getAll(friend.id);
+                            req.onsuccess = () => resolve(req.result || []);
+                            req.onerror = () => resolve([]);
                         } catch(e) {
                             resolve([]);
                         }
                     });
+
+                    const globalStickers = await new Promise(resolve => {
+                        try {
+                            const transaction = db.transaction(['ai_stickers'], 'readonly');
+                            const store = transaction.objectStore('ai_stickers');
+                            const index = store.index('friendId');
+                            const req = index.getAll('global'); // Fetch global stickers
+                            req.onsuccess = () => resolve(req.result || []);
+                            req.onerror = () => resolve([]);
+                        } catch(e) {
+                            resolve([]);
+                        }
+                    });
+
+                    // Combine and remove duplicates, friend-specific ones take priority
+                    const combinedStickers = [...friendStickers, ...globalStickers];
+                    const aiStickers = combinedStickers.filter((sticker, index, self) =>
+                        index === self.findIndex((s) => s.src === sticker.src)
+                    );
 
                 let visiblePosts = await new Promise(resolve => {
                     dbGetAll('discover_posts', posts => {
@@ -12740,12 +12804,26 @@
             prompt += `   - **拒绝说教**：除非你的人设本身就是老师或喜欢说教的长辈，否则**严禁**对用户的行为进行道德评判、给出教科书式的人生建议或劝导。请像一个真实的朋友/恋人/仇人那样互动。\n\n`;
 
             if (aiStickers && aiStickers.length > 0) {
-                prompt += `【你的专属表情包】\n你可以使用以下表情包来表达情感。请根据语境选择合适的表情包，直接输出对应的 XML 标签（不要修改内部的ID）：\n`;
-                aiStickers.forEach((sticker, index) => {
-                    const desc = sticker.description ? ` (含义：${sticker.description})` : '';
-                    prompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
-                });
-                prompt += `\n`;
+                const friendStickers = aiStickers.filter(s => s.friendId === friend.id);
+                const globalStickers = aiStickers.filter(s => s.friendId === 'global');
+
+                if (globalStickers.length > 0) {
+                    prompt += `【可用表情包】\n你可以使用以下表情包来表达情感。请根据语境选择合适的表情包，直接输出对应的 XML 标签（不要修改内部的ID）：\n`;
+                    globalStickers.forEach((sticker, index) => {
+                        const desc = sticker.description ? ` (含义：${sticker.description})` : '';
+                        prompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
+                    });
+                    prompt += `\n`;
+                }
+
+                if (friendStickers.length > 0) {
+                    prompt += `【你的专属表情包】\n你也可以使用以下更符合你人设的专属表情包：\n`;
+                    friendStickers.forEach((sticker, index) => {
+                        const desc = sticker.description ? ` (含义：${sticker.description})` : '';
+                        prompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
+                    });
+                    prompt += `\n`;
+                }
             }
 
             if (friend.syncReality) {
@@ -16095,6 +16173,8 @@ ${historyText}`;
 
         // --- AI Emoji Library Logic ---
         let lastSelectedEmojiCharacter = "";
+        let isEmojiLibraryEditMode = false;
+        let selectedAiStickerIds = new Set();
 
         function renderEmojiLibraryCharacters() {
             const select = document.getElementById('emoji-library-character-select');
@@ -16102,29 +16182,27 @@ ${historyText}`;
             dbGetAll('friends', friends => {
                 select.innerHTML = '';
                 
+                // Add Global option first
+                const globalOption = document.createElement('option');
+                globalOption.value = "global";
+                globalOption.textContent = "全局/默认";
+                select.appendChild(globalOption);
+
                 const nonGroupFriends = (friends || []).filter(f => !f.isGroup);
 
-                if (nonGroupFriends.length === 0) {
-                    const defaultOption = document.createElement('option');
-                    defaultOption.value = "";
-                    defaultOption.textContent = "暂无角色";
-                    select.appendChild(defaultOption);
+                nonGroupFriends.forEach(friend => {
+                    const option = document.createElement('option');
+                    option.value = friend.id;
+                    option.textContent = friend.name;
+                    select.appendChild(option);
+                });
+
+                // Restore last selection or default to global
+                if (lastSelectedEmojiCharacter && (lastSelectedEmojiCharacter === 'global' || nonGroupFriends.find(f => f.id === lastSelectedEmojiCharacter))) {
+                    select.value = lastSelectedEmojiCharacter;
                 } else {
-                    nonGroupFriends.forEach(friend => {
-                        const option = document.createElement('option');
-                        option.value = friend.id;
-                        option.textContent = friend.name;
-                        if (friend.id === lastSelectedEmojiCharacter) {
-                            option.selected = true;
-                        }
-                        select.appendChild(option);
-                    });
-                    
-                    // Auto-select first if no selection restored or valid
-                    if ((!lastSelectedEmojiCharacter || !nonGroupFriends.find(f => f.id === lastSelectedEmojiCharacter)) && select.options.length > 0) {
-                        select.options[0].selected = true;
-                        lastSelectedEmojiCharacter = select.value;
-                    }
+                    select.value = 'global';
+                    lastSelectedEmojiCharacter = 'global';
                 }
                 
                 refreshCustomSelect(select);
@@ -16140,11 +16218,139 @@ ${historyText}`;
             });
         }
 
+        function toggleEmojiLibraryEditMode(btn) {
+            isEmojiLibraryEditMode = !isEmojiLibraryEditMode;
+            const grid = document.getElementById('ai-sticker-grid');
+            const actionBtn = document.getElementById('emoji-library-action-btn');
+            
+            if (isEmojiLibraryEditMode) {
+                btn.textContent = "取消";
+                grid.classList.add('batch-edit-mode');
+                
+                // Change bottom button to delete style
+                actionBtn.classList.add('emoji-library-delete-btn');
+                actionBtn.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+            } else {
+                btn.textContent = "编辑";
+                grid.classList.remove('batch-edit-mode');
+                selectedAiStickerIds.clear(); // Clear selection
+                
+                // Reset checkboxes UI
+                document.querySelectorAll('.sticker-select-checkbox').forEach(cb => cb.classList.remove('checked'));
+                
+                // Reset bottom button
+                actionBtn.classList.remove('emoji-library-delete-btn');
+                actionBtn.innerHTML = "+";
+            }
+        }
+
+        function handleEmojiLibraryActionBtn() {
+            if (isEmojiLibraryEditMode) {
+                deleteSelectedAiStickers();
+            } else {
+                openAiStickerUploadModal();
+            }
+        }
+
+        function toggleAiStickerSelection(id, element) {
+            const checkbox = element.querySelector('.sticker-select-checkbox');
+            if (selectedAiStickerIds.has(id)) {
+                selectedAiStickerIds.delete(id);
+                if (checkbox) checkbox.classList.remove('checked');
+            } else {
+                selectedAiStickerIds.add(id);
+                if (checkbox) checkbox.classList.add('checked');
+            }
+        }
+
+        function deleteSelectedAiStickers() {
+            if (selectedAiStickerIds.size === 0) {
+                showToast('请选择要删除的表情包');
+                return;
+            }
+
+            // Custom modal with specific button styles as requested
+            const modal = document.getElementById('custom-confirm-modal');
+            const titleEl = document.getElementById('custom-confirm-title');
+            const messageEl = document.getElementById('custom-confirm-message');
+            const confirmBtn = document.getElementById('custom-confirm-confirm-btn');
+            const cancelBtn = document.getElementById('custom-confirm-cancel-btn');
+
+            titleEl.textContent = '确认删除';
+            messageEl.textContent = `确定要删除选中的 ${selectedAiStickerIds.size} 个表情包吗？`;
+            
+            // Apply requested styles
+            cancelBtn.style.backgroundColor = 'white';
+            cancelBtn.style.color = 'black';
+            cancelBtn.style.border = '1px solid #ddd'; // Adding border for visibility
+            
+            confirmBtn.style.backgroundColor = 'black';
+            confirmBtn.style.color = 'white';
+
+            modal.style.display = 'flex';
+
+            confirmBtn.onclick = () => {
+                const idsToDelete = Array.from(selectedAiStickerIds);
+                let deletedCount = 0;
+                
+                idsToDelete.forEach(id => {
+                    // id is likely a string from sticker.id, IndexedDB key might be number or string. 
+                    // dbAdd uses autoIncrement true, so keys are numbers.
+                    // We need to ensure we pass the correct type.
+                    // ai_stickers store keyPath is 'id', autoIncrement true.
+                    // We need to parse int if the ID string looks like an integer.
+                    let key = id;
+                    if (!isNaN(parseInt(id))) {
+                        key = parseInt(id);
+                    }
+
+                    dbDelete('ai_stickers', key, () => {
+                        deletedCount++;
+                        if (deletedCount === idsToDelete.length) {
+                            showToast('删除成功');
+                            modal.style.display = 'none';
+                            
+                            // Reset styles
+                            cancelBtn.style.backgroundColor = '';
+                            cancelBtn.style.color = '';
+                            cancelBtn.style.border = '';
+                            confirmBtn.style.backgroundColor = '';
+                            confirmBtn.style.color = '';
+                            
+                            // Exit edit mode (or stay? User didn't specify, but usually stay or refresh list)
+                            // Let's refresh list and keep edit mode active for convenience, 
+                            // but clear selection.
+                            selectedAiStickerIds.clear();
+                            renderAiStickers(lastSelectedEmojiCharacter);
+                        }
+                    });
+                });
+            };
+
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+                // Reset styles
+                cancelBtn.style.backgroundColor = '';
+                cancelBtn.style.color = '';
+                cancelBtn.style.border = '';
+                confirmBtn.style.backgroundColor = '';
+                confirmBtn.style.color = '';
+            };
+        }
+
         function renderAiStickers(friendId) {
             const grid = document.getElementById('ai-sticker-grid');
             grid.innerHTML = '';
+            
+            // Re-apply batch edit mode class if active
+            if (isEmojiLibraryEditMode) {
+                grid.classList.add('batch-edit-mode');
+            } else {
+                grid.classList.remove('batch-edit-mode');
+            }
+
             if (!friendId) {
-                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:#999; margin-top:20px;">请先选择一个角色</div>';
+                grid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:#999; margin-top:20px;">请先选择一个角色或全局</div>';
                 return;
             }
             
@@ -16152,6 +16358,8 @@ ${historyText}`;
             const diceItem = document.createElement('div');
             diceItem.className = 'sticker-item';
             diceItem.innerHTML = `<img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 100 100'><g transform='translate(0, -5)'><rect x='5' y='25' width='50' height='50' rx='10' fill='white' stroke='%23333' stroke-width='3'/><circle cx='20' cy='40' r='5' fill='%23333'/><circle cx='45' cy='40' r='5' fill='%23333'/><circle cx='20' cy='65' r='5' fill='%23333'/><circle cx='45' cy='65' r='5' fill='%23333'/><circle cx='32.5' cy='52.5' r='5' fill='%23333'/></g><g transform='translate(35, 25)'><rect x='5' y='25' width='50' height='50' rx='10' fill='white' stroke='%23333' stroke-width='3'/><circle cx='20' cy='40' r='5' fill='%23333'/><circle cx='45' cy='65' r='5' fill='%23333'/></g></svg>" alt="Dice">`;
+            // Disable interaction in batch edit mode for dice (it's not deletable from here usually, or should we allow?)
+            // It's a static item, not in DB, so cannot delete.
             grid.appendChild(diceItem);
 
             try {
@@ -16170,49 +16378,23 @@ ${historyText}`;
                         const img = document.createElement('img');
                         img.src = sticker.src;
 
-                        const deleteBtn = document.createElement('div');
-                        deleteBtn.className = 'sticker-delete-btn';
-                        deleteBtn.innerHTML = '&times;';
-                        
-                        deleteBtn.onclick = (e) => {
-                            e.stopPropagation();
-                            dbDelete('ai_stickers', sticker.id, () => {
-                                renderAiStickers(friendId);
-                            });
-                        };
-
-                        let pressTimer;
-                        let wasLongPress = false;
-
-                        const startPress = (e) => {
-                            if (e.button === 2) return;
-                            wasLongPress = false;
-                            pressTimer = setTimeout(() => {
-                                wasLongPress = true;
-                                grid.classList.add('edit-mode');
-                            }, 500);
-                        };
-
-                        const cancelPress = () => {
-                            clearTimeout(pressTimer);
-                        };
-
-                        item.addEventListener('mousedown', startPress);
-                        item.addEventListener('touchstart', startPress, { passive: true });
-                        item.addEventListener('mouseup', cancelPress);
-                        item.addEventListener('mouseleave', cancelPress);
-                        item.addEventListener('touchend', cancelPress);
-                        item.addEventListener('touchcancel', cancelPress);
+                        // Batch Selection Checkbox
+                        const checkbox = document.createElement('div');
+                        checkbox.className = 'sticker-select-checkbox';
+                        if (selectedAiStickerIds.has(String(sticker.id)) || selectedAiStickerIds.has(sticker.id)) {
+                            checkbox.classList.add('checked');
+                        }
 
                         item.onclick = (e) => {
-                            if (wasLongPress) return;
-                            if (grid.classList.contains('edit-mode')) {
-                                grid.classList.remove('edit-mode');
+                            if (isEmojiLibraryEditMode) {
+                                toggleAiStickerSelection(sticker.id, item);
+                            } else {
+                                sendSticker(sticker.src, sticker.description);
                             }
                         };
                         
                         item.appendChild(img);
-                        item.appendChild(deleteBtn);
+                        item.appendChild(checkbox);
                         grid.appendChild(item);
                     });
                 };
@@ -16224,7 +16406,7 @@ ${historyText}`;
         function openAiStickerUploadModal() {
             const friendId = document.getElementById('emoji-library-character-select').value;
             if (!friendId) {
-                showToast('请先选择一个角色');
+                showToast('请先选择一个角色或全局');
                 return;
             }
             document.getElementById('ai-sticker-upload-modal').style.display = 'flex';
@@ -16236,7 +16418,10 @@ ${historyText}`;
 
         function handleAiStickerFiles(input) {
             const friendId = document.getElementById('emoji-library-character-select').value;
-            if (!friendId) return;
+            if (!friendId) {
+                showToast('请先选择一个角色或全局');
+                return;
+            }
             
             const files = Array.from(input.files);
             if (files.length === 0) return;
@@ -16377,7 +16562,10 @@ ${historyText}`;
         function openAiStickerUrlModal() {
             closeAiStickerUploadModal();
             const friendId = document.getElementById('emoji-library-character-select').value;
-            if (!friendId) return;
+            if (!friendId) {
+                showToast('请先选择一个角色或全局');
+                return;
+            }
 
             showGenericStickerModal({
                 title: '批量添加链接表情',
