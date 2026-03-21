@@ -138,11 +138,11 @@
             max-height: 100%;
         }
 
-        #main-page, #theme-page, #desktop-theme-page, #chat-theme-page, #bubble-theme-page, #settings-page, #world-book-page, #wechat-page, #chat-interface-page, #chat-info-page, #wechat-me-page, #friend-profile-page, #memory-management-page, #emoji-library-page, #wechat-discover-page, #regex-app-page, #global-font-page {
+        #main-page, #theme-page, #desktop-theme-page, #chat-theme-page, #bubble-theme-page, #settings-page, #world-book-page, #wechat-page, #chat-interface-page, #chat-info-page, #wechat-me-page, #friend-profile-page, #memory-management-page, #emoji-library-page, #wechat-discover-page, #regex-app-page, #global-font-page, #offline-chat-page {
             display: none;
         }
 
-        #main-page.active, #theme-page.active, #desktop-theme-page.active, #chat-theme-page.active, #settings-page.active, #world-book-page.active, #wechat-page.active, #wechat-contacts-page.active, #chat-interface-page.active, #chat-info-page.active, #wechat-me-page.active, #friend-profile-page.active, #memory-management-page.active, #emoji-library-page.active, #wechat-discover-page.active, #regex-app-page.active, #global-font-page.active {
+        #main-page.active, #theme-page.active, #desktop-theme-page.active, #chat-theme-page.active, #settings-page.active, #world-book-page.active, #wechat-page.active, #wechat-contacts-page.active, #chat-interface-page.active, #chat-info-page.active, #wechat-me-page.active, #friend-profile-page.active, #memory-management-page.active, #emoji-library-page.active, #wechat-discover-page.active, #regex-app-page.active, #global-font-page.active, #offline-chat-page.active {
             display: flex;
         }
 
@@ -1897,7 +1897,7 @@
             background-color: #fff;
             border-radius: 8px;
             padding: 8px 16px;
-            font-size: 15px;
+            font-size: 16px;
             outline: none;
             height: 36px;
             resize: none;
@@ -3358,6 +3358,48 @@
         #music-player-page { display: none; }
         #music-player-page.active { display: flex; }
 
+        /* Music Avatars Blending */
+        .music-avatars-container {
+            position: relative;
+            width: 145px;
+            height: 75px;
+            margin: 0 auto;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .music-avatar {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #2b2b2b;
+            box-sizing: border-box;
+        }
+
+        .music-avatar.friend {
+            left: 0;
+            z-index: 3;
+        }
+
+        .music-avatar.me {
+            left: 70px;
+            z-index: 2;
+        }
+
+        .music-avatars-container.swapped .music-avatar.friend {
+            left: 70px;
+            z-index: 3;
+        }
+
+        .music-avatars-container.swapped .music-avatar.me {
+            left: 0;
+            z-index: 2;
+        }
+
         /* Music Playlist Modal */
         #music-playlist-sheet-overlay {
             z-index: 2000;
@@ -3436,8 +3478,8 @@
                 height: 100%;
                 height: 100dvh;
             }
-            body, input, textarea, select {
-                font-size: 16px; /* 防止 iOS 聚焦时自动缩放 */
+            body, input, textarea, select, .chat-input, .settings-item input, .gm-input, .af-input, .wechat-search-input {
+                font-size: 16px !important; /* 防止 iOS 聚焦时自动缩放 */
             }
             body {
                 background-color: var(--phone-bg);
@@ -3549,6 +3591,184 @@
 
         #bubble-preset-modal .preset-actions[style*="grid"] button[style*="background-color"] {
             border: none;
+        }
+
+        /* Offline Chat Page Styles */
+        #offline-chat-page {
+            background-color: #fff;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            z-index: 50; /* Higher than normal chat */
+            padding-top: 0 !important;
+            padding-bottom: var(--keyboard-offset, 0px);
+            transition: padding-bottom 0.2s ease-out;
+        }
+
+        .offline-chat-header {
+            height: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: calc(max(34px, env(safe-area-inset-top)) + 2px) 15px 12px 15px;
+            background-color: #fff;
+            flex-shrink: 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .offline-chat-header .back-arrow {
+            grid-column: 1;
+            justify-self: start;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .offline-chat-header .settings-btn {
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .offline-chat-header .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+            flex-grow: 1;
+            text-align: center;
+        }
+
+        #offline-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background-color: #fff;
+        }
+
+        /* Offline Chat specific message styles */
+        .offline-message-row {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .offline-bubble-container {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+        }
+
+        .offline-bubble-container.left {
+            justify-content: flex-start;
+        }
+
+        .offline-bubble-container.right {
+            justify-content: flex-end;
+        }
+
+        .offline-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .offline-bubble-content-group {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+        }
+        
+        .offline-user-name {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 2px;
+            text-align: right;
+        }
+
+        .offline-bubble {
+            padding: 12px 16px;
+            font-size: 15px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            border-radius: 20px; /* Very rounded */
+            position: relative;
+        }
+
+        .offline-bubble.left {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #eee;
+            border-bottom-left-radius: 5px;
+        }
+
+        .offline-bubble.right {
+            background-color: #e1f5fe; /* Light blue */
+            color: #333;
+            border-bottom-right-radius: 5px;
+        }
+
+        .offline-action {
+            text-align: center;
+            font-size: 14px;
+            color: #000;
+            margin: 5px 0;
+            padding: 0 20px;
+            font-style: italic;
+        }
+
+        .offline-thought {
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            margin: 5px 0;
+            padding: 0 20px;
+            text-decoration: underline;
+            text-decoration-style: dashed;
+            text-underline-offset: 4px;
+        }
+
+        .offline-input-container {
+            padding: 10px 15px;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .offline-input {
+            flex: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .offline-send-btn {
+            background-color: #e1f5fe; /* Light blue initial */
+            color: #333; /* Dark text for contrast */
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .offline-send-btn:active {
+            background-color: #b3e5fc;
         }
     </style>
 </head>
@@ -4731,6 +4951,25 @@
             </div>
         </div>
 
+        <div id="offline-chat-page" class="page" style="position: relative;">
+            <div class="offline-chat-header">
+                <span class="back-arrow" onclick="exitOfflineChat()"><</span>
+                <span class="title" id="offline-chat-title"></span>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <svg onclick="retryLastOfflineMessage()" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer;"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    <svg onclick="openOfflineSettingsModal(false)" class="settings-btn" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" style="cursor: pointer;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+                </div>
+            </div>
+            <div id="offline-chat-messages"></div>
+            <div id="offline-manual-reply-btn" style="position: absolute; right: 15px; bottom: 70px; width: 45px; height: 45px; background-color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; z-index: 100;" onclick="triggerAIResponse(false)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: translate(-1px, 1px);"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </div>
+            <div class="offline-input-container">
+                <input type="text" id="offline-chat-input" class="offline-input" placeholder="输入...">
+                <button class="offline-send-btn" onclick="sendOfflineMessage()">发送</button>
+            </div>
+        </div>
+
         <div id="chat-info-page" class="page">
             <div class="settings-header">
                 <span class="back-arrow" onclick="showPage('chat-interface-page')"><</span>
@@ -4874,6 +5113,15 @@
                 </div>
 
                 <div class="settings-card" id="chat-info-thought-section" style="width: 100%; margin-top: 15px;">
+                    <div class="settings-item" style="border-bottom: 1px solid #f5f5f5; padding-bottom: 15px; margin-bottom: 15px;">
+                        <div class="notification-toggle">
+                            <label style="font-size: 16px; font-weight: 500; color: #333;">线下模式单独界面</label>
+                            <label class="switch">
+                                <input type="checkbox" id="separate-offline-ui-toggle" onchange="updateFriendInfo('separateOfflineUI', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
                     <div class="settings-item">
                         <div class="notification-toggle">
                             <label style="font-size: 16px; font-weight: 500; color: #333;">心声功能</label>
@@ -5387,11 +5635,33 @@
         <!-- Connection / Avatars -->
         <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px; z-index: 10; position: relative;">
             <!-- Avatars -->
-            <div class="music-avatars-container" style="position: relative; display: flex; align-items: center; justify-content: center; height: 80px; z-index: 2;">
-                <!-- 左头像：Me -->
-                <img id="music-my-avatar" src="https://via.placeholder.com/150/B5EAD7/ffffff?text=Me" alt="My Avatar" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid #2b2b2b; object-fit: cover; transform: translateX(6px); z-index: 2;">
-                <!-- 右头像：Friend -->
-                <img id="music-friend-avatar" src="https://via.placeholder.com/150/FFB7B2/ffffff?text=You" alt="Friend Avatar" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid #2b2b2b; object-fit: cover; transform: translateX(-6px); z-index: 3;">
+            <div class="music-avatars-container" onclick="this.classList.toggle('swapped')">
+                <svg width="185" height="150" style="position: absolute; top: 0; left: -20px; z-index: 4; pointer-events: none; overflow: visible; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));">
+                    <!-- Left wire -->
+                    <path d="M 6 39 C -15 80, 30 110, 92.5 120" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" />
+                    <!-- Right wire -->
+                    <path d="M 179 39 C 200 80, 155 110, 92.5 120" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" />
+                    <!-- Main wire -->
+                    <path d="M 92.5 120 L 92.5 150" fill="none" stroke="#ccc" stroke-width="1.5" />
+                    <!-- Junction -->
+                    <rect x="91" y="118" width="3" height="6" rx="1.5" fill="#ccc" />
+                    
+                    <!-- Left earbud -->
+                    <g transform="translate(15, 35) rotate(65)">
+                        <rect x="-1.5" y="-2" width="3" height="12" rx="1.5" fill="#ddd" />
+                        <ellipse cx="0" cy="-4" rx="3.5" ry="5" fill="#fff" />
+                    </g>
+
+                    <!-- Right earbud -->
+                    <g transform="translate(170, 35) rotate(-65)">
+                        <rect x="-1.5" y="-2" width="3" height="12" rx="1.5" fill="#ddd" />
+                        <ellipse cx="0" cy="-4" rx="3.5" ry="5" fill="#fff" />
+                    </g>
+                </svg>
+                <!-- 角色头像 (Friend) -->
+                <img id="music-friend-avatar" class="music-avatar friend" src="https://via.placeholder.com/150/FFB7B2/ffffff?text=You" alt="Friend Avatar">
+                <!-- 用户头像 (Me) -->
+                <img id="music-my-avatar" class="music-avatar me" src="https://via.placeholder.com/150/B5EAD7/ffffff?text=Me" alt="My Avatar">
             </div>
 
             <!-- Text -->
@@ -8821,13 +9091,20 @@
 
         function initMusicPlayerView() {
             // Setup Avatars
-            dbGet('user_profile', 'main_user', profile => {
-                document.getElementById('music-my-avatar').src = profile && profile.avatar ? profile.avatar : 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me';
-            });
-
             dbGet('friends', currentChatFriendId, friend => {
                 if (friend) {
                     document.getElementById('music-friend-avatar').src = friend.avatar;
+                    if (friend.myAvatar) {
+                        document.getElementById('music-my-avatar').src = friend.myAvatar;
+                    } else {
+                        dbGet('user_profile', 'main_user', profile => {
+                            document.getElementById('music-my-avatar').src = profile && profile.avatar ? profile.avatar : 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me';
+                        });
+                    }
+                } else {
+                    dbGet('user_profile', 'main_user', profile => {
+                        document.getElementById('music-my-avatar').src = profile && profile.avatar ? profile.avatar : 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me';
+                    });
                 }
             });
 
@@ -9458,8 +9735,12 @@
 
         function showBannerNotification(friend, text) {
             const chatPage = document.getElementById('chat-interface-page');
+            const offlineChatPage = document.getElementById('offline-chat-page');
             // If user is currently in the chat interface with this friend, don't show banner
             if (chatPage.classList.contains('active') && currentChatFriendId === friend.id) {
+                return; 
+            }
+            if (offlineChatPage.classList.contains('active') && currentChatFriendId === friend.id) {
                 return; 
             }
 
@@ -10495,6 +10776,7 @@
         });
 
         let activeMessage = null;
+        let activeMessageSegment = null;
         const msgContextMenu = document.getElementById('message-context-menu');
 
         document.addEventListener('click', (e) => {
@@ -10503,12 +10785,29 @@
             }
         });
 
-        function showMessageContextMenu(e, msg) {
+        function showMessageContextMenu(e, msg, segmentInfo = null) {
             activeMessage = msg;
+            activeMessageSegment = segmentInfo;
             
-            // Toggle buttons based on message type
-            document.getElementById('msg-ctx-retry').style.display = (msg.type === 'received') ? 'block' : 'none';
-            document.getElementById('msg-ctx-recall').style.display = (msg.type === 'sent') ? 'block' : 'none';
+            const isOfflineModeUI = document.getElementById('offline-chat-page').classList.contains('active');
+
+            if (isOfflineModeUI) {
+                document.getElementById('msg-ctx-multiselect').style.display = 'none';
+                document.getElementById('msg-ctx-retry').style.display = 'none'; // The retry button is in the header
+                document.getElementById('msg-ctx-copy').style.display = 'block';
+                document.getElementById('msg-ctx-edit').style.display = 'block';
+                document.getElementById('msg-ctx-quote').style.display = 'none';
+                document.getElementById('msg-ctx-recall').style.display = 'none';
+                document.getElementById('msg-ctx-delete').style.display = 'block';
+            } else {
+                document.getElementById('msg-ctx-multiselect').style.display = 'block';
+                document.getElementById('msg-ctx-retry').style.display = (msg.type === 'received') ? 'block' : 'none';
+                document.getElementById('msg-ctx-copy').style.display = 'block';
+                document.getElementById('msg-ctx-edit').style.display = 'block';
+                document.getElementById('msg-ctx-quote').style.display = 'block';
+                document.getElementById('msg-ctx-recall').style.display = (msg.type === 'sent') ? 'block' : 'none';
+                document.getElementById('msg-ctx-delete').style.display = 'block';
+            }
             
             const phoneContainer = document.querySelector('.phone-container');
             const phoneRect = phoneContainer.getBoundingClientRect();
@@ -10531,7 +10830,11 @@
 
         document.getElementById('msg-ctx-copy').addEventListener('click', () => {
             if (activeMessage && activeMessage.text) {
-                navigator.clipboard.writeText(activeMessage.text).then(() => showToast('已复制'));
+                let textToCopy = activeMessage.text;
+                if (activeMessageSegment) {
+                    textToCopy = activeMessageSegment.content;
+                }
+                navigator.clipboard.writeText(textToCopy).then(() => showToast('已复制'));
             }
             msgContextMenu.style.display = 'none';
         });
@@ -10564,16 +10867,51 @@
 
         document.getElementById('msg-ctx-delete').addEventListener('click', () => {
             if (activeMessage) {
-                showCustomConfirm('确定要删除这条消息吗？', () => {
-                    dbGetAll('chat_history', allMsgs => {
-                        const dbMsg = allMsgs.find(m => m.friendId === activeMessage.friendId && m.timestamp === activeMessage.timestamp);
-                        if (dbMsg) {
-                            dbDelete('chat_history', dbMsg.id, () => {
-                                renderMessages(currentChatFriendId);
-                            });
-                        }
-                    });
-                }, '删除消息');
+                if (activeMessageSegment) {
+                    showCustomConfirm('确定要删除这条片段吗？', () => {
+                        dbGetAll('chat_history', allMsgs => {
+                            const dbMsg = allMsgs.find(m => m.friendId === activeMessage.friendId && m.timestamp === activeMessage.timestamp);
+                            if (dbMsg) {
+                                let parts = parseOfflineMessage(dbMsg.text);
+                                parts.splice(activeMessageSegment.index, 1);
+                                
+                                let newText = '';
+                                parts.forEach(p => {
+                                    if (p.type === 'dialogue') newText += '「' + p.content + '」';
+                                    else if (p.type === 'thought') newText += '<thought>' + p.content + '</thought>';
+                                    else if (p.type === 'action') newText += p.content;
+                                });
+                                
+                                if (!newText.trim()) {
+                                    dbDelete('chat_history', dbMsg.id, () => {
+                                        renderOfflineChat(currentChatFriendId);
+                                    });
+                                } else {
+                                    dbMsg.text = newText;
+                                    dbUpdate('chat_history', dbMsg, () => {
+                                        renderOfflineChat(currentChatFriendId);
+                                    });
+                                }
+                            }
+                        });
+                    }, '删除片段');
+                } else {
+                    showCustomConfirm('确定要删除这条消息吗？', () => {
+                        dbGetAll('chat_history', allMsgs => {
+                            const dbMsg = allMsgs.find(m => m.friendId === activeMessage.friendId && m.timestamp === activeMessage.timestamp);
+                            if (dbMsg) {
+                                dbDelete('chat_history', dbMsg.id, () => {
+                                    const isOfflineModeUI = document.getElementById('offline-chat-page').classList.contains('active');
+                                    if (isOfflineModeUI) {
+                                        renderOfflineChat(currentChatFriendId);
+                                    } else {
+                                        renderMessages(currentChatFriendId);
+                                    }
+                                });
+                            }
+                        });
+                    }, '删除消息');
+                }
             }
             msgContextMenu.style.display = 'none';
         });
@@ -10604,7 +10942,12 @@
                             dbDelete('chat_history', msg.id, () => {
                                 deletedCount++;
                                 if (deletedCount === messagesToDelete.length) {
-                                    renderMessages(currentChatFriendId);
+                                    const isOfflineModeUI = document.getElementById('offline-chat-page').classList.contains('active');
+                                    if (isOfflineModeUI) {
+                                        renderOfflineChat(currentChatFriendId);
+                                    } else {
+                                        renderMessages(currentChatFriendId);
+                                    }
                                     triggerAIResponse();
                                 }
                             });
@@ -10624,7 +10967,11 @@
 
         document.getElementById('msg-ctx-edit').addEventListener('click', () => {
             if (activeMessage) {
-                document.getElementById('edit-message-content').value = activeMessage.text;
+                if (activeMessageSegment) {
+                    document.getElementById('edit-message-content').value = activeMessageSegment.content;
+                } else {
+                    document.getElementById('edit-message-content').value = activeMessage.text;
+                }
                 document.getElementById('edit-message-modal').style.display = 'flex';
             }
             msgContextMenu.style.display = 'none';
@@ -10710,7 +11057,12 @@
                             if (deletedCount === msgsToDelete.length) {
                                 showToast('删除成功');
                                 exitSelectionMode();
-                                renderMessages(currentChatFriendId);
+                                const isOfflineModeUI = document.getElementById('offline-chat-page').classList.contains('active');
+                                if (isOfflineModeUI) {
+                                    renderOfflineChat(currentChatFriendId);
+                                } else {
+                                    renderMessages(currentChatFriendId);
+                                }
                             }
                         });
                     });
@@ -10739,11 +11091,29 @@
                 dbGetAll('chat_history', allMsgs => {
                     const dbMsg = allMsgs.find(m => m.friendId === activeMessage.friendId && m.timestamp === activeMessage.timestamp);
                     if (dbMsg) {
-                        dbMsg.text = newText;
-                        dbUpdate('chat_history', dbMsg, () => {
-                            document.getElementById('edit-message-modal').style.display = 'none';
-                            renderMessages(currentChatFriendId, dbMsg.id || dbMsg.timestamp);
-                        });
+                        if (activeMessageSegment) {
+                            let parts = parseOfflineMessage(dbMsg.text);
+                            parts[activeMessageSegment.index].content = newText;
+                            
+                            let combinedText = '';
+                            parts.forEach(p => {
+                                if (p.type === 'dialogue') combinedText += '「' + p.content + '」';
+                                else if (p.type === 'thought') combinedText += '<thought>' + p.content + '</thought>';
+                                else if (p.type === 'action') combinedText += p.content;
+                            });
+                            
+                            dbMsg.text = combinedText;
+                            dbUpdate('chat_history', dbMsg, () => {
+                                document.getElementById('edit-message-modal').style.display = 'none';
+                                renderOfflineChat(currentChatFriendId);
+                            });
+                        } else {
+                            dbMsg.text = newText;
+                            dbUpdate('chat_history', dbMsg, () => {
+                                document.getElementById('edit-message-modal').style.display = 'none';
+                                renderMessages(currentChatFriendId, dbMsg.id || dbMsg.timestamp);
+                            });
+                        }
                     }
                 });
             }
@@ -10768,7 +11138,7 @@
             return sanitizedText;
         }
 
-        function attachMessageEvents(element, messageObj) {
+        function attachMessageEvents(element, messageObj, segmentInfo = null) {
             let pressTimer;
             let startX, startY;
             let isLongPress = false;
@@ -10782,7 +11152,7 @@
                 pressTimer = setTimeout(() => {
                     isLongPress = true;
                     e.preventDefault();
-                    showMessageContextMenu(e, messageObj);
+                    showMessageContextMenu(e, messageObj, segmentInfo);
                 }, 500);
             };
 
@@ -10830,7 +11200,7 @@
             element.addEventListener('contextmenu', (e) => { 
                 e.preventDefault(); 
                 if (!isLongPress) {
-                    showMessageContextMenu(e, messageObj); 
+                    showMessageContextMenu(e, messageObj, segmentInfo); 
                 }
             });
             element.addEventListener('click', onClick, true);
@@ -12189,7 +12559,8 @@
             const request = index.getAll(friendId);
 
             request.onsuccess = () => {
-                const messages = request.result;
+                let messages = request.result;
+                messages = messages.filter(msg => !msg.isOfflineSeparate);
                 if (messages.length > 0) {
                     messages.forEach(msg => addMessageToUI(msg, false));
                 }
@@ -12302,9 +12673,16 @@
                             container.scrollTop = container.scrollHeight;
                         }
                     } else {
-                        const titleEl = document.getElementById('chat-interface-title');
-                        if (titleEl) {
-                            titleEl.textContent = '对方正在输入...';
+                        if (document.getElementById('offline-chat-page').classList.contains('active')) {
+                            const titleEl = document.getElementById('offline-chat-title');
+                            if (titleEl) {
+                                titleEl.textContent = '...';
+                            }
+                        } else {
+                            const titleEl = document.getElementById('chat-interface-title');
+                            if (titleEl) {
+                                titleEl.textContent = '对方正在输入...';
+                            }
                         }
                     }
                 });
@@ -12318,9 +12696,16 @@
                         const indicators = document.querySelectorAll('.group-typing-indicator');
                         indicators.forEach(el => el.remove());
                     } else {
-                        const titleEl = document.getElementById('chat-interface-title');
-                        if (titleEl && friend) {
-                            titleEl.textContent = friend.name;
+                        if (document.getElementById('offline-chat-page').classList.contains('active')) {
+                            const titleEl = document.getElementById('offline-chat-title');
+                            if (titleEl) {
+                                titleEl.textContent = '';
+                            }
+                        } else {
+                            const titleEl = document.getElementById('chat-interface-title');
+                            if (titleEl && friend) {
+                                titleEl.textContent = friend.name;
+                            }
                         }
                     }
                 });
@@ -12502,7 +12887,7 @@
                             // Sanitize thought tags immediately to standardize various bracket forms to <thought>
                             aiResponseText = sanitizeThoughtTags(aiResponseText);
 
-                            const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
+                            const isOfflineMode = (friend.offlineSettings && friend.offlineSettings.enabled) || (friend.separateOfflineUI && document.getElementById('offline-chat-page').classList.contains('active'));
 
                             // Parse Thought Feature Tags
                             let mood = null;
@@ -12676,15 +13061,19 @@
                             } else if (isOfflineMode) {
                                 // Offline mode: handle as a single message
                                 hideTypingIndicator(friend.id);
+                                const isSeparateUI = friend.separateOfflineUI && document.getElementById('offline-chat-page').classList.contains('active');
                                 const responseMsg = {
                                     friendId: friend.id,
                                     text: aiResponseText,
                                     type: 'received',
                                     timestamp: Date.now(),
-                                    isOffline: true // Add our new flag
+                                    isOffline: true,
+                                    isOfflineSeparate: isSeparateUI
                                 };
 
-                                if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                if (isSeparateUI && currentChatFriendId === friend.id) {
+                                    await appendOfflineMessage(responseMsg, friend, true, true);
+                                } else if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
                                     addMessageToUI(responseMsg);
                                 }
                                 await new Promise(resolve => dbAdd('chat_history', responseMsg, resolve));
@@ -12695,16 +13084,18 @@
                                 friend.lastTime = getCurrentTimeStr();
                                 friend.lastActivityTimestamp = Date.now();
                                 
-                                const isChatActive = currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active');
+                                const isChatActive = currentChatFriendId === friend.id && (document.getElementById('chat-interface-page').classList.contains('active') || document.getElementById('offline-chat-page').classList.contains('active'));
                                 if (!isChatActive) {
                                     friend.unreadCount = (friend.unreadCount || 0) + 1;
                                 }
 
                                 await new Promise(resolve => dbUpdate('friends', friend, resolve));
 
-                                showBannerNotification(friend, msgPreview);
+                                if (!isChatActive) {
+                                    showBannerNotification(friend, msgPreview);
+                                }
 
-                                if (document.getElementById('wechat-page').classList.contains('active')) {
+                                if (document.getElementById('wechat-page').classList.contains('active') || document.getElementById('wechat-contacts-page').classList.contains('active')) {
                                     renderChatList();
                                 }
                             } else {
@@ -12797,7 +13188,7 @@
                                 }
 
 
-                                    // Parse Send Image Command
+                                // Parse Send Image Command
                                     const sendImageRegex = /<send_image>(.*?)<\/send_image>/;
                                     const sendImageMatch = partText.match(sendImageRegex);
                                     if (sendImageMatch) {
@@ -12815,12 +13206,25 @@
                                         }
                                     }
 
+                                    // Parse Location
+                                    let locationData = null;
+                                    const locationRegex = /<location name="([^"]+)">([^<]*)<\/location>/;
+                                    const locationMatch = partText.match(locationRegex);
+                                    if (locationMatch) {
+                                        locationData = {
+                                            name: locationMatch[1],
+                                            detail: locationMatch[2] || ''
+                                        };
+                                        partText = partText.replace(locationRegex, '').trim();
+                                    }
+
                                 // Parse Dice
                                 let hasDice = false;
                                 if (partText.includes('<dice></dice>')) {
                                     hasDice = true;
                                     partText = partText.replace(/<dice><\/dice>/g, '').trim();
                                 }
+
 
                                 // Parse Music Control
                                 const musicControlRegex = /<music_control>(.*?)<\/music_control>/;
@@ -12925,7 +13329,7 @@
                                         partText = partText.replace(quoteRegex, '').trim();
                                     }
                                     
-                                    if (partText === '' && !transferData && !aiStickerUrl && !hasDice) {
+                                    if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData) {
                                         if (hasAction) {
                                             partText = actionText;
                                         } else if (avatarChangeMatch || hasMusicAction) {
@@ -12936,7 +13340,35 @@
                                         }
                                     }
 
-                                    if (transferData) {
+                                    if (locationData) {
+                                        if (partText) {
+                                            const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
+                                            if (quoteData) textMsg.quote = quoteData;
+                                            if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                                addMessageToUI(textMsg);
+                                            } else {
+                                                showBannerNotification(friend, partText);
+                                            }
+                                            await new Promise(resolve => dbAdd('chat_history', textMsg, resolve));
+                                        }
+
+                                        const locationMsg = {
+                                            friendId: friend.id,
+                                            text: `[位置] ${locationData.name}`,
+                                            type: 'received',
+                                            timestamp: Date.now() + 100,
+                                            isLocation: true,
+                                            locationName: locationData.name,
+                                            locationDetail: locationData.detail
+                                        };
+                                        if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                            addMessageToUI(locationMsg);
+                                        } else {
+                                            showBannerNotification(friend, `[位置] ${locationData.name}`);
+                                        }
+                                        await new Promise(resolve => dbAdd('chat_history', locationMsg, resolve));
+                                        friend.lastMsg = `[位置] ${locationData.name}`;
+                                    } else if (transferData) {
                                         if (partText) {
                                             const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
                                             if (quoteData) textMsg.quote = quoteData;
@@ -13187,7 +13619,7 @@
 
         function buildSystemPrompt(friend, userPersona = null, aiStickers = [], visiblePosts = []) {
             let prompt = `你现在的身份是：${friend.realName || friend.name}。\n`;
-            const isOfflineMode = friend.offlineSettings && friend.offlineSettings.enabled;
+            const isOfflineMode = (friend.offlineSettings && friend.offlineSettings.enabled) || (friend.separateOfflineUI && document.getElementById('offline-chat-page').classList.contains('active'));
 
             // --- 核心互动原则 (最高优先级) ---
             prompt += `\n【核心互动原则与禁忌】\n`;
@@ -13304,7 +13736,7 @@
             }
 
             if (isOfflineMode) {
-                const settings = friend.offlineSettings;
+                const settings = friend.offlineSettings || {};
                 prompt += `\n【重要：当前为线下模式，请严格遵守以下所有规则】\n`;
                 prompt += `1.  **输出格式**: 你的回复必须合并为【一条完整的消息】，不能拆分成多条发送。\n`;
                 prompt += `    - **灵活组合**: 在这条消息内，你可以自由组合、穿插【语言】、【动作】和【心理描写】。不需要固定的顺序（如不必须是语言+动作+心理），也不需要各部分字数相当。例如可以是：语言+心理+动作+心理+语言，或者动作+心理+语言等等。\n`;
@@ -13348,7 +13780,8 @@
 6. 识别图片/表情包：对方可能会发送图片或表情包，请你结合图片内容或表情包上的文字/画面情感进行自然的回应，如果图里有梗，请根据人设回应。
 7. 更换头像：如果用户发给你一张或多张图片让你换头像，你的反应要符合人设，这可以是一个多回合的互动。你可以同意、拒绝，或者先拉扯几句再同意。例如：\n- **如果你是傲娇型**：你可以先说‘我才不要，这个不好看’，如果用户哄你，你再说‘好吧好吧，真拿你没办法……’，然后输出 <change_avatar>图片ID</change_avatar> 指令。\n- **如果你想提条件**：你可以说‘换倒是可以，不过你得先夸我几句’，等用户夸完你再输出指令。\n- **如果你想马上换**：直接换，说出符合人设的话，并输出指令。\n- **核心**：让互动更真实，你可以先拒绝或嘴硬，等用户哄你或满足条件后，再输出 <change_avatar>图片ID或图片链接</change_avatar> 指令来完成更换。如果就是不想换，也可以根据人设坚持拒绝。
 8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。
-9. 删除朋友圈：如果用户在聊天中提到让你删掉某条朋友圈动态，你可以根据人设决定是否同意。如果同意，请在回复中包含指令 <delete_moment>动态关键字或ID</delete_moment>，系统会自动帮你删除包含该关键字的最新一条朋友圈。如果你不想删，可以找理由拒绝。`;
+9. 删除朋友圈：如果用户在聊天中提到让你删掉某条朋友圈动态，你可以根据人设决定是否同意。如果同意，请在回复中包含指令 <delete_moment>动态关键字或ID</delete_moment>，系统会自动帮你删除包含该关键字的最新一条朋友圈。如果你不想删，可以找理由拒绝。
+10. 发送位置：如果你想发送一个地理位置，请使用格式：<location name="位置名称">详细地址（可选）</location>。系统会自动将其渲染为位置卡片。你可以在发送位置的同时附带额外的文字。`;
             }
             prompt += `\n请根据上述人设和记忆，以${friend.name}的口吻进行自然地回复。`;
             return prompt;
@@ -13907,7 +14340,7 @@
                                     partText = partText.replace(quoteRegex, '').trim();
                                 }
                                 
-                                if (partText === '' && !transferData && !aiStickerUrl && !hasDice) {
+                                if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData) {
                                     if (hasAction) {
                                         partText = actionText;
                                     } else if (hasMusicAction) {
@@ -13917,7 +14350,29 @@
                                     }
                                 }
 
-                                if (transferData) {
+                                if (locationData) {
+                                    if (partText) {
+                                        const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
+                                        if (quoteData) textMsg.quote = quoteData;
+                                        await new Promise(resolve => dbAdd('chat_history', textMsg, resolve));
+                                        if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(textMsg);
+                                        else showBannerNotification(friend, partText);
+                                    }
+
+                                    const locationMsg = {
+                                        friendId: friend.id,
+                                        text: `[位置] ${locationData.name}`,
+                                        type: 'received',
+                                        timestamp: Date.now() + 100,
+                                        isLocation: true,
+                                        locationName: locationData.name,
+                                        locationDetail: locationData.detail
+                                    };
+                                    await new Promise(resolve => dbAdd('chat_history', locationMsg, resolve));
+                                    if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(locationMsg);
+                                    else showBannerNotification(friend, `[位置] ${locationData.name}`);
+                                    friend.lastMsg = `[位置] ${locationData.name}`;
+                                } else if (transferData) {
                                     if (partText) {
                                         const textMsg = {
                                             friendId: friend.id,
@@ -14080,6 +14535,8 @@
             }
         }
 
+        const summarizingFriends = new Set();
+
         function runAutoSummarization() {
             const configStr = localStorage.getItem('globalConfig');
             if (!configStr) return;
@@ -14102,8 +14559,8 @@
                             
                             const CHUNK_SIZE = parseInt(friend.summarizeInterval || '20', 10);
                             if (unsummarized.length >= CHUNK_SIZE) {
-                                if (friend._isSummarizing) return;
-                                friend._isSummarizing = true;
+                                if (summarizingFriends.has(friend.id)) return;
+                                summarizingFriends.add(friend.id);
                                 
                                 const toSummarize = unsummarized.slice(0, CHUNK_SIZE);
                                 
@@ -14134,6 +14591,10 @@ ${historyText}`;
                                             createdAt: Date.now()
                                         });
                                         
+                                        if (friend._isSummarizing !== undefined) {
+                                            delete friend._isSummarizing;
+                                        }
+                                        
                                         await new Promise(res => dbUpdate('friends', friend, res));
                                         
                                         const tx2 = db.transaction(['chat_history'], 'readwrite');
@@ -14150,7 +14611,7 @@ ${historyText}`;
                                 } catch (e) {
                                     console.error("Summarization failed:", e);
                                 } finally {
-                                    friend._isSummarizing = false;
+                                    summarizingFriends.delete(friend.id);
                                 }
                             }
                         };
@@ -15524,6 +15985,7 @@ ${historyText}`;
                         }
                         
                         document.getElementById('show-thought-text-toggle').checked = friend.showThoughtText !== false;
+                        document.getElementById('separate-offline-ui-toggle').checked = friend.separateOfflineUI || false;
                         
                         const isActiveChat = friend.activeChat || false;
                         document.getElementById('active-chat-toggle').checked = isActiveChat;
@@ -15961,6 +16423,8 @@ ${historyText}`;
                         }
                     } else if (field === 'showThoughtText') {
                         friend.showThoughtText = value;
+                    } else if (field === 'separateOfflineUI') {
+                        friend.separateOfflineUI = value;
                     }
                     
                     dbUpdate('friends', friend, () => {
@@ -16035,6 +16499,283 @@ ${historyText}`;
         }
 
         document.getElementById('delete-friend-btn').addEventListener('click', deleteCurrentFriend);
+
+        // --- Offline Chat Separate UI Logic ---
+        function openOfflineChat(friendId) {
+            currentChatFriendId = friendId;
+            dbGet('friends', friendId, friend => {
+                if (!friend) return;
+                document.getElementById('offline-chat-title').textContent = '';
+                showPage('offline-chat-page');
+                renderOfflineChat(friendId);
+            });
+        }
+
+        function exitOfflineChat() {
+            if (currentChatFriendId) {
+                dbGet('friends', currentChatFriendId, friend => {
+                    if (friend && friend.offlineSettings) {
+                        friend.offlineSettings.enabled = false;
+                        dbUpdate('friends', friend, () => {
+                            showPage('chat-interface-page');
+                            renderMessages(currentChatFriendId);
+                        });
+                    } else {
+                        showPage('chat-interface-page');
+                        renderMessages(currentChatFriendId);
+                    }
+                });
+            } else {
+                showPage('chat-interface-page');
+            }
+        }
+
+        function renderOfflineChat(friendId) {
+            const container = document.getElementById('offline-chat-messages');
+            container.innerHTML = '';
+            
+            const transaction = db.transaction(['chat_history'], 'readonly');
+            const store = transaction.objectStore('chat_history');
+            const index = store.index('friendId');
+            const request = index.getAll(friendId);
+
+            request.onsuccess = () => {
+                let messages = request.result;
+                messages = messages.filter(msg => msg.isOfflineSeparate);
+                
+                dbGet('friends', friendId, friend => {
+                    if (messages.length > 0) {
+                        messages.forEach(msg => appendOfflineMessage(msg, friend, false, false));
+                    }
+                    container.scrollTop = container.scrollHeight;
+                });
+            };
+        }
+
+        async function appendOfflineMessage(msg, friend, shouldScroll = true, isNew = false) {
+            const container = document.getElementById('offline-chat-messages');
+            const row = document.createElement('div');
+            row.className = 'offline-message-row';
+
+            if (msg.type === 'sent') {
+                const bubbleContainer = document.createElement('div');
+                bubbleContainer.className = 'offline-bubble-container right';
+                
+                const contentGroup = document.createElement('div');
+                contentGroup.className = 'offline-bubble-content-group';
+                
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'offline-user-name';
+                
+                let myAvatarSrc = 'https://via.placeholder.com/150/B5EAD7/ffffff?text=Me';
+                let myNameStr = '我';
+
+                if (friend && friend.myAvatar) {
+                    myAvatarSrc = friend.myAvatar;
+                }
+                
+                nameLabel.textContent = myNameStr;
+                
+                const bubble = document.createElement('div');
+                bubble.className = 'offline-bubble right';
+                bubble.innerHTML = msg.text.replace(/\n/g, '<br>');
+                
+                attachMessageEvents(bubble, msg);
+                
+                contentGroup.appendChild(nameLabel);
+                contentGroup.appendChild(bubble);
+                
+                const avatar = document.createElement('img');
+                avatar.className = 'offline-avatar';
+                avatar.src = myAvatarSrc;
+                
+                dbGet('user_profile', 'main_user', profile => {
+                    if (profile && profile.name) nameLabel.textContent = profile.name;
+                    if (!friend.myAvatar && profile && profile.avatar) avatar.src = profile.avatar;
+                });
+
+                bubbleContainer.appendChild(contentGroup);
+                bubbleContainer.appendChild(avatar);
+                row.appendChild(bubbleContainer);
+                
+            } else {
+                const parsedSegments = parseOfflineMessage(msg.text);
+                container.appendChild(row);
+                
+                for (let index = 0; index < parsedSegments.length; index++) {
+                    const seg = parsedSegments[index];
+                    
+                    if (isNew && index > 0) {
+                        const isActive = document.getElementById('offline-chat-page').classList.contains('active') && currentChatFriendId === msg.friendId;
+                        if (isActive) {
+                            if (shouldScroll) container.scrollTop = container.scrollHeight;
+                            const delay = Math.random() * 500 + 500;
+                            await new Promise(res => {
+                                let start = Date.now();
+                                let timer = setInterval(() => {
+                                    if (!document.getElementById('offline-chat-page').classList.contains('active')) {
+                                        clearInterval(timer);
+                                        res();
+                                    } else if (Date.now() - start >= delay) {
+                                        clearInterval(timer);
+                                        res();
+                                    }
+                                }, 50);
+                            });
+                        }
+                    }
+                    
+                    const segmentInfo = { index: index, type: seg.type, content: seg.content };
+
+                    if (seg.type === 'dialogue') {
+                        const bubbleContainer = document.createElement('div');
+                        bubbleContainer.className = 'offline-bubble-container left';
+                        
+                        const contentGroup = document.createElement('div');
+                        contentGroup.className = 'offline-bubble-content-group';
+                        
+                        const nameLabel = document.createElement('div');
+                        nameLabel.className = 'offline-user-name';
+                        nameLabel.style.textAlign = 'left';
+                        nameLabel.textContent = friend.name;
+                        
+                        const avatar = document.createElement('img');
+                        avatar.className = 'offline-avatar';
+                        avatar.src = friend.avatar;
+                        
+                        const bubble = document.createElement('div');
+                        bubble.className = 'offline-bubble left';
+                        bubble.innerHTML = seg.content.replace(/\n/g, '<br>');
+                        
+                        attachMessageEvents(bubble, msg, segmentInfo);
+                        
+                        contentGroup.appendChild(nameLabel);
+                        contentGroup.appendChild(bubble);
+                        
+                        bubbleContainer.appendChild(avatar);
+                        bubbleContainer.appendChild(contentGroup);
+                        row.appendChild(bubbleContainer);
+                    } else if (seg.type === 'action') {
+                        const actionDiv = document.createElement('div');
+                        actionDiv.className = 'offline-action';
+                        actionDiv.innerHTML = seg.content.replace(/\n/g, '<br>');
+                        attachMessageEvents(actionDiv, msg, segmentInfo);
+                        row.appendChild(actionDiv);
+                    } else if (seg.type === 'thought') {
+                        const thoughtDiv = document.createElement('div');
+                        thoughtDiv.className = 'offline-thought';
+                        thoughtDiv.innerHTML = seg.content.replace(/\n/g, '<br>');
+                        attachMessageEvents(thoughtDiv, msg, segmentInfo);
+                        row.appendChild(thoughtDiv);
+                    }
+                    
+                    if (shouldScroll) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                }
+                return; // Early return since we already appended the row
+            }
+
+            container.appendChild(row);
+            if (shouldScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function parseOfflineMessage(text) {
+            const segments = [];
+            text = sanitizeThoughtTags(text);
+            
+            const regex = /(「.*?」|<thought>.*?<\/thought>|<inner_thought>.*?<\/inner_thought>)/gs;
+            
+            let lastIndex = 0;
+            let match;
+            
+            while ((match = regex.exec(text)) !== null) {
+                const actionStr = text.substring(lastIndex, match.index).trim();
+                if (actionStr) {
+                    segments.push({ type: 'action', content: actionStr });
+                }
+                
+                const token = match[0];
+                if (token.startsWith('「')) {
+                    segments.push({ type: 'dialogue', content: token.substring(1, token.length - 1) });
+                } else if (token.startsWith('<thought>')) {
+                    segments.push({ type: 'thought', content: token.substring(9, token.length - 10) });
+                } else if (token.startsWith('<inner_thought>')) {
+                    segments.push({ type: 'thought', content: token.substring(15, token.length - 16) });
+                }
+                
+                lastIndex = regex.lastIndex;
+            }
+            
+            const trailingAction = text.substring(lastIndex).trim();
+            if (trailingAction) {
+                segments.push({ type: 'action', content: trailingAction });
+            }
+            
+            if (segments.length === 0 && text.trim()) {
+                segments.push({ type: 'dialogue', content: text.trim() });
+            }
+            
+            return segments;
+        }
+
+        function sendOfflineMessage() {
+            const input = document.getElementById('offline-chat-input');
+            const messageText = input.value.trim();
+            if (messageText === '' || !currentChatFriendId) return;
+
+            const message = {
+                friendId: currentChatFriendId,
+                text: messageText,
+                type: 'sent',
+                timestamp: Date.now(),
+                isOfflineSeparate: true
+            };
+
+            dbAdd('chat_history', message, () => {
+                dbGet('friends', currentChatFriendId, friend => {
+                    if (friend) {
+                        appendOfflineMessage(message, friend);
+                        input.value = '';
+                        // Removed triggerAIResponse() for manual offline mode
+                    }
+                });
+            });
+        }
+
+        function retryLastOfflineMessage() {
+            if (!currentChatFriendId) return;
+            
+            dbGetAll('chat_history', allMsgs => {
+                const friendMsgs = allMsgs.filter(m => m.friendId === currentChatFriendId && m.isOfflineSeparate);
+                if (friendMsgs.length === 0) {
+                    showToast('没有可重新生成的回复');
+                    return;
+                }
+                
+                const lastMsg = friendMsgs[friendMsgs.length - 1];
+                if (lastMsg.type === 'received') {
+                    showCustomConfirm('确定要重新生成上一条回复吗？', () => {
+                        dbDelete('chat_history', lastMsg.id || lastMsg.timestamp, () => {
+                            renderOfflineChat(currentChatFriendId);
+                            triggerAIResponse();
+                        });
+                    }, '重新生成');
+                } else {
+                    showToast('只能重新生成角色的回复');
+                }
+            });
+        }
+        
+        // Let's bind enter key for offline chat
+        document.getElementById('offline-chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendOfflineMessage();
+            }
+        });
 
         // --- Memory Management Logic ---
         let currentEditingMemoryId = null;
@@ -16994,6 +17735,32 @@ ${historyText}`;
             if (!currentChatFriendId) {
                 showToast('请先选择一个聊天');
                 return;
+            }
+
+            dbGet('friends', currentChatFriendId, friend => {
+                if (friend && friend.separateOfflineUI) {
+                    if (!friend.offlineSettings) {
+                        friend.offlineSettings = { enabled: true };
+                    } else {
+                        friend.offlineSettings.enabled = true;
+                    }
+                    dbUpdate('friends', friend, () => {
+                        openOfflineChat(friend.id);
+                        toggleActionPanel();
+                    });
+                    return;
+                }
+                
+                openOfflineSettingsModal(true);
+            });
+        }
+
+        function openOfflineSettingsModal(showEnableToggle = false) {
+            if (!currentChatFriendId) return;
+
+            const enableItem = document.getElementById('offline-mode-toggle').closest('.offline-modal-item');
+            if (enableItem) {
+                enableItem.style.display = showEnableToggle ? 'flex' : 'none';
             }
 
             const writingStyleSelect = document.getElementById('writing-style-select');
