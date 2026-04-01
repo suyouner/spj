@@ -14743,11 +14743,11 @@
                 const timeString = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekDays[now.getDay()]} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 
                 let holiday = getHoliday(now);
-                let timePrompt = `【当前现实时间】\n现在是 ${timeString} (${timePeriod})。`;
+                let timePrompt = `【当前场景时间】\n现在是 ${timeString} (${timePeriod})。`;
                 if (holiday) {
                     timePrompt += `\n今天是 ${holiday}。`;
                 }
-                timePrompt += `\n请感知当前时间，并根据时间调整你的语气、问候语或行为（例如深夜时表现出困意或提醒休息，工作时间表现出忙碌或摸鱼等）。`;
+                timePrompt += `\n请在互动中自然地融入当前的时间背景。`;
                 
                 prompt += timePrompt + `\n\n`;
             }
