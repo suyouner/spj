@@ -1,9 +1,10 @@
-const CACHE_NAME = 'suanpiji-v10';
+const CACHE_NAME = 'suanpiji-v11';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon192.png',
+  './icon512.png'
 ];
 
 self.addEventListener('install', event => {
