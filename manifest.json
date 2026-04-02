@@ -4,6 +4,7 @@
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone"], 
   "background_color": "transparent",
   "theme_color": "transparent",
   "orientation": "portrait-primary",
