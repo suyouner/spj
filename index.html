@@ -14740,7 +14740,7 @@
                 else if (hour >= 14 && hour < 18) timePeriod = '下午';
                 else if (hour >= 18 && hour < 24) timePeriod = '晚上';
 
-                const timeString = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekDays[now.getDay()]} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const timeString = `星期${weekDays[now.getDay()]} ${String(hour).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 
                 let holiday = getHoliday(now);
                 let timePrompt = `【当前场景时间】\n现在是 ${timeString} (${timePeriod})。`;
