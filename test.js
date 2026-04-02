@@ -3923,10 +3923,18 @@
             if (friend.syncReality) {
                 const now = new Date();
                 const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-                const timeString = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekDays[now.getDay()]} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                let timePeriod = '';
+                const h = now.getHours();
+                if (h >= 0 && h < 6) timePeriod = '凌晨';
+                else if (h >= 6 && h < 12) timePeriod = '上午';
+                else if (h >= 12 && h < 14) timePeriod = '中午';
+                else if (h >= 14 && h < 18) timePeriod = '下午';
+                else if (h >= 18 && h < 24) timePeriod = '晚上';
+                
+                const timeString = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 星期${weekDays[now.getDay()]} ${timePeriod} ${String(h).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
                 
                 let holiday = getHoliday(now);
-                let timePrompt = `【当前现实时间】\n现在是 ${timeString}。`;
+                let timePrompt = `【当前场景时间】\n现在是 ${timeString}。`;
                 if (holiday) {
                     timePrompt += `\n今天是 ${holiday}。`;
                 }
