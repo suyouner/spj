@@ -6233,6 +6233,7 @@
         <button class="message-context-menu-item" id="msg-ctx-retry">重试</button>
         <button class="message-context-menu-item" id="msg-ctx-copy">复制</button>
         <button class="message-context-menu-item" id="msg-ctx-edit">编辑</button>
+        <button class="message-context-menu-item" id="msg-ctx-split">拆分</button>
         <button class="message-context-menu-item" id="msg-ctx-quote">引用</button>
         <button class="message-context-menu-item" id="msg-ctx-recall">撤回</button>
         <button class="message-context-menu-item" id="msg-ctx-delete">删除</button>
@@ -6248,6 +6249,18 @@
             <div class="modal-actions" style="margin-top: 15px;">
                 <button class="cancel-btn" onclick="document.getElementById('edit-message-modal').style.display='none'">取消</button>
                 <button class="confirm-btn" onclick="saveEditedMessage()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Split Message Modal -->
+    <div class="modal-overlay" id="split-message-modal" style="z-index: 2500;">
+        <div class="modal-content" style="width: 300px;">
+            <h3 style="text-align: center; font-size: 17px; font-weight: 600; margin-bottom: 10px;">拆分消息（分句消息使用）</h3>
+            <textarea id="split-message-content" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: none; height: 120px; font-size: 14px; box-sizing: border-box;"></textarea>
+            <div class="modal-actions" style="margin-top: 15px;"> 
+                <button class="cancel-btn" onclick="document.getElementById('split-message-modal').style.display='none'">取消</button>
+                <button class="confirm-btn" onclick="saveSplitMessage()">确定</button>
             </div>
         </div>
     </div>
@@ -9407,9 +9420,20 @@
         }
 
         function deleteDiscoverPost(postId) {
-            showCustomConfirm('确定要删除这条动态吗？', () => {
+            const messageHtml = `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <span style="margin-bottom: 15px;">确定要删除这条动态吗？</span>
+                    <label class="gm-contact-item" style="justify-content: center;">
+                        <input type="checkbox" id="secret-delete-checkbox">
+                        <div class="round-checkbox"><div class="inner-dot"></div></div>
+                        <span>偷偷删除</span>
+                    </label>
+                </div>
+            `;
+            showCustomConfirm(messageHtml, () => {
+                const isSecretDelete = document.getElementById('secret-delete-checkbox')?.checked;
                 dbGet('discover_posts', postId, post => {
-                    if (post) {
+                    if (post && !isSecretDelete) {
                         notifyBotsOfDeletion(post);
                     }
                     dbDelete('discover_posts', postId, () => {
@@ -11542,6 +11566,7 @@
                     });
                 }
             });
+            triggerAIResponse(false);
         }
 
         function openFakePhotoViewModal(desc) {
@@ -11608,7 +11633,7 @@
                         if (friend && friend.isGroup) {
                             items.forEach(item => {
                                 const name = item.querySelector('.action-name').textContent;
-                                if (name !== '图片' && name !== '线下模式') {
+                                if (name !== '图片' && name !== '线下模式' && name !== '拍照') {
                                     item.style.display = 'none';
                                 } else {
                                     item.style.display = 'flex';
@@ -11711,6 +11736,7 @@
                     dbUpdate('friends', friend, renderChatList);
                 }
             });
+            triggerAIResponse(false);
             }
             e.target.value = ''; // Reset input
         });
@@ -12046,12 +12072,14 @@
             activeMessageSegment = segmentInfo;
             
             const isOfflineMessage = e.target.closest('#offline-chat-messages') !== null;
+            const isSplittable = !msg.isSticker && !msg.isTransfer && !msg.isLocation && !msg.isFakePhoto && !msg.isInfo;
 
             if (isOfflineMessage) {
                 document.getElementById('msg-ctx-multiselect').style.display = 'none';
                 document.getElementById('msg-ctx-retry').style.display = 'none'; // The retry button is in the header
                 document.getElementById('msg-ctx-copy').style.display = 'block';
                 document.getElementById('msg-ctx-edit').style.display = 'block';
+                document.getElementById('msg-ctx-split').style.display = isSplittable ? 'block' : 'none';
                 document.getElementById('msg-ctx-quote').style.display = 'none';
                 document.getElementById('msg-ctx-recall').style.display = 'none';
                 document.getElementById('msg-ctx-delete').style.display = 'block';
@@ -12060,6 +12088,7 @@
                 document.getElementById('msg-ctx-retry').style.display = (msg.type === 'received') ? 'block' : 'none';
                 document.getElementById('msg-ctx-copy').style.display = 'block';
                 document.getElementById('msg-ctx-edit').style.display = 'block';
+                document.getElementById('msg-ctx-split').style.display = isSplittable ? 'block' : 'none';
                 document.getElementById('msg-ctx-quote').style.display = 'block';
                 document.getElementById('msg-ctx-recall').style.display = (msg.type === 'sent') ? 'block' : 'none';
                 document.getElementById('msg-ctx-delete').style.display = 'block';
@@ -12231,6 +12260,56 @@
             }
             msgContextMenu.style.display = 'none';
         });
+
+        document.getElementById('msg-ctx-split').addEventListener('click', () => {
+            if (activeMessage) {
+                document.getElementById('split-message-content').value = activeMessage.text;
+                document.getElementById('split-message-modal').style.display = 'flex';
+            }
+            msgContextMenu.style.display = 'none';
+        });
+
+        function saveSplitMessage() {
+            const content = document.getElementById('split-message-content').value;
+            if (!content.trim()) return;
+            
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return;
+            
+            if (activeMessage) {
+                dbGetAll('chat_history', allMsgs => {
+                    const dbMsg = allMsgs.find(m => (m.id && activeMessage.id && String(m.id) === String(activeMessage.id)) || (m.friendId === activeMessage.friendId && String(m.timestamp) === String(activeMessage.timestamp)));
+                    if (dbMsg) {
+                        dbDelete('chat_history', dbMsg.id, () => {
+                            const baseTime = dbMsg.timestamp;
+                            
+                            const addNext = (index) => {
+                                if (index >= lines.length) {
+                                    document.getElementById('split-message-modal').style.display = 'none';
+                                    if (dbMsg.isOfflineSeparate || document.getElementById('offline-chat-page').classList.contains('active')) {
+                                        renderOfflineChat(currentChatFriendId, false, null);
+                                    } else {
+                                        renderMessages(currentChatFriendId);
+                                    }
+                                    return;
+                                }
+                                
+                                const newMsg = { ...dbMsg };
+                                delete newMsg.id; 
+                                newMsg.text = lines[index];
+                                newMsg.timestamp = baseTime + index; 
+                                
+                                dbAdd('chat_history', newMsg, () => {
+                                    addNext(index + 1);
+                                });
+                            };
+                            
+                            addNext(0);
+                        });
+                    }
+                });
+            }
+        }
 
         // --- Selection Mode Logic ---
         let isSelectionMode = false;
@@ -14236,6 +14315,7 @@
 
 如果你需要发送表情包，可以在发言内容中包含对应角色的专属表情包 <sticker>表情包ID</sticker>。
 如果你想让某个角色扔骰子，请在发言内容中包含：<dice></dice>。系统会自动将其转换为一个随机骰子动画。
+如果你希望某个角色发送现拍的照片，请在发言内容中包含：<fake_photo>照片画面的详细描述</fake_photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”或“[图片]”、“[照片]”等文字占位符来敷衍。这不会影响角色发送常规的表情包。
 如果你认为此时不需要任何人发言，请直接输出“无”。严禁代替用户发言，严禁输出用户的动作。`;
                         }
                     } else {
@@ -14303,7 +14383,7 @@
                         } else if (!(friend.offlineSettings && friend.offlineSettings.enabled)) {
                             history.push({
                                 type: 'system',
-                                text: "【系统强制指令】当前是【微信线上聊天模式】！\n1. 严禁使用「」引号包裹对话。\n2. 严禁发送任何背景旁白、动作描写或心理活动（如“我看着...”、“手指...”等）。\n3. 请直接输出你要回复的文字内容，就像你在用微信打字一样。",
+                                text: "【系统强制指令】当前是【微信线上聊天模式】！\n1. 严禁使用「」引号包裹对话。\n2. 严禁发送任何背景旁白、动作描写或心理活动。\n3. 【最重要：强制拆分】只要你的回复包含多句话，就必须使用换行符将其拆分为多行！严禁回复一整段不换行的长文！必须像微信打字一样碎片化发送！",
                                 timestamp: Date.now()
                             });
                         }
@@ -14319,6 +14399,11 @@
                             aiResponseText = sanitizeThoughtTags(aiResponseText);
 
                             const isOfflineMode = (friend.offlineSettings && friend.offlineSettings.enabled) || (friend.separateOfflineUI && document.getElementById('offline-chat-page').classList.contains('active'));
+
+                            // Remove newlines inside <fake_photo> tags to prevent fragmentation
+                            aiResponseText = aiResponseText.replace(/<fake_photo>([\s\S]*?)<\/fake_photo>/g, (match, p1) => {
+                                return `<fake_photo>${p1.replace(/\n/g, ' ')}</fake_photo>`;
+                            });
 
                             // Parse Thought Feature Tags
                             let mood = null;
@@ -14417,6 +14502,20 @@
                                             }
 
                                             let hasDice = false;
+
+                                            const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/g;
+                                            if (!text.includes('<fake_photo>')) {
+                                                text = text.replace(lazyImageRegex, (match, desc) => `<fake_photo>${desc || '一张照片'}</fake_photo>`);
+                                            }
+
+                                            const fakePhotoRegex = /<fake_photo>([\s\S]*?)<\/fake_photo>/;
+                                            const fakePhotoMatch = text.match(fakePhotoRegex);
+                                            let aiFakePhotoDesc = null;
+                                            if (fakePhotoMatch) {
+                                                aiFakePhotoDesc = fakePhotoMatch[1].trim();
+                                                text = text.replace(fakePhotoRegex, '').trim();
+                                            }
+
                                             if (text.includes('<dice></dice>')) {
                                                 hasDice = true;
                                                 text = text.replace(/<dice><\/dice>/g, '').trim();
@@ -14505,10 +14604,35 @@
                                                 await new Promise(resolve => dbAdd('chat_history', diceMsg, resolve));
                                             }
 
+                                            if (aiFakePhotoDesc) {
+                                                const fakePhotoMsg = {
+                                                    friendId: friend.id,
+                                                    senderId: senderMember.id,
+                                                    senderName: senderMember.name,
+                                                    senderAvatar: senderMember.avatar,
+                                                    text: `[照片] ${aiFakePhotoDesc}`,
+                                                    type: 'received',
+                                                    timestamp: Date.now() + 30,
+                                                    isFakePhoto: true,
+                                                    fakePhotoDesc: aiFakePhotoDesc,
+                                                    isOffline: isOfflineMode,
+                                                    isOfflineSeparate: isSeparateUI
+                                                };
+                                                if (currentChatFriendId === friend.id) {
+                                                    if (!isSeparateUI && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                                        addMessageToUI(fakePhotoMsg);
+                                                    } else if (isSeparateUI && document.getElementById('offline-chat-page').classList.contains('active')) {
+                                                        addMessageToUI(fakePhotoMsg); 
+                                                    }
+                                                }
+                                                await new Promise(resolve => dbAdd('chat_history', fakePhotoMsg, resolve));
+                                            }
+
                                             let lastMsgPreview = text;
                                             if (!lastMsgPreview) {
                                                 if (stickerUrl) lastMsgPreview = '[表情包]';
                                                 if (hasDice) lastMsgPreview = '[骰子]';
+                                                if (aiFakePhotoDesc) lastMsgPreview = '[照片]';
                                             }
                                             friend.lastMsg = `${senderMember.name}: ${lastMsgPreview}`;
                                             friend.lastTime = getCurrentTimeStr();
@@ -14659,6 +14783,19 @@
                                     partText = partText.replace(aiStickerRegex, '').trim();
                                 }
 
+                                const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/g;
+                                if (!partText.includes('<fake_photo>')) {
+                                    partText = partText.replace(lazyImageRegex, (match, desc) => `<fake_photo>${desc || '一张照片'}</fake_photo>`);
+                                }
+
+                                // Parse Fake Photo
+                                let aiFakePhotoDesc = null;
+                                const fakePhotoRegex = /<fake_photo>([\s\S]*?)<\/fake_photo>/;
+                                const fakePhotoMatch = partText.match(fakePhotoRegex);
+                                if (fakePhotoMatch) {
+                                    aiFakePhotoDesc = fakePhotoMatch[1].trim();
+                                    partText = partText.replace(fakePhotoRegex, '').trim();
+                                }
 
                                 // Parse Send Image Command
                                     const sendImageRegex = /<send_image>(.*?)<\/send_image>/;
@@ -15269,7 +15406,8 @@
 7. 更换头像：如果用户发给你一张或多张图片让你换头像，你的反应要符合人设，这可以是一个多回合的互动。你可以同意、拒绝，或者先拉扯几句再同意。例如：\n- **如果你是傲娇型**：你可以先说‘我才不要，这个不好看’，如果用户哄你，你再说‘好吧好吧，真拿你没办法……’，然后输出 <change_avatar>图片ID</change_avatar> 指令。\n- **如果你想提条件**：你可以说‘换倒是可以，不过你得先夸我几句’，等用户夸完你再输出指令。\n- **如果你想马上换**：直接换，说出符合人设的话，并输出指令。\n- **核心**：让互动更真实，你可以先拒绝或嘴硬，等用户哄你或满足条件后，再输出 <change_avatar>图片ID或图片链接</change_avatar> 指令来完成更换。如果就是不想换，也可以根据人设坚持拒绝。
 8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。
 9. 删除朋友圈：如果用户在聊天中提到让你删掉某条朋友圈动态，你可以根据人设决定是否同意。如果同意，请在回复中包含指令 <delete_moment>动态关键字或ID</delete_moment>，系统会自动帮你删除包含该关键字的最新一条朋友圈。如果你不想删，可以找理由拒绝。
-10. 发送位置：如果你想发送一个地理位置，请使用格式：<location name="位置名称">详细地址（可选）</location>。系统会自动将其渲染为位置卡片。你可以在发送位置的同时附带额外的文字。`;
+10. 发送位置：如果你想发送一个地理位置，请使用格式：<location name="位置名称">详细地址（可选）</location>。系统会自动将其渲染为位置卡片。你可以在发送位置的同时附带额外的文字。
+11. 拍照发送：如果用户希望你拍照分享当前的画面（比如自拍、风景等），或者你主动想给对方发送一张现拍的照片，请在回复中包含单独的一行：<fake_photo>照片画面的详细描述</fake_photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”或“[图片]”、“[照片]”等文字占位符来敷衍。你可以附带额外的聊天文字，但这不会影响角色发送常规的表情包。`;
             }
             prompt += `\n请根据上述人设和记忆，以${friend.name}的口吻进行自然地回复。`;
             return prompt;
@@ -15661,6 +15799,11 @@
                         let aiResponseText = await callLLM(config, systemPrompt, history);
 
                         if (aiResponseText) {
+                            // Remove newlines inside <fake_photo> tags to prevent fragmentation
+                            aiResponseText = aiResponseText.replace(/<fake_photo>([\s\S]*?)<\/fake_photo>/g, (match, p1) => {
+                                return `<fake_photo>${p1.replace(/\n/g, ' ')}</fake_photo>`;
+                            });
+
                             // Parse Thought Feature Tags
                             let mood = null;
                             let innerThought = null;
@@ -15741,10 +15884,26 @@
                                     const matchedSticker = aiStickers.find(s => String(s.id) === stickerValue);
                                     if (matchedSticker) {
                                         aiStickerUrl = matchedSticker.src;
-                                    } else {
+                                    } else if (stickerValue.startsWith('http') || stickerValue.startsWith('data:image') || stickerValue.startsWith('./') || stickerValue.startsWith('/')) {
                                         aiStickerUrl = stickerValue;
+                                    } else {
+                                        aiStickerUrl = null;
                                     }
                                     partText = partText.replace(aiStickerRegex, '').trim();
+                                }
+
+                                const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/g;
+                                if (!partText.includes('<fake_photo>')) {
+                                    partText = partText.replace(lazyImageRegex, (match, desc) => `<fake_photo>${desc || '一张照片'}</fake_photo>`);
+                                }
+
+                                // Parse Fake Photo
+                                let aiFakePhotoDesc = null;
+                                const fakePhotoRegex = /<fake_photo>([\s\S]*?)<\/fake_photo>/;
+                                const fakePhotoMatch = partText.match(fakePhotoRegex);
+                                if (fakePhotoMatch) {
+                                    aiFakePhotoDesc = fakePhotoMatch[1].trim();
+                                    partText = partText.replace(fakePhotoRegex, '').trim();
                                 }
 
                                 // Parse Send Image Command
@@ -15759,7 +15918,11 @@
                                         (m.text === imageIdOrUrl)
                                     );
                                     if (imageMsg) {
-                                        aiStickerUrl = imageMsg.text;
+                                        if (imageMsg.isFakePhoto) {
+                                            aiFakePhotoDesc = imageMsg.fakePhotoDesc;
+                                        } else {
+                                            aiStickerUrl = imageMsg.text;
+                                        }
                                     } else if (imageIdOrUrl.startsWith('http') || imageIdOrUrl.startsWith('data:image')) {
                                         aiStickerUrl = imageIdOrUrl;
                                     }
@@ -15874,7 +16037,7 @@
                                     partText = partText.replace(quoteRegex, '').trim();
                                 }
                                 
-                                if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData) {
+                                if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData && !aiFakePhotoDesc) {
                                     if (hasAction) {
                                         partText = actionText;
                                     } else if (hasMusicAction) {
@@ -15906,6 +16069,27 @@
                                     if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(locationMsg);
                                     else showBannerNotification(friend, `[位置] ${locationData.name}`);
                                     friend.lastMsg = `[位置] ${locationData.name}`;
+                                } else if (aiFakePhotoDesc) {
+                                    if (partText) {
+                                        const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
+                                        if (quoteData) textMsg.quote = quoteData;
+                                        await new Promise(resolve => dbAdd('chat_history', textMsg, resolve));
+                                        if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(textMsg);
+                                        else showBannerNotification(friend, partText);
+                                    }
+
+                                    const fakePhotoMsg = {
+                                        friendId: friend.id,
+                                        text: `[照片] ${aiFakePhotoDesc}`,
+                                        type: 'received',
+                                        timestamp: Date.now() + 100,
+                                        isFakePhoto: true,
+                                        fakePhotoDesc: aiFakePhotoDesc
+                                    };
+                                    await new Promise(resolve => dbAdd('chat_history', fakePhotoMsg, resolve));
+                                    if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(fakePhotoMsg);
+                                    else showBannerNotification(friend, '[照片]');
+                                    friend.lastMsg = '[照片]';
                                 } else if (transferData) {
                                     if (partText) {
                                         const textMsg = {
@@ -19353,6 +19537,7 @@ ${historyText}`;
             });
 
             closeLocationModal();
+            triggerAIResponse(false);
         }
 
         // --- Transfer Logic ---
@@ -19459,7 +19644,7 @@ ${historyText}`;
             });
 
             document.getElementById('transfer-modal').style.display = 'none';
-            // Do not trigger AI response automatically
+            triggerAIResponse(false);
         }
 
         function openTransferActionModal(msg) {
@@ -19519,6 +19704,7 @@ ${historyText}`;
                                 }
                             });
                         });
+                        triggerAIResponse(false);
                     });
                 }
             });
@@ -21075,16 +21261,23 @@ ${historyText}`;
                 if (aiResponseText) {
                     const lines = aiResponseText.split('\n').filter(l => l.trim() !== '');
                     
+                    let usedAvatars = new Set();
+                    
                     let count = 0;
                     for (let i = 0; i < lines.length; i++) {
                         const content = lines[i].trim();
                         // remove leading numbers if any
                         const cleanContent = content.replace(/^\d+[\.、]\s*/, '');
                             if (cleanContent) {
+                                let availableAvatars = tiebaAvatars.filter(a => !usedAvatars.has(a));
+                                if (availableAvatars.length === 0) availableAvatars = tiebaAvatars;
+                                const selectedAvatar = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+                                usedAvatars.add(selectedAvatar);
+
                                 const post = {
                                     id: Date.now().toString() + '_' + i,
                                     authorName: generateRealisticNetName(),
-                                    authorAvatar: tiebaAvatars[Math.floor(Math.random() * tiebaAvatars.length)],
+                                    authorAvatar: selectedAvatar,
                                     content: cleanContent,
                                     timestamp: Date.now() - i * 1000, // Slightly offset so they order properly
                                 isRolePost: false,
@@ -21189,9 +21382,28 @@ ${historyText}`;
 
         // --- Tieba Detail Page Logic ---
         let currentTiebaPostId = null;
+        let currentTiebaReplyCommentId = null;
+        let currentTiebaReplyToName = null;
+
+        function prepareTiebaReply(commentId, replyToName) {
+            currentTiebaReplyCommentId = commentId;
+            currentTiebaReplyToName = replyToName;
+            const input = document.getElementById('tieba-detail-comment-input');
+            if (input) {
+                input.placeholder = replyToName ? `回复 ${replyToName}...` : '发评论...';
+                input.focus();
+            }
+        }
 
         function openTiebaPostDetail(postId) {
             currentTiebaPostId = postId;
+            currentTiebaReplyCommentId = null;
+            currentTiebaReplyToName = null;
+            const input = document.getElementById('tieba-detail-comment-input');
+            if (input) {
+                input.value = '';
+                input.placeholder = '发评论...';
+            }
             dbGet('tieba_posts', postId, post => {
                 if(!post) return;
                 
@@ -21228,6 +21440,13 @@ ${historyText}`;
 
         function closeTiebaPostDetail() {
             currentTiebaPostId = null;
+            currentTiebaReplyCommentId = null;
+            currentTiebaReplyToName = null;
+            const input = document.getElementById('tieba-detail-comment-input');
+            if (input) {
+                input.value = '';
+                input.placeholder = '发评论...';
+            }
             showPage('tieba-page');
         }
 
@@ -21250,6 +21469,19 @@ ${historyText}`;
                     const commentsCount = comment.comments || 0;
                     const likes = comment.likes || 0;
                     const isLiked = comment.isLiked || false;
+                    
+                    let subCommentsHtml = '';
+                    if (comment.subComments && comment.subComments.length > 0) {
+                        subCommentsHtml = '<div style="background-color: #f7f7f7; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-size: 14px; color: #333;">';
+                        comment.subComments.forEach(sub => {
+                            if (sub.replyTo) {
+                                subCommentsHtml += `<div style="margin-bottom: 4px; line-height: 1.5; cursor: pointer;" onclick="prepareTiebaReply('${comment.id}', '${sub.name}')"><span style="color: #eb7350; font-weight: 500;">${sub.name}</span> 回复 <span style="color: #eb7350; font-weight: 500;">${sub.replyTo}</span>：${sub.content}</div>`;
+                            } else {
+                                subCommentsHtml += `<div style="margin-bottom: 4px; line-height: 1.5; cursor: pointer;" onclick="prepareTiebaReply('${comment.id}', '${sub.name}')"><span style="color: #eb7350; font-weight: 500;">${sub.name}</span>：${sub.content}</div>`;
+                            }
+                        });
+                        subCommentsHtml += '</div>';
+                    }
 
                     commentEl.innerHTML = `
                         <img src="${comment.avatar || tiebaAvatars[Math.floor(Math.random() * tiebaAvatars.length)]}" style="width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; object-fit: cover;">
@@ -21261,13 +21493,14 @@ ${historyText}`;
                                 </div>
                                 <div style="color: #999; font-size: 16px; font-weight: bold; line-height: 1; cursor: pointer; padding: 0 5px;" onclick="deleteTiebaComment('${post.id}', '${comment.id}')">...</div>
                             </div>
-                            <div style="font-size: 15px; color: #333; line-height: 1.5; margin-bottom: 10px; word-wrap: break-word; white-space: pre-wrap;">${comment.content}</div>
+                            <div style="font-size: 15px; color: #333; line-height: 1.6; margin-bottom: 10px; word-wrap: break-word; white-space: pre-wrap;">${comment.content}</div>
+                            ${subCommentsHtml}
                             <div style="display: flex; justify-content: space-between; color: #999; font-size: 12px; padding-right: 20px;">
                                 <div style="display: flex; align-items: center; gap: 4px;">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 10 20 15 15 20"></polyline><path d="M4 4v7a4 4 0 0 0 4 4h12"></path></svg>
                                     ${reposts > 0 ? reposts : '转发'}
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 4px;">
+                                <div style="display: flex; align-items: center; gap: 4px; cursor: pointer;" onclick="prepareTiebaReply('${comment.id}', null)">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                                     ${commentsCount > 0 ? commentsCount : '评论'}
                                 </div>
@@ -21335,38 +21568,111 @@ ${historyText}`;
 
             const numComments = Math.floor(Math.random() * (15 - 8 + 1)) + 8; // 8 to 15
 
-            let prompt = `你现在需要扮演${numComments}个不同的网络论坛/贴吧用户，对以下这篇帖子发表评论。
+            let prompt = `你现在需要扮演不同的网络论坛/微博用户，对以下这篇帖子发表评论。
 【原帖内容】：
 ${post.content}
 
 【要求】：
-1. 请生成恰好 ${numComments} 条不同的网友评论，每条评论占一行，用换行符分隔。不要带有任何编号、发帖人名字或多余解释。
+1. 请生成恰好 ${numComments} 条主评论。为了显得真实，其中约一半的主评论需要包含 1 到 2 条其他网友的楼中楼回复。
 2. 语气要符合真实的网民，可以有赞同、反对、吐槽、玩梗、抖机灵、围观等各种态度，尽量丰富多样。
-3. 每条评论长度在 5 到 50 字之间。
-4. 只输出评论内容文本，不输出任何其他东西。`;
+3. 每条评论和回复的长度在 5 到 50 字之间。
+4. 在楼中楼回复（subComments）中，除了直接回复层主，也可以有网友之间的互相回复。如果是互相回复，请使用 "replyTo" 字段指明被回复者的 "name"；如果是直接回复层主，则不需要 "replyTo" 字段。
+5. 必须且仅输出合法的 JSON 数组格式，不要有任何多余的标记或解释，例如：
+[
+  {
+    "content": "主评论内容1",
+    "subComments": [
+      {"name": "路人甲", "content": "楼中楼回复1"},
+      {"name": "吃瓜群众", "replyTo": "路人甲", "content": "确实是这样"}
+    ]
+  }
+]`;
 
             try {
-                let aiResponseText = await callLLM(config, prompt, []);
+                let aiResponseText = await callLLM(config, prompt, [{ type: 'sent', text: "请严格输出合法 JSON 格式的内容。" }]);
                 if (aiResponseText) {
                     const currentPost = await new Promise(res => dbGet('tieba_posts', post.id, res));
                     if (!currentPost) return;
 
-                    const lines = aiResponseText.split('\n').filter(l => l.trim() !== '');
+                    let jsonStr = aiResponseText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+                    const startIdx = jsonStr.indexOf('[');
+                    const endIdx = jsonStr.lastIndexOf(']');
+                    if (startIdx !== -1 && endIdx !== -1) {
+                        jsonStr = jsonStr.substring(startIdx, endIdx + 1);
+                    }
+                    
+                    let commentsData = [];
+                    try {
+                        commentsData = JSON.parse(jsonStr);
+                    } catch (e) {
+                        console.error('Failed to parse JSON comments', e);
+                        return;
+                    }
                     
                     if (!currentPost.tiebaComments) currentPost.tiebaComments = [];
 
-                    for (let i = 0; i < lines.length && i < numComments; i++) {
-                        let content = lines[i].replace(/^\d+[\.、]\s*/, '').trim();
+                    const usedAvatars = new Set();
+                    if (currentPost.authorAvatar) {
+                        usedAvatars.add(currentPost.authorAvatar);
+                    }
+                    currentPost.tiebaComments.forEach(c => {
+                        if (c.avatar) usedAvatars.add(c.avatar);
+                    });
+
+                    for (let i = 0; i < commentsData.length && i < numComments; i++) {
+                        let item = commentsData[i];
+                        let content = (item.content || '').trim();
                         if (content) {
-                            content = content.replace(/^["「『]|["」』]$/g, '').trim();
+                            let availableAvatars = tiebaAvatars.filter(a => !usedAvatars.has(a));
+                            if (availableAvatars.length === 0) {
+                                availableAvatars = tiebaAvatars; // Fallback if all used
+                            }
+                            const selectedAvatar = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+                            usedAvatars.add(selectedAvatar);
+
+                            const subComments = [];
+                            if (item.subComments && item.subComments.length > 0) {
+                                const nameMap = {};
+                                item.subComments.forEach(sub => {
+                                    if (sub.content) {
+                                        let aiName = sub.name;
+                                        let realName;
+                                        if (aiName && nameMap[aiName]) {
+                                            realName = nameMap[aiName];
+                                        } else {
+                                            realName = generateRealisticNetName();
+                                            if (aiName) nameMap[aiName] = realName;
+                                        }
+
+                                        let replyToRealName = null;
+                                        if (sub.replyTo) {
+                                            if (nameMap[sub.replyTo]) {
+                                                replyToRealName = nameMap[sub.replyTo];
+                                            } else {
+                                                const newReplyToName = generateRealisticNetName();
+                                                nameMap[sub.replyTo] = newReplyToName;
+                                                replyToRealName = newReplyToName;
+                                            }
+                                        }
+
+                                        subComments.push({
+                                            name: realName,
+                                            content: sub.content.trim(),
+                                            replyTo: replyToRealName
+                                        });
+                                    }
+                                });
+                            }
+
                             currentPost.tiebaComments.push({
                                 id: Date.now().toString() + '_' + i,
                                 name: generateRealisticNetName(),
-                                avatar: tiebaAvatars[Math.floor(Math.random() * tiebaAvatars.length)],
+                                avatar: selectedAvatar,
                                 content: content,
+                                subComments: subComments,
                                 timestamp: Date.now() + i,
                                 reposts: Math.floor(Math.random() * 5),
-                                comments: Math.floor(Math.random() * 10),
+                                comments: subComments.length + Math.floor(Math.random() * 5),
                                 likes: Math.floor(Math.random() * 50)
                             });
                         }
@@ -21399,34 +21705,283 @@ ${post.content}
 
                 dbGet('tieba_posts', currentTiebaPostId, post => {
                     if (post) {
-                        if (!post.tiebaComments) post.tiebaComments = [];
-                        post.tiebaComments.push({
-                            id: Date.now().toString(),
-                            name: myName,
-                            avatar: myAvatar,
-                            content: text,
-                            timestamp: Date.now(),
-                            reposts: 0,
-                            comments: 0,
-                            likes: 0
-                        });
-                        post.comments = (post.comments || 0) + 1;
+                        if (currentTiebaReplyCommentId) {
+                            const comment = post.tiebaComments.find(c => String(c.id) === String(currentTiebaReplyCommentId));
+                            if (comment) {
+                                if (!comment.subComments) comment.subComments = [];
+                                comment.subComments.push({
+                                    name: myName,
+                                    content: text,
+                                    replyTo: currentTiebaReplyToName || null
+                                });
+                                comment.comments = (comment.comments || 0) + 1;
+                                post.comments = (post.comments || 0) + 1;
+                            }
+                        } else {
+                            if (!post.tiebaComments) post.tiebaComments = [];
+                            post.tiebaComments.push({
+                                id: Date.now().toString(),
+                                name: myName,
+                                avatar: myAvatar,
+                                content: text,
+                                timestamp: Date.now(),
+                                reposts: 0,
+                                comments: 0,
+                                likes: 0,
+                                subComments: []
+                            });
+                            post.comments = (post.comments || 0) + 1;
+                        }
                         
                         dbUpdate('tieba_posts', post, () => {
+                            const isReplyToComment = !!currentTiebaReplyCommentId;
+                            
+                            let targetCommentId = currentTiebaReplyCommentId;
+                            if (!targetCommentId && post.tiebaComments && post.tiebaComments.length > 0) {
+                                targetCommentId = post.tiebaComments[post.tiebaComments.length - 1].id;
+                            }
+                            
                             input.value = '';
+                            input.placeholder = '发评论...';
+                            currentTiebaReplyCommentId = null;
+                            currentTiebaReplyToName = null;
                             document.getElementById('tieba-detail-comments-num').textContent = post.comments;
                             renderTiebaCommentsList(post);
                             const page = document.getElementById('tieba-post-detail-page');
                             const contentArea = page.querySelector('.tieba-content');
-                            if (contentArea) {
+                            if (contentArea && !isReplyToComment) {
                                 setTimeout(() => {
                                     contentArea.scrollTop = contentArea.scrollHeight;
                                 }, 50);
                             }
+                            
+                            generateTiebaAIReplies(post.id, targetCommentId, isReplyToComment);
                         });
                     }
                 });
             });
+        }
+
+        async function generateTiebaAIReplies(postId, targetCommentId = null, isReplyToSubComment = false) {
+            const configStr = localStorage.getItem('globalConfig');
+            if (!configStr) return;
+            const config = JSON.parse(configStr);
+            if (!config.apiKey || !config.model) return;
+
+            const post = await new Promise(res => dbGet('tieba_posts', postId, res));
+            if (!post) return;
+
+            const loadingEl = document.getElementById('tieba-detail-comments-loading');
+            if (loadingEl) loadingEl.style.display = 'block';
+
+            let commentsContext = '';
+            if (post.tiebaComments && post.tiebaComments.length > 0) {
+                const recentComments = post.tiebaComments.slice(-10);
+                recentComments.forEach(c => {
+                    commentsContext += `[评论ID: ${c.id}] 层主 ${c.name}: ${c.content}\n`;
+                    if (c.subComments && c.subComments.length > 0) {
+                        c.subComments.forEach(sub => {
+                            let replyStr = sub.replyTo ? ` 回复 ${sub.replyTo}` : '';
+                            commentsContext += `  - 楼中楼: ${sub.name}${replyStr}: ${sub.content}\n`;
+                        });
+                    }
+                });
+            }
+
+            let extraRequirement = '';
+            let jsonExample = '';
+            if (targetCommentId) {
+                if (isReplyToSubComment) {
+                    extraRequirement = `\n【强制要求】：由于刚刚用户在一条评论的楼中楼里发表了新回复，**你本次必须且只能**生成针对该楼层的楼中楼回复(action: "reply_sub")，绝对**不允许**生成新的主评论(action: "new_main")。你要去互动和回应用户，被回复主评论的ID为: ${targetCommentId}，被回复者(replyTo)必须填 "我"。`;
+                    jsonExample = `[
+  {
+    "action": "reply_sub",
+    "targetCommentId": "${targetCommentId}",
+    "replyTo": "我",
+    "content": "楼中楼回复内容1"
+  },
+  {
+    "action": "reply_sub",
+    "targetCommentId": "${targetCommentId}",
+    "replyTo": "我",
+    "content": "楼中楼回复内容2"
+  }
+]`;
+                } else {
+                    extraRequirement = `\n由于刚刚用户发表了新的一楼（主评论），你可以新建主评论互动，或者去用户的那个新楼层下发表楼中楼围观互动。如果是去用户的那个新楼层发楼中楼，该主评论ID为: ${targetCommentId}，且**不需要**填写replyTo字段（或者填null，因为是直接回复层主）。`;
+                    jsonExample = `[
+  {
+    "action": "new_main",
+    "content": "主评论内容",
+    "subComments": [
+      {"name": "吃瓜群众", "replyTo": "你的名字或null", "content": "确实是这样"}
+    ]
+  },
+  {
+    "action": "reply_sub",
+    "targetCommentId": "${targetCommentId}",
+    "replyTo": "被回复者的名字（例如'我'，或null表示直接回复层主）",
+    "content": "楼中楼回复内容"
+  }
+]`;
+                }
+            } else {
+                 jsonExample = `[
+  {
+    "action": "new_main",
+    "content": "主评论内容",
+    "subComments": [
+      {"name": "吃瓜群众", "replyTo": "你的名字或null", "content": "确实是这样"}
+    ]
+  },
+  {
+    "action": "reply_sub",
+    "targetCommentId": "要回复的主评论的ID（从上面上下文获取）",
+    "replyTo": "被回复者的名字（或null表示直接回复层主）",
+    "content": "楼中楼回复内容"
+  }
+]`;
+            }
+
+            let prompt = `你现在需要扮演不同的网络论坛/微博用户，针对这篇帖子和当前的评论区发表新的评论（特别是对用户“我”的最新发言进行回复或围观）。
+【原帖内容】：
+${post.content}
+
+【最近的评论区状态】：
+${commentsContext}
+
+【要求】：
+1. 生成 1 到 3 条新的评论。${extraRequirement}
+2. 语气要符合真实的网民，可以有赞同、反对、吐槽、玩梗等。
+3. 必须且仅输出合法的 JSON 数组格式，不要有任何多余的标记或解释，格式示例如下：
+${jsonExample}`;
+
+            try {
+                let aiResponseText = await callLLM(config, prompt, [{ type: 'sent', text: "请严格输出合法 JSON 格式的内容。" }]);
+                if (aiResponseText) {
+                    const currentPost = await new Promise(res => dbGet('tieba_posts', postId, res));
+                    if (!currentPost) return;
+
+                    let jsonStr = aiResponseText.replace(/\`\`\`json/g, '').replace(/\`\`\`/g, '').trim();
+                    const startIdx = jsonStr.indexOf('[');
+                    const endIdx = jsonStr.lastIndexOf(']');
+                    if (startIdx !== -1 && endIdx !== -1) {
+                        jsonStr = jsonStr.substring(startIdx, endIdx + 1);
+                    }
+                    
+                    let actions = [];
+                    try {
+                        actions = JSON.parse(jsonStr);
+                    } catch (e) {
+                        console.error('Failed to parse JSON replies', e);
+                        return;
+                    }
+                    
+                    if (!currentPost.tiebaComments) currentPost.tiebaComments = [];
+
+                    const usedAvatars = new Set();
+                    if (currentPost.authorAvatar) usedAvatars.add(currentPost.authorAvatar);
+                    currentPost.tiebaComments.forEach(c => {
+                        if (c.avatar) usedAvatars.add(c.avatar);
+                    });
+
+                    const nameMap = {};
+
+                    for (let i = 0; i < actions.length; i++) {
+                        let act = actions[i];
+                        if (act.action === 'new_main') {
+                            let content = (act.content || '').trim();
+                            if (content) {
+                                let availableAvatars = tiebaAvatars.filter(a => !usedAvatars.has(a));
+                                if (availableAvatars.length === 0) availableAvatars = tiebaAvatars;
+                                const selectedAvatar = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+                                usedAvatars.add(selectedAvatar);
+
+                                const subComments = [];
+                                if (act.subComments && act.subComments.length > 0) {
+                                    act.subComments.forEach(sub => {
+                                        if (sub.content) {
+                                            let aiName = sub.name;
+                                            let realName = aiName && nameMap[aiName] ? nameMap[aiName] : generateRealisticNetName();
+                                            if (aiName) nameMap[aiName] = realName;
+
+                                            let replyToRealName = null;
+                                            if (sub.replyTo) {
+                                                if (sub.replyTo === '我') {
+                                                    replyToRealName = '我';
+                                                } else if (nameMap[sub.replyTo]) {
+                                                    replyToRealName = nameMap[sub.replyTo];
+                                                } else {
+                                                    const newReplyToName = generateRealisticNetName();
+                                                    nameMap[sub.replyTo] = newReplyToName;
+                                                    replyToRealName = newReplyToName;
+                                                }
+                                            }
+
+                                            subComments.push({
+                                                name: realName,
+                                                content: sub.content.trim(),
+                                                replyTo: replyToRealName
+                                            });
+                                        }
+                                    });
+                                }
+
+                                currentPost.tiebaComments.push({
+                                    id: Date.now().toString() + '_' + i,
+                                    name: generateRealisticNetName(),
+                                    avatar: selectedAvatar,
+                                    content: content,
+                                    subComments: subComments,
+                                    timestamp: Date.now() + i,
+                                    reposts: Math.floor(Math.random() * 5),
+                                    comments: subComments.length + Math.floor(Math.random() * 5),
+                                    likes: Math.floor(Math.random() * 50)
+                                });
+                                currentPost.comments = (currentPost.comments || 0) + 1;
+                            }
+                        } else if (act.action === 'reply_sub') {
+                            let targetId = act.targetCommentId;
+                            let comment = currentPost.tiebaComments.find(c => String(c.id) === String(targetId));
+                            if (comment && act.content) {
+                                if (!comment.subComments) comment.subComments = [];
+                                let replyToName = act.replyTo;
+                                if (replyToName === 'null') replyToName = null;
+                                if (replyToName && nameMap[replyToName]) replyToName = nameMap[replyToName];
+                                else if (replyToName && replyToName !== '我') replyToName = generateRealisticNetName();
+
+                                comment.subComments.push({
+                                    name: generateRealisticNetName(),
+                                    content: act.content.trim(),
+                                    replyTo: replyToName
+                                });
+                                comment.comments = (comment.comments || 0) + 1;
+                                currentPost.comments = (currentPost.comments || 0) + 1;
+                            }
+                        }
+                    }
+                    
+                    await new Promise(res => dbUpdate('tieba_posts', currentPost, res));
+                    
+                    if (currentTiebaPostId === currentPost.id) {
+                        renderTiebaCommentsList(currentPost);
+                        document.getElementById('tieba-detail-comments-num').textContent = currentPost.comments;
+                        const page = document.getElementById('tieba-post-detail-page');
+                        const contentArea = page.querySelector('.tieba-content');
+                        if (contentArea && !isReplyToSubComment) {
+                            setTimeout(() => {
+                                contentArea.scrollTop = contentArea.scrollHeight;
+                            }, 50);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to generate AI replies', e);
+            } finally {
+                if (loadingEl && currentTiebaPostId === postId) {
+                    loadingEl.style.display = 'none';
+                }
+            }
         }
 
     // 检查并注册 Service Worker
@@ -21527,69 +22082,69 @@ ${post.content}
     });
 
     const tiebaAvatars = [
-        'https://img.heliar.top/file/1775975067221_微信图片_20260412141546_855_12.jpg',
-        'https://img.heliar.top/file/1775975050764_微信图片_20260412141545_854_12.png',
-        'https://img.heliar.top/file/1775975047277_微信图片_20260412141544_853_12.jpg',
-        'https://img.heliar.top/file/1775975044854_微信图片_20260412141543_852_12.jpg',
-        'https://img.heliar.top/file/1775975040647_微信图片_20260412141542_851_12.jpg',
-        'https://img.heliar.top/file/1775975038871_微信图片_20260412141541_850_12.jpg',
-        'https://img.heliar.top/file/1775975035385_微信图片_20260412141540_849_12.jpg',
-        'https://img.heliar.top/file/1775975027350_微信图片_20260412141539_848_12.jpg',
-        'https://img.heliar.top/file/1775975033130_微信图片_20260412141538_847_12.jpg',
-        'https://img.heliar.top/file/1775975029471_微信图片_20260412141537_846_12.jpg',
-        'https://img.heliar.top/file/1775975019891_微信图片_20260412141536_845_12.jpg',
-        'https://img.heliar.top/file/1775975026529_微信图片_20260412141534_844_12.jpg',
-        'https://img.heliar.top/file/1775975020658_微信图片_20260412141533_843_12.jpg',
-        'https://img.heliar.top/file/1775975012558_微信图片_20260412141532_842_12.jpg',
-        'https://img.heliar.top/file/1775975020605_微信图片_20260412141531_841_12.jpg',
-        'https://img.heliar.top/file/1775975013512_微信图片_20260412141530_840_12.jpg',
-        'https://img.heliar.top/file/1775975016600_微信图片_20260412141529_839_12.png',
-        'https://img.heliar.top/file/1775975011876_微信图片_20260412141528_838_12.jpg',
-        'https://img.heliar.top/file/1775975012442_微信图片_20260412141527_837_12.jpg',
-        'https://img.heliar.top/file/1775975005096_微信图片_20260412141525_836_12.jpg',
-        'https://img.heliar.top/file/1775975005587_微信图片_20260412141524_835_12.jpg',
-        'https://img.heliar.top/file/1775974975347_微信图片_20260412141523_834_12.jpg',
-        'https://img.heliar.top/file/1775974976057_微信图片_20260412141522_833_12.jpg',
-        'https://img.heliar.top/file/1775974978198_微信图片_20260412141521_832_12.jpg',
-        'https://img.heliar.top/file/1775974975196_微信图片_20260412141520_831_12.jpg',
-        'https://img.heliar.top/file/1775974972465_微信图片_20260412141519_830_12.jpg',
-        'https://img.heliar.top/file/1775974969734_微信图片_20260412141518_829_12.jpg',
-        'https://img.heliar.top/file/1775974967506_微信图片_20260412141517_828_12.jpg',
-        'https://img.heliar.top/file/1775974964086_微信图片_20260412141516_827_12.jpg',
-        'https://img.heliar.top/file/1775974964069_微信图片_20260412141515_826_12.jpg',
-        'https://img.heliar.top/file/1775974962867_微信图片_20260412141514_825_12.jpg',
-        'https://img.heliar.top/file/1775974957397_微信图片_20260412141513_824_12.jpg',
-        'https://img.heliar.top/file/1775974962178_微信图片_20260412141511_823_12.jpg',
-        'https://img.heliar.top/file/1775974954891_微信图片_20260412141510_822_12.jpg',
-        'https://img.heliar.top/file/1775974952619_微信图片_20260412141509_821_12.jpg',
-        'https://img.heliar.top/file/1775974949501_微信图片_20260412141508_820_12.jpg',
-        'https://img.heliar.top/file/1775974954012_微信图片_20260412141507_819_12.png',
-        'https://img.heliar.top/file/1775974952355_微信图片_20260412141506_818_12.jpg',
-        'https://img.heliar.top/file/1775974946287_微信图片_20260412141505_817_12.jpg',
-        'https://img.heliar.top/file/1775974947399_微信图片_20260412141504_816_12.jpg',
-        'https://img.heliar.top/file/1775974943309_微信图片_20260412141503_815_12.jpg',
-        'https://img.heliar.top/file/1775974915705_微信图片_20260412141502_814_12.jpg',
-        'https://img.heliar.top/file/1775974921221_微信图片_20260412141501_813_12.jpg',
-        'https://img.heliar.top/file/1775974917946_微信图片_20260412141500_812_12.png',
-        'https://img.heliar.top/file/1775974913326_微信图片_20260412141459_811_12.png',
-        'https://img.heliar.top/file/1775974912070_微信图片_20260412141458_810_12.jpg',
-        'https://img.heliar.top/file/1775974906201_微信图片_20260412141457_809_12.png',
-        'https://img.heliar.top/file/1775974911798_微信图片_20260412141456_808_12.jpg',
-        'https://img.heliar.top/file/1775974909927_微信图片_20260412141455_807_12.png',
-        'https://img.heliar.top/file/1775974905117_微信图片_20260412141454_806_12.png',
-        'https://img.heliar.top/file/1775974898571_微信图片_20260412141453_805_12.png',
-        'https://img.heliar.top/file/1775974899285_微信图片_20260412141452_804_12.png',
-        'https://img.heliar.top/file/1775974901171_微信图片_20260412141451_803_12.jpg',
-        'https://img.heliar.top/file/1775974899496_微信图片_20260412141450_802_12.jpg',
-        'https://img.heliar.top/file/1775974890548_微信图片_20260412141448_801_12.jpg',
-        'https://img.heliar.top/file/1775974892604_微信图片_20260412141447_800_12.jpg',
-        'https://img.heliar.top/file/1775974889784_微信图片_20260412141446_799_12.jpg',
-        'https://img.heliar.top/file/1775974890828_微信图片_20260412141445_798_12.jpg',
-        'https://img.heliar.top/file/1775974883365_微信图片_20260412141444_797_12.jpg',
-        'https://img.heliar.top/file/1775974879895_微信图片_20260412141443_796_12.jpg',
-        'https://img.heliar.top/file/1775974886049_微信图片_20260412141441_795_12.jpg',
-        'https://img.heliar.top/file/1775974884317_微信图片_20260412141440_794_12.jpg',
-        'https://img.heliar.top/file/1775974879251_微信图片_20260412141439_793_12.jpg'
+        'https://file.icve.com.cn/file_doc/qdqqd/A5tC37cE_vip.jpg',
+        'https://xiaoiwg.dongfeng-nissan.com.cn/aicc-workbench/res/download/default/temp/images/20260413/a46734fb90f222bc09a0dddc41ec3b4ac7a6f2d1.jpg',
+        'https://qn.fqcdn.cn/666666666666666666666666/20260413224043999820-vip.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/H5YeuJp6_vip.jpg',
+        'https://static.eeo.cn/upload/images/20260413/c734e4d168d267957329.jpg',
+        'https://xiuxiu-pro-new.meitudata.com/bizshoot/69dd009a34784ohgzwvt1j1071.jpg',
+        'https://console.bce.baidu.com/api/v1/znzs/user/file/download?src=user&fileId=2a889c07-541c-4e66-a0e2-06175e83faed.jpg',
+        'https://nos.netease.com/ysf/4b7cfe0ac3009db7200aedd863483a43',
+        'https://qn.fqcdn.cn/666666666666666666666666/20260413224148406528-vip.jpg',
+        'https://qn.fqcdn.cn/666666666666666666666666/20260413224152026509-vip.jpg',
+        'https://www.lnjubao.cn/minio-jbpt/upload/20260413/a60baae63f3f6f597bdfaa38d28de338.jpg',
+        'https://intellcs.sinosafe.com.cn/immessage/api/v1/message/attachment/download?groupName=group1&authorization=EnAfMjUzaQVz&fileName=M00/00/CE/CgND1WndAMCAQwmbAAKY0VwF8Sg283.png',
+        'https://cdncs.ykt.cbern.com.cn/v0.1/download?path=/zxx_feedback/qdqqd/1776091336007.png',
+        'https://oss-static.relxtech.com/crm/file/2026-04-13/418ab84f-047b-49bb-9e72-d1eb49c734d41776091346357.jpg',
+        'https://www.lnjubao.cn/minio-jbpt/upload/20260413/ad25230841d9c05a5fa92a5d8d6fef4c.png',
+        'https://pic.sl.al/gdrive/pic/2026-04-13/fileid_1EYvA-tz92goWNBNRdccTNW_MXGAsU57Y_image_1776091353241.jpeg',
+        'https://yun.jxnews.com.cn/sjfxt/image/69dd00e31052416d949303d7.png',
+        'https://www.lnjubao.cn/minio-jbpt/upload/20260413/c29d114294b4997132787698df511f79.jpg',
+        'https://img2-tc.tapimg.com/moment/etag/Fq917Dj936N98tKonWmQtCOlwq7H_20260413224254.png',
+        'https://xiuxiu-pro-new.meitudata.com/bizshoot/69dd00f02280c50hfa13mf4475.png',
+        'https://cn.oilgasgpts.com/resource/profile/2026/04/13/oJDfXFwh_vip_20260413224301A128.jpg',
+        'https://chatimg.pp373.com/Upload/2026-04-13/4d34eac840934dc3bc4cfa5db92226c3.jpg',
+        'https://cn.oilgasmall.com/uploads/20260413/3e447062e4db24253798bd67a888e4bc.jpg',
+        'https://s3v2.53kf.com/message/2026/102/image/72200000_msg_1776091394_69dd01020d0fc.jpg',
+        'https://s3v2.53kf.com/message/2026/102/image/72200000_msg_1776091400_69dd0108414fe.jpg',
+        'https://cdncs.ykt.cbern.com.cn/v0.1/download?path=/zxx_feedback/qdqqd/1776091405042.png',
+        'https://cdn.waimaimingtang.com/file/images/bwc/20260413224345-7dc4a2e5aa.png',
+        'https://intellcs.sinosafe.com.cn/immessage/api/v1/message/attachment/download?groupName=group1&authorization=EnAfMjUzaQVz&fileName=M00/00/CE/CgNDimndASOAPFHKAAIyJMET0KY360.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/TtxYFHWv_vip.jpg',
+        'https://pic.sl.al/gdrive/pic/2026-04-13/fileid_17QKpGFPRvwd4GjvhrgvIFkRjYApZMPXn_image_1776091446830.jpeg',
+        'https://ocs.celine.cn/livechat/uploadfile/celine/20260413/1836C47E1B6A1A60D9FEB93462531CF9.jpg',
+        'https://oss.cdeaa.com/qdqqd/wplBkRNQ_vip.jpg',
+        'https://img.sobot.com/qdqqd/console/wsRes/ticket/20260413/vip/ELSgS_1776091468952.jpg',
+        'https://pic.sl.al/gdrive/pic/2026-04-13/fileid_13pe9y2mrmJ-x3tVrBkr8aJdx5mPNxitT_image_1776091471746.jpeg',
+        'https://static2.51gonggui.com/FhFb-6QXkEdWkc-npkGKGhWbqCF_#.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/ZN0VXIjk_vip.jpg',
+        'https://oss-static.relxtech.com/crm/file/2026-04-13/010914ef-0738-4818-9e65-9cb1fb30210a1776091510912.jpg',
+        'https://www.gxjubao.org.cn/data/file/2026/0413/vip_63ee2d9acb282fd557185540f59e877e.jpg',
+        'https://12387.cert.org.cn/image_tent/sysresources/86ba01f1e50e4c6c88439d90d54a4c46.jpg',
+        'https://oss.cdeaa.com/qdqqd/DHFm6lnC_vip.jpg',
+        'https://oss.cdeaa.com/qdqqd/XJVPDTzq_vip.jpg',
+        'https://ocs.celine.cn/livechat/uploadfile/celine/20260413/A9D15A352D3098939442F22FEBA311B2.jpg',
+        'https://static.eeo.cn/upload/images/20260413/6aeedc770f4ac05e6360.jpg',
+        'https://img.36krcdn.com/hsossms/20260413/v2_d8807e451ef14568beb47f9f84b5a9bf@000000_oswg336773oswg1130oswg1130_img_jpg#.jpg',
+        'https://s3v2.53kf.com/message/2026/102/image/72200000_msg_1776091576_69dd01b820498.jpg',
+        'https://yun.jxnews.com.cn/sjfxt/image/69dd01ba1052416d949303d8.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/weCyThjf_vip.png',
+        'https://nos.netease.com/youdata-netease/public-utilUpload-iE1VRHKFa3RfPBGXM38CSw.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/W6nJqjco_vip.jpg',
+        'https://oss-static.relxtech.com/crm/file/2026-04-13/059bfb12-c5c1-4010-a945-6d712c345a1b1776091638246.jpg',
+        'https://static.eeo.cn/upload/images/20260413/1300a813f60d14ac4627.jpg',
+        'https://pic.sl.al/gdrive/pic/2026-04-13/fileid_1J1niNNE8rePG0HVqutSTYIf2Kk8bWwxV_image_1776091643849.jpeg',
+        'https://cdncs.ykt.cbern.com.cn/v0.1/download?path=/zxx_feedback/qdqqd/1776091651351.png',
+        'https://static.eeo.cn/upload/images/20260413/d9610b4b443039e82544.jpg',
+        'https://wxkb-res-1258476243.cos.ap-shanghai.myqcloud.com/web/img/8848100788856671/bvQVqXUwhDzas5tZ9Qgd1b_20260413144738#.jpg',
+        'https://img2-tc.tapimg.com/moment/etag/FrjY5DMGRnyRQXX9TYngyIOhgT50_20260413224746.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/7co6iKbh_vip.jpg',
+        'https://xiuxiu-pro-new.meitudata.com/bizshoot/69dd0224d12b9sjuhb0nt29437.jpg',
+        'https://www.gxjubao.org.cn/data/file/2026/0413/vip_0de264d0a8bca961f7733b1a0d541c37.jpg',
+        'https://img.36krcdn.com/hsossms/20260413/v2_565543b93f3d4f9087e8d04b91f72ef9@000000_oswg396802oswg1080oswg1080_img_jpg#.jpg',
+        'https://www.lnjubao.cn/minio-jbpt/upload/20260413/14ae58260317b92ac04ed24fd39e1ef9.jpg',
+        'https://file.icve.com.cn/file_doc/qdqqd/Cr6cyASu_vip.png',
+        'https://xffkws.iflytek.com/group1/M01/F6/3F/rB_aX2ndAlCANtsIAAAhdzO2D24900.jpg'
     ];
 
     const tiebaColors = [
@@ -21601,9 +22156,6 @@ ${post.content}
         '#e3cfb4'
     ];
 
-</script>
-</body>
-</html>
 </script>
 </body>
 </html>
