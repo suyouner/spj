@@ -11566,7 +11566,6 @@
                     });
                 }
             });
-            triggerAIResponse(false);
         }
 
         function openFakePhotoViewModal(desc) {
@@ -11736,7 +11735,6 @@
                     dbUpdate('friends', friend, renderChatList);
                 }
             });
-            triggerAIResponse(false);
             }
             e.target.value = ''; // Reset input
         });
@@ -13473,6 +13471,10 @@
                         callback(dataUrl);
                     }, 10);
                 };
+                img.onerror = () => {
+                    // Fallback to original data URL if image fails to load
+                    callback(e.target.result);
+                };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
@@ -14364,6 +14366,7 @@
                             history = history.slice(-shortTermCount);
                             // 将群聊记录包装成 LLM 容易理解的格式
                             history = history.map(msg => {
+                                if (msg.type === 'system') return msg;
                                 const sender = msg.type === 'sent' ? '用户' : (msg.senderName || '未知成员');
                                 const txt = msg.isSticker ? (msg.text.startsWith('dice:') ? '[骰子]' : '[图片/表情]') : msg.text;
                                 return { type: msg.type, text: `${sender}: ${txt}` };
@@ -14404,9 +14407,13 @@
                             aiResponseText = aiResponseText.replace(/<fake_photo>([\s\S]*?)<\/fake_photo>/g, (match, p1) => {
                                 return `<fake_photo>${p1.replace(/\n/g, ' ')}</fake_photo>`;
                             });
+                            
+                            // Remove system prompt texts accidentally outputted by AI
+                            const sysPromptRegex = /【系统提示】(当前从.*?切换到了.*?|当前从.*?切换回了.*?)。.*?/g;
+                            aiResponseText = aiResponseText.replace(sysPromptRegex, '').trim();
 
                             // Parse Thought Feature Tags
-                            let mood = null;
+                            let mood = null; 
                             let innerThought = null;
                             
                             // Handle Mood - support multiple but take the last one, remove all
@@ -15803,6 +15810,10 @@
                             aiResponseText = aiResponseText.replace(/<fake_photo>([\s\S]*?)<\/fake_photo>/g, (match, p1) => {
                                 return `<fake_photo>${p1.replace(/\n/g, ' ')}</fake_photo>`;
                             });
+                            
+                            // Remove system prompt texts accidentally outputted by AI
+                            const sysPromptRegex = /【系统提示】(当前从.*?切换到了.*?|当前从.*?切换回了.*?)。.*?/g;
+                            aiResponseText = aiResponseText.replace(sysPromptRegex, '').trim();
 
                             // Parse Thought Feature Tags
                             let mood = null;
@@ -18511,7 +18522,23 @@ ${historyText}`;
         function exitOfflineChat() {
             if (currentChatFriendId) {
                 dbGet('friends', currentChatFriendId, friend => {
-                    if (friend && friend.offlineSettings) {
+                    if (friend && friend.offlineSettings && friend.offlineSettings.enabled) {
+                        friend.offlineSettings.enabled = false;
+                        
+                        const sysMsg = {
+                            friendId: currentChatFriendId,
+                            text: '【系统提示】当前从【线下模式】切换回了【线上微信聊天模式】。请停止使用线下模式的描写，恢复成普通的微信聊天打字格式。',
+                            type: 'system',
+                            timestamp: Date.now()
+                        };
+                        
+                        dbAdd('chat_history', sysMsg, () => {
+                            dbUpdate('friends', friend, () => {
+                                showPage('chat-interface-page');
+                                renderMessages(currentChatFriendId);
+                            });
+                        });
+                    } else if (friend && friend.offlineSettings) {
                         friend.offlineSettings.enabled = false;
                         dbUpdate('friends', friend, () => {
                             showPage('chat-interface-page');
@@ -20032,16 +20059,33 @@ ${historyText}`;
 
             dbGet('friends', currentChatFriendId, friend => {
                 if (friend && (friend.isGroup || friend.separateOfflineUI)) {
+                    let wasEnabled = friend.offlineSettings && friend.offlineSettings.enabled;
+                    
                     if (!friend.offlineSettings) {
                         friend.offlineSettings = { enabled: true };
                     } else {
                         friend.offlineSettings.enabled = true;
                     }
                     friend.separateOfflineUI = true;
-                    dbUpdate('friends', friend, () => {
-                        openOfflineChat(friend.id);
-                        toggleActionPanel();
-                    });
+                    
+                    const updateAndGo = () => {
+                        dbUpdate('friends', friend, () => {
+                            openOfflineChat(friend.id);
+                            toggleActionPanel();
+                        });
+                    };
+
+                    if (!wasEnabled) {
+                        const sysMsg = {
+                            friendId: currentChatFriendId,
+                            text: '【系统提示】当前从【线上微信聊天模式】切换到了【线下模式】。请停止普通的微信聊天格式，开始按照线下模式的要求进行对话、动作和心理的综合描写。',
+                            type: 'system',
+                            timestamp: Date.now()
+                        };
+                        dbAdd('chat_history', sysMsg, updateAndGo);
+                    } else {
+                        updateAndGo();
+                    }
                     return;
                 }
                 
@@ -20127,16 +20171,38 @@ ${historyText}`;
 
             dbGet('friends', currentChatFriendId, friend => {
                 if (friend) {
+                    let wasEnabled = friend.offlineSettings ? friend.offlineSettings.enabled : false;
+                    let isEnabledNow = settings.enabled;
+                    
                     friend.offlineSettings = settings;
-                    dbUpdate('friends', friend, () => {
-                        showToast('线下模式设置已保存');
-                        closeOfflineModeModal();
+                    
+                    const finishSave = () => {
+                        dbUpdate('friends', friend, () => {
+                            showToast('线下模式设置已保存');
+                            closeOfflineModeModal();
+                            
+                            // If we are currently in the separate offline UI, re-render to apply the showThoughts setting immediately
+                            if (document.getElementById('offline-chat-page').classList.contains('active')) {
+                                renderOfflineChat(currentChatFriendId);
+                            }
+                        });
+                    };
+
+                    if (wasEnabled !== isEnabledNow) {
+                        const directionText = isEnabledNow 
+                            ? '当前从【线上微信聊天模式】切换到了【线下模式】。请停止普通的微信聊天格式，开始按照线下模式的要求进行对话、动作和心理的综合描写。' 
+                            : '当前从【线下模式】切换回了【线上微信聊天模式】。请停止使用线下模式的描写，恢复成普通的微信聊天打字格式。';
                         
-                        // If we are currently in the separate offline UI, re-render to apply the showThoughts setting immediately
-                        if (document.getElementById('offline-chat-page').classList.contains('active')) {
-                            renderOfflineChat(currentChatFriendId);
-                        }
-                    });
+                        const sysMsg = {
+                            friendId: currentChatFriendId,
+                            text: '【系统提示】' + directionText,
+                            type: 'system',
+                            timestamp: Date.now()
+                        };
+                        dbAdd('chat_history', sysMsg, finishSave);
+                    } else {
+                        finishSave();
+                    }
                 }
             });
         }
