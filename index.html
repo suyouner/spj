@@ -12695,16 +12695,16 @@
             // Handles: <thought>, [thought], 【thought】, 〈thought〉, （thought） and their closing tags
             // Also handles variations in casing and whitespace like < Thought >
             let sanitizedText = text
-                .replace(/<(\s*)thought(\s*)>/gi, '<thought>')
-                .replace(/<\/(\s*)thought(\s*)>/gi, '</thought>')
-                .replace(/\[(\s*)thought(\s*)\]/gi, '<thought>')
-                .replace(/\[\/(\s*)thought(\s*)\]/gi, '</thought>')
-                .replace(/【(\s*)thought(\s*)】/gi, '<thought>')
-                .replace(/【\/(\s*)thought(\s*)】/gi, '</thought>')
-                .replace(/〈(\s*)thought(\s*)〉/gi, '<thought>')
-                .replace(/〈\/(\s*)thought(\s*)〉/gi, '</thought>')
-                .replace(/（(\s*)thought(\s*)）/gi, '<thought>')
-                .replace(/（\/(\s*)thought(\s*)）/gi, '</thought>');
+                .replace(/<(\s*)(?:thought|tought|thougth)(\s*)>/gi, '<thought>')
+                .replace(/<\/(\s*)(?:thought|tought|thougth)(\s*)>/gi, '</thought>')
+                .replace(/\[(\s*)(?:thought|tought|thougth)(\s*)\]/gi, '<thought>')
+                .replace(/\[\/(\s*)(?:thought|tought|thougth)(\s*)\]/gi, '</thought>')
+                .replace(/【(\s*)(?:thought|tought|thougth)(\s*)】/gi, '<thought>')
+                .replace(/【\/(\s*)(?:thought|tought|thougth)(\s*)】/gi, '</thought>')
+                .replace(/〈(\s*)(?:thought|tought|thougth)(\s*)〉/gi, '<thought>')
+                .replace(/〈\/(\s*)(?:thought|tought|thougth)(\s*)〉/gi, '</thought>')
+                .replace(/（(\s*)(?:thought|tought|thougth)(\s*)）/gi, '<thought>')
+                .replace(/（\/(\s*)(?:thought|tought|thougth)(\s*)）/gi, '</thought>');
             return sanitizedText;
         }
 
