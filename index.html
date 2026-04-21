@@ -4421,8 +4421,8 @@
                 <div class="app-item" data-app-id="app-4" onclick="showPage('theme-page')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="主题"></div><div class="app-name">主题</div></div>
                 <div class="app-item" data-app-id="app-5" onclick="showPage('emoji-library-page')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="表情库"></div><div class="app-name">表情库</div></div>
                 <div class="app-item" data-app-id="app-6" onclick="showPage('regex-app-page')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="正则"></div><div class="app-name">正则</div></div>
-                <div class="app-item" data-app-id="app-7" onclick="showToast('功能正在开发中')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="论坛"></div><div class="app-name">论坛</div></div>
-                <div class="app-item" data-app-id="app-8" onclick="showToast('功能正在开发中')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="商店"></div><div class="app-name">商店</div></div>
+                <div class="app-item" data-app-id="app-7" onclick="showToast('功能开发中')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="论坛"></div><div class="app-name">论坛</div></div>
+                <div class="app-item" data-app-id="app-8" onclick="showToast('功能开发中')"><div class="app-icon"><img class="app-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="商店"></div><div class="app-name">商店</div></div>
             </div>
             <div class="dock-bar">
                 <div class="app-item" data-app-id="dock-1"><div class="app-icon"><img class="dock-icon-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Dock 1"></div></div>
@@ -12691,20 +12691,42 @@
 
         function sanitizeThoughtTags(text) {
             if (!text) return '';
-            // Regex to find various incorrect thought tags and replace them
-            // Handles: <thought>, [thought], 【thought】, 〈thought〉, （thought） and their closing tags
-            // Also handles variations in casing and whitespace like < Thought >
+            
             let sanitizedText = text
-                .replace(/<(\s*)(?:thought|tought|thougth)(\s*)>/gi, '<thought>')
-                .replace(/<\/(\s*)(?:thought|tought|thougth)(\s*)>/gi, '</thought>')
-                .replace(/\[(\s*)(?:thought|tought|thougth)(\s*)\]/gi, '<thought>')
-                .replace(/\[\/(\s*)(?:thought|tought|thougth)(\s*)\]/gi, '</thought>')
-                .replace(/【(\s*)(?:thought|tought|thougth)(\s*)】/gi, '<thought>')
-                .replace(/【\/(\s*)(?:thought|tought|thougth)(\s*)】/gi, '</thought>')
-                .replace(/〈(\s*)(?:thought|tought|thougth)(\s*)〉/gi, '<thought>')
-                .replace(/〈\/(\s*)(?:thought|tought|thougth)(\s*)〉/gi, '</thought>')
-                .replace(/（(\s*)(?:thought|tought|thougth)(\s*)）/gi, '<thought>')
-                .replace(/（\/(\s*)(?:thought|tought|thougth)(\s*)）/gi, '</thought>');
+                // Fix common spelling mistakes for thought
+                .replace(/[<\[【〈（]\s*(tought|throught|though|thout)\s*[>\]】〉）]/gi, '<thought>')
+                .replace(/[<\[【〈（]\s*\/\s*(tought|throught|though|thout)\s*[>\]】〉）]/gi, '</thought>')
+                // Fix non-standard brackets for thought
+                .replace(/[\[【〈（]\s*thought\s*[\]】〉）]/gi, '<thought>')
+                .replace(/[\[【〈（]\s*\/\s*thought\s*[\]】〉）]/gi, '</thought>')
+                // Fix whitespaces in standard thought tags
+                .replace(/<\s*thought\s*>/gi, '<thought>')
+                .replace(/<\s*\/\s*thought\s*>/gi, '</thought>')
+                
+                // Fix common spelling mistakes for inner_thought
+                .replace(/[<\[【〈（]\s*(inner_tought|inner_throught|inner_though|inner_thout)\s*[>\]】〉）]/gi, '<inner_thought>')
+                .replace(/[<\[【〈（]\s*\/\s*(inner_tought|inner_throught|inner_though|inner_thout)\s*[>\]】〉）]/gi, '</inner_thought>')
+                // Fix non-standard brackets for inner_thought
+                .replace(/[\[【〈（]\s*inner_thought\s*[\]】〉）]/gi, '<inner_thought>')
+                .replace(/[\[【〈（]\s*\/\s*inner_thought\s*[\]】〉）]/gi, '</inner_thought>')
+                // Fix whitespaces in standard inner_thought tags
+                .replace(/<\s*inner_thought\s*>/gi, '<inner_thought>')
+                .replace(/<\s*\/\s*inner_thought\s*>/gi, '</inner_thought>');
+
+            // Auto-close unclosed <thought> tags at the end of text
+            let thoughtOpenCount = (sanitizedText.match(/<thought>/gi) || []).length;
+            let thoughtCloseCount = (sanitizedText.match(/<\/thought>/gi) || []).length;
+            for (let i = 0; i < thoughtOpenCount - thoughtCloseCount; i++) {
+                sanitizedText += '</thought>';
+            }
+
+            // Auto-close unclosed <inner_thought> tags
+            let innerThoughtOpenCount = (sanitizedText.match(/<inner_thought>/gi) || []).length;
+            let innerThoughtCloseCount = (sanitizedText.match(/<\/inner_thought>/gi) || []).length;
+            for (let i = 0; i < innerThoughtOpenCount - innerThoughtCloseCount; i++) {
+                sanitizedText += '</inner_thought>';
+            }
+
             return sanitizedText;
         }
 
