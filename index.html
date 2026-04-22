@@ -8669,7 +8669,7 @@
                     req.onsuccess = () => {
                         const result = req.result || [];
                         // 提取轻量级必要数据：ID, SRC 和描述，避免携带可能的巨大冗余信息
-                        resolve(result.map(s => ({ id: s.id, src: s.src, description: s.description })));
+                        resolve(result.map(s => ({ id: s.id, src: s.src, description: s.description, friendId: s.friendId })));
                     };
                     req.onerror = () => resolve([]);
                 } catch(e) {
@@ -12623,7 +12623,11 @@
                 let deletedCount = 0;
                 
                 idsToDelete.forEach(id => {
-                    dbDelete('chat_history', id, () => {
+                    let key = id;
+                    if (!isNaN(Number(id))) {
+                        key = Number(id);
+                    }
+                    dbDelete('chat_history', key, () => {
                         deletedCount++;
                         if (deletedCount === idsToDelete.length) {
                             showToast('删除成功');
@@ -14469,7 +14473,7 @@
                             const req = index.getAll(fId);
                             req.onsuccess = () => {
                                 const res = req.result || [];
-                                resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description })));
+                                resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description, friendId: s.friendId })));
                             };
                             req.onerror = () => resolve([]);
                         } catch(e) {
@@ -14510,7 +14514,7 @@
                             // Inject Member's Stickers
                             const memberStickers = aiStickers.filter(s => s.friendId === member.id);
                             if (memberStickers.length > 0) {
-                                systemPrompt += `【${member.name}的专属表情包】（请在发言时通过 <sticker>表情包ID</sticker> 使用）：\n`;
+                                systemPrompt += `【${member.name}的专属表情库】（请在发言时通过 <sticker>表情包ID</sticker> 使用，绝对禁止文字编造）：\n`;
                                 memberStickers.forEach((sticker, index) => {
                                     const desc = sticker.description ? ` (含义：${sticker.description})` : '';
                                     systemPrompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
@@ -14558,7 +14562,8 @@
 2. 【心理描写】必须使用 <thought></thought> 包裹。建议将心理描写紧跟在对话之后（同一行），以便于阅读。
 3. 【动作描写】直接输出，不使用任何符号。动作描写可以独立一行。在动作描写中【严禁使用代词（他/她/它）】，必须直接使用角色的名字！
 4. 所有输出的每一行都必须以【角色名字:】开头！即使是动作或心理描写也必须加上名字前缀，以此来指明这个动作或想法属于谁。
-5. 如果你认为此时不需要任何人发言，请直接输出“无”。严禁代替用户发言，严禁输出用户的动作。`;
+5. 发送表情包：如果角色有专属表情，你可以通过 <sticker>表情包ID</sticker> 来发送。**绝对禁止**用文字编造表情包发送动作（如“[发送了表情: xxx]”）。
+6. 如果你认为此时不需要任何人发言，请直接输出“无”。严禁代替用户发言，严禁输出用户的动作。`;
                         } else {
                             systemPrompt += `--- \n请根据群聊当前的上下文，决定接下来由哪些群成员发言。为了还原真实的群聊氛围，你可以让多个不同角色互相附和、抢答，也可以让同一个角色连续发送多条消息（断句发送）。
 请严格按照以下格式输出成员的发言内容（每行代表一条独立的气泡，必须以成员名字开头，加英文冒号）：
@@ -14567,7 +14572,7 @@
 角色B的名字: 她的回复
 角色C的名字: 插入话题
 
-如果你需要发送表情包，可以在发言内容中包含对应角色的专属表情包 <sticker>表情包ID</sticker>。
+如果你需要发送表情包，必须只能从角色专属表情库中选择，并在发言内容中包含 <sticker>表情包ID</sticker>。**绝对禁止**用文字自行编造发送表情的行为（如“[发送了表情：xxx]”）。
 如果你想让某个角色扔骰子，请在发言内容中包含：<dice></dice>。系统会自动将其转换为一个随机骰子动画。
 如果你希望某个角色发送现拍的照片，请在发言内容中包含：<fake_photo>照片画面的详细描述</fake_photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”或“[图片]”、“[照片]”等文字占位符来敷衍。这不会影响角色发送常规的表情包。
 如果你认为此时不需要任何人发言，请直接输出“无”。严禁代替用户发言，严禁输出用户的动作。`;
@@ -14760,8 +14765,10 @@
                                                 const s = allStickers.find(st => String(st.id) === stickerId && st.friendId === senderMember.id);
                                                 if (s) {
                                                     stickerUrl = s.src;
-                                                } else {
+                                                } else if (stickerId.startsWith('http') || stickerId.startsWith('data:image') || stickerId.startsWith('./') || stickerId.startsWith('/')) {
                                                     stickerUrl = stickerId;
+                                                } else {
+                                                    stickerUrl = null;
                                                 }
                                                 text = text.replace(stickerRegex, '').trim();
                                             }
@@ -15042,8 +15049,10 @@
                                     const matchedSticker = aiStickers.find(s => String(s.id) === stickerValue);
                                     if (matchedSticker) {
                                         aiStickerUrl = matchedSticker.src;
-                                    } else {
+                                    } else if (stickerValue.startsWith('http') || stickerValue.startsWith('data:image') || stickerValue.startsWith('./') || stickerValue.startsWith('/')) {
                                         aiStickerUrl = stickerValue;
+                                    } else {
+                                        aiStickerUrl = null;
                                     }
                                     partText = partText.replace(aiStickerRegex, '').trim();
                                 }
@@ -15516,7 +15525,7 @@
                 const globalStickers = aiStickers.filter(s => s.friendId === 'global');
 
                 if (globalStickers.length > 0) {
-                    prompt += `【可用表情包】\n你可以使用以下表情包来表达情感。请根据语境选择合适的表情包，直接输出对应的 XML 标签（不要修改内部的ID）：\n`;
+                    prompt += `【可用表情库】\n当你想要发表情包时，**绝对禁止**使用文字自行编造（例如严禁输出“[发送了一张表情包]”、“[图片]”等文字），**必须且只能**从以下表情库中选择，并直接输出对应的 <sticker> 标签。如果没有合适的表情，请直接回复纯文字，绝不能自己用文字编造表情！\n`;
                     globalStickers.forEach((sticker, index) => {
                         const desc = sticker.description ? ` (含义：${sticker.description})` : '';
                         prompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
@@ -15525,7 +15534,7 @@
                 }
 
                 if (friendStickers.length > 0) {
-                    prompt += `【你的专属表情包】\n你也可以使用以下更符合你人设的专属表情包：\n`;
+                    prompt += `【你的专属表情库】\n你还可以使用以下更符合你人设的专属表情包（同样，**必须只能**选用这里的表情，不可自行编造或用文字描述发表情的动作）：\n`;
                     friendStickers.forEach((sticker, index) => {
                         const desc = sticker.description ? ` (含义：${sticker.description})` : '';
                         prompt += `${index + 1}. <sticker>${sticker.id}</sticker>${desc}\n`;
@@ -15661,7 +15670,7 @@
                 prompt += `为了模拟真实的微信聊天体验，**任何人设**（无论是高冷、年长还是活泼）都必须遵循以下**强制断句规则**：\n`;
                 prompt += `1. **强制换行拆分**：除非用户明确要求“写长篇大论”或“一整段回复”，否则只要你的回复超过两句话，就**必须使用换行符（回车）**将其拆分为多条短消息。严禁回复没有换行的一长段文字！少于两句话时可以不换行。\n`;
                 prompt += `2. **标点与停顿**：\n   - 随性/年轻/高冷人设：多用空格代替标点，省略句末标点，大量使用换行。\n   - 严谨/年长人设：可以保留规范标点，但长回复也必须用换行符拆分成几条发送。\n`;
-                prompt += `3. **共同底线（无论何种人设都必须遵守）**：\n   - **严禁**使用书面语引号「」包裹对话。\n   - **严禁**在正文中出现任何动作、神态描写（如*叹气*、*笑*、（摸头）等）。\n   - **严禁**输出 <br> 等 HTML 代码。\n   - 直接输出你想说的话，就像你在用微信打字一样。\n`;
+                prompt += `3. **共同底线（无论何种人设都必须遵守）**：\n   - **严禁**使用书面语引号「」包裹对话。\n   - **严禁**在正文中出现任何动作、神态描写（如*叹气*、*笑*、（摸头）等）。\n   - **严禁**输出 <br> 等 HTML 代码。\n   - **绝对禁止**使用文字描述来编造发送图片或表情包的行为（例如绝对不能输出“[发送了一张表情包(含义:xxx)]”之类的文字），只能通过 <sticker> 标签发送已有的表情。\n   - 直接输出你想说的话，就像你在用微信打字一样。\n`;
 
                 if (friend.enableThoughts) {
                     prompt += `\n【心声功能特别强调】\n即便开启了心声功能，你在“线上模式”下的正文也【必须】保持纯粹的聊天格式，【严禁】任何形式的动作或心理描写。心声只能作为附加信息，使用 <mood> 和 <inner_thought> 标签包裹，并【必须】放在所有聊天消息的【最后面】。\n<mood> 标签中仅允许填写一个日式颜文字（Kaomoji），例如 (^_^), (>_<), (T_T) 等。严禁使用任何 Emoji 表情（如 😊, 😂）。【重要】每次回复都【必须】生成 <mood> 标签，否则视为违规。\n`;
@@ -16043,7 +16052,7 @@
                         const req = index.getAll(friend.id);
                         req.onsuccess = () => {
                             const res = req.result || [];
-                            resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description })));
+                            resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description, friendId: s.friendId })));
                         };
                         req.onerror = () => resolve([]);
                     } catch(e) {
@@ -21445,7 +21454,7 @@ ${historyText}`;
                             const req = index.getAll(friend.id);
                             req.onsuccess = () => {
                                 const res = req.result || [];
-                                resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description })));
+                                resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description, friendId: s.friendId })));
                             };
                             req.onerror = () => resolve([]);
                         } catch(e) {
@@ -22377,7 +22386,7 @@ ${roleContext}
                     const req = index.getAll(friend.id);
                     req.onsuccess = () => {
                         const res = req.result || [];
-                        resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description })));
+                        resolve(res.map(s => ({ id: s.id, src: s.src, description: s.description, friendId: s.friendId })));
                     };
                     req.onerror = () => resolve([]);
                 } catch(e) {
