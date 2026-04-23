@@ -21123,6 +21123,15 @@ ${historyText}`;
             });
         };
 
+        function handleAvatarClick(friendId) {
+            if (!friendId) return;
+            dbGet('friends', friendId, friend => {
+                if (friend && friend.enableThoughts) {
+                    showThoughtModal(friend);
+                }
+            });
+        }
+
         function showThoughtModal(friend) {
             const modal = document.getElementById('thought-modal');
             document.getElementById('thought-role-name').textContent = friend.name;
