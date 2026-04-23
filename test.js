@@ -3658,8 +3658,19 @@
                                 }
 
 
-                                    // Parse Send Image Command
-                                    const sendImageRegex = /<send_image>(.*?)<\/send_image>/;
+                                // Parse Photo
+                                const photoRegex = /<photo>([\s\S]*?)<\/photo>/;
+                                const photoMatch = partText.match(photoRegex);
+                                let isPhotoCard = false;
+                                let aiPhotoDesc = '';
+                                if (photoMatch) {
+                                    isPhotoCard = true;
+                                    aiPhotoDesc = photoMatch[1].trim();
+                                    partText = partText.replace(photoRegex, '').trim();
+                                }
+
+                                // Parse Send Image Command
+                                const sendImageRegex = /<send_image>(.*?)<\/send_image>/;
                                     const sendImageMatch = partText.match(sendImageRegex);
                                     if (sendImageMatch) {
                                         const imageIdOrUrl = sendImageMatch[1].trim();
@@ -4018,7 +4029,8 @@
 5. 扔骰子：如果你想扔骰子，请在回复中包含：<dice></dice>。系统会自动将其转换为一个随机骰子动画。
 6. 识别图片/表情包：对方可能会发送图片或表情包，请你结合图片内容或表情包上的文字/画面情感进行自然的回应，如果图里有梗，请根据人设回应。
 7. 更换头像：如果用户发给你一张或多张图片让你换头像，你的反应要符合人设，这可以是一个多回合的互动。你可以同意、拒绝，或者先拉扯几句再同意。例如：\n- **如果你是傲娇型**：你可以先说‘我才不要，这个不好看’，如果用户哄你，你再说‘好吧好吧，真拿你没办法……’，然后输出 <change_avatar>图片ID</change_avatar> 指令。\n- **如果你想提条件**：你可以说‘换倒是可以，不过你得先夸我几句’，等用户夸完你再输出指令。\n- **如果你想马上换**：直接换，说出符合人设的话，并输出指令。\n- **核心**：让互动更真实，你可以先拒绝或嘴硬，等用户哄你或满足条件后，再输出 <change_avatar>图片ID或图片链接</change_avatar> 指令来完成更换。如果就是不想换，也可以根据人设坚持拒绝。
-8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。`;
+8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。
+9. 发送自拍/现拍照片：如果你想发送现拍的照片/自拍，请在回复中包含：<photo>照片画面的详细描述</photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”！`;
             }
             prompt += `\n请根据上述人设和记忆，以${friend.name}的口吻进行自然地回复。`;
             return prompt;
@@ -4329,6 +4341,17 @@
                                 if (aiStickerMatch) {
                                     aiStickerUrl = aiStickerMatch[1].trim();
                                     partText = partText.replace(aiStickerRegex, '').trim();
+                                }
+
+                                // Parse Photo
+                                const photoRegex = /<photo>([\s\S]*?)<\/photo>/;
+                                const photoMatch = partText.match(photoRegex);
+                                let isPhotoCard = false;
+                                let aiPhotoDesc = '';
+                                if (photoMatch) {
+                                    isPhotoCard = true;
+                                    aiPhotoDesc = photoMatch[1].trim();
+                                    partText = partText.replace(photoRegex, '').trim();
                                 }
 
                                 // Parse Send Image Command

@@ -2829,8 +2829,8 @@
             height: 40px;
         }
 
-        /* Fake Photo Bubble Styles */
-        .message-bubble.fake-photo-bubble {
+        /* Photo Card Bubble Styles */
+        .message-bubble.photo-card-bubble {
             background-color: #e5e5e5 !important;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0 100 L 35 40 L 65 70 L 80 50 L 100 70 V 100 H 0 Z" fill="%23ffffff"/><circle cx="80" cy="20" r="12" fill="%23ffffff"/></svg>') !important;
             background-size: cover;
@@ -2850,10 +2850,10 @@
             border: 1px solid #d0d0d0;
             overflow: hidden;
         }
-        .message-bubble.fake-photo-bubble:after {
+        .message-bubble.photo-card-bubble:after {
             display: none;
         }
-        .fake-photo-text {
+        .photo-card-text {
             font-size: 14px;
             font-weight: 500;
             letter-spacing: 1px;
@@ -5522,7 +5522,7 @@
             <!-- Action Panel -->
             <div id="action-panel">
                 <div class="action-grid-container">
-                    <div class="action-item" onclick="openFakePhotoUploadModal()">
+                    <div class="action-item" onclick="openPhotoCardUploadModal()">
                         <div class="action-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                         </div>
@@ -6111,13 +6111,13 @@
             </div>
         </div>
 
-    <!-- Fake Photo View Modal -->
-    <div class="modal-overlay" id="fake-photo-view-modal" onclick="closeFakePhotoViewModal()">
+    <!-- Photo Card View Modal -->
+    <div class="modal-overlay" id="photo-card-view-modal" onclick="closePhotoCardViewModal()">
         <div class="modal-content" onclick="event.stopPropagation()" style="background: #f7f7f7;">
             <h3 style="text-align: center; font-size: 17px; font-weight: 600; margin-bottom: 15px;">照片内容</h3>
-            <div id="fake-photo-view-content" style="font-size: 15px; color: #333; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; padding: 10px; background: white; border-radius: 8px; min-height: 100px;"></div>
+            <div id="photo-card-view-content" style="font-size: 15px; color: #333; line-height: 1.6; word-wrap: break-word; white-space: pre-wrap; padding: 10px; background: white; border-radius: 8px; min-height: 100px;"></div>
             <div class="modal-actions" style="margin-top: 15px;">
-                <button class="confirm-btn" style="background-color: #000; color: #fff; width: 100%;" onclick="closeFakePhotoViewModal()">关闭</button>
+                <button class="confirm-btn" style="background-color: #000; color: #fff; width: 100%;" onclick="closePhotoCardViewModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -11752,7 +11752,7 @@
         const actionImageInput = document.getElementById('action-image-input');
         let lastMessageTimestamp = null;
 
-        function openFakePhotoUploadModal() {
+        function openPhotoCardUploadModal() {
             if (!currentChatFriendId) {
                 showToast('请先选择一个聊天');
                 return;
@@ -11762,28 +11762,28 @@
                 title: '发送照片',
                 body: `
                     <label style="font-weight:600;">照片描述：</label>
-                    <textarea id="fake-photo-desc-input" placeholder="详细描述照片..." style="height: 100px; resize: none; margin-top: 10px; width: 100%; box-sizing: border-box;"></textarea>
+                    <textarea id="photo-card-desc-input" placeholder="详细描述照片..." style="height: 100px; resize: none; margin-top: 10px; width: 100%; box-sizing: border-box;"></textarea>
                 `,
                 onConfirm: () => {
-                    const desc = document.getElementById('fake-photo-desc-input').value.trim();
+                    const desc = document.getElementById('photo-card-desc-input').value.trim();
                     if (!desc) {
                         showToast('请输入照片描述');
                         return false;
                     }
-                    sendFakePhoto(desc);
+                    sendPhotoCard(desc);
                     return true;
                 }
             });
         }
 
-        function sendFakePhoto(desc) {
+        function sendPhotoCard(desc) {
             const message = {
                 friendId: currentChatFriendId,
                 text: `[照片] ${desc}`, // Used for system prompt parsing
                 type: 'sent',
                 timestamp: Date.now(),
-                isFakePhoto: true,
-                fakePhotoDesc: desc
+                isPhotoCard: true,
+                photoDesc: desc
             };
 
             addMessageToUI(message);
@@ -11803,13 +11803,13 @@
             });
         }
 
-        function openFakePhotoViewModal(desc) {
-            document.getElementById('fake-photo-view-content').textContent = desc || '无内容';
-            document.getElementById('fake-photo-view-modal').style.display = 'flex';
+        function openPhotoCardViewModal(desc) {
+            document.getElementById('photo-card-view-content').textContent = desc || '无内容';
+            document.getElementById('photo-card-view-modal').style.display = 'flex';
         }
 
-        function closeFakePhotoViewModal() {
-            document.getElementById('fake-photo-view-modal').style.display = 'none';
+        function closePhotoCardViewModal() {
+            document.getElementById('photo-card-view-modal').style.display = 'none';
         }
         let currentQuote = null;
 
@@ -12305,7 +12305,7 @@
             activeMessageSegment = segmentInfo;
             
             const isOfflineMessage = e.target.closest('#offline-chat-messages') !== null;
-            const isSplittable = !msg.isSticker && !msg.isTransfer && !msg.isLocation && !msg.isFakePhoto && !msg.isInfo;
+            const isSplittable = !msg.isSticker && !msg.isTransfer && !msg.isLocation && !msg.isPhotoCard && !msg.isInfo;
 
             if (isOfflineMessage) {
                 document.getElementById('msg-ctx-multiselect').style.display = 'none';
@@ -13191,7 +13191,7 @@
             }
 
             // Handle Transfer messages
-            if (msg.isFakePhoto) {
+            if (msg.isPhotoCard) {
                 const wrapper = document.createElement('div');
                 wrapper.className = `message-bubble-wrapper ${msg.type}`;
                 wrapper.dataset.msgId = msg.id || msg.timestamp;
@@ -13204,10 +13204,10 @@
                 contentGroup.className = 'message-content-group';
 
                 const bubble = document.createElement('div');
-                bubble.className = `message-bubble ${msg.type} fake-photo-bubble`;
+                bubble.className = `message-bubble ${msg.type} photo-card-bubble`;
                 
                 bubble.innerHTML = `
-                    <span class="fake-photo-text">点击查看照片</span>
+                    <span class="photo-card-text">点击查看照片</span>
                 `;
 
                 attachMessageEvents(bubble, msg);
@@ -13219,7 +13219,7 @@
                         return;
                     }
                     e.stopPropagation();
-                    openFakePhotoViewModal(msg.fakePhotoDesc);
+                    openPhotoCardViewModal(msg.photoDesc);
                 };
 
                 contentGroup.appendChild(bubble);
@@ -14574,7 +14574,7 @@
 
 如果你需要发送表情包，必须只能从角色专属表情库中选择，并在发言内容中包含 <sticker>表情包ID</sticker>。**绝对禁止**用文字自行编造发送表情的行为（如“[发送了表情：xxx]”）。
 如果你想让某个角色扔骰子，请在发言内容中包含：<dice></dice>。系统会自动将其转换为一个随机骰子动画。
-如果你希望某个角色发送现拍的照片，请在发言内容中包含：<fake_photo>照片画面的详细描述</fake_photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”或“[图片]”、“[照片]”等文字占位符来敷衍。这不会影响角色发送常规的表情包。
+如果你希望某个角色发送现拍的照片，请在发言内容中包含：<photo>照片画面的详细描述</photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”或“[图片]”、“[照片]”等文字占位符来敷衍。这不会影响角色发送常规的表情包。
 如果你认为此时不需要任何人发言，请直接输出“无”。严禁代替用户发言，严禁输出用户的动作。`;
                         }
                     } else {
@@ -14666,9 +14666,9 @@
 
                             const isOfflineMode = (friend.offlineSettings && friend.offlineSettings.enabled) || (friend.separateOfflineUI && document.getElementById('offline-chat-page').classList.contains('active'));
 
-                            // Remove newlines inside <fake_photo> tags to prevent fragmentation
-                            aiResponseText = aiResponseText.replace(/<fake_photo>([\s\S]*?)<\/fake_photo>/g, (match, p1) => {
-                                return `<fake_photo>${p1.replace(/\n/g, ' ')}</fake_photo>`;
+                            // Remove newlines inside <photo> tags to prevent fragmentation
+                            aiResponseText = aiResponseText.replace(/<photo>([\s\S]*?)<\/photo>/gi, (match, p1) => {
+                                return `<photo>${p1.replace(/\n/g, ' ')}</photo>`;
                             });
                             
                             // Remove system prompt texts accidentally outputted by AI
@@ -14748,7 +14748,7 @@
                                     }
                                     
                                     if (senderMember && text) {
-                                            const stickerRegex = /<sticker>(.*?)<\/sticker>/;
+                                            const stickerRegex = /<sticker>(.*?)<\/sticker>/i;
                                             const stickerMatch = text.match(stickerRegex);
                                             let stickerUrl = null;
                                             if (stickerMatch) {
@@ -14775,17 +14775,17 @@
 
                                             let hasDice = false;
 
-                                            const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/g;
-                                            if (!text.includes('<fake_photo>')) {
-                                                text = text.replace(lazyImageRegex, (match, desc) => `<fake_photo>${desc || '一张照片'}</fake_photo>`);
+                                            const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图|photo)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/gi;
+                                            if (!text.match(/<photo>/i)) {
+                                                text = text.replace(lazyImageRegex, (match, desc) => `<photo>${desc || '一张照片'}</photo>`);
                                             }
 
-                                            const fakePhotoRegex = /<fake_photo>([\s\S]*?)<\/fake_photo>/;
-                                            const fakePhotoMatch = text.match(fakePhotoRegex);
-                                            let aiFakePhotoDesc = null;
-                                            if (fakePhotoMatch) {
-                                                aiFakePhotoDesc = fakePhotoMatch[1].trim();
-                                                text = text.replace(fakePhotoRegex, '').trim();
+                                            const photoRegex = /<photo>([\s\S]*?)<\/photo>/i;
+                                            const photoMatch = text.match(photoRegex);
+                                            let aiPhotoDesc = null;
+                                            if (photoMatch) {
+                                                aiPhotoDesc = photoMatch[1].trim();
+                                                text = text.replace(photoRegex, '').trim();
                                             }
 
                                             if (text.includes('<dice></dice>')) {
@@ -14876,17 +14876,17 @@
                                                 await new Promise(resolve => dbAdd('chat_history', diceMsg, resolve));
                                             }
 
-                                            if (aiFakePhotoDesc) {
+                                            if (aiPhotoDesc) {
                                                 const fakePhotoMsg = {
                                                     friendId: friend.id,
                                                     senderId: senderMember.id,
                                                     senderName: senderMember.name,
                                                     senderAvatar: senderMember.avatar,
-                                                    text: `[照片] ${aiFakePhotoDesc}`,
+                                                    text: `[照片] ${aiPhotoDesc}`,
                                                     type: 'received',
                                                     timestamp: Date.now() + 30,
-                                                    isFakePhoto: true,
-                                                    fakePhotoDesc: aiFakePhotoDesc,
+                                                    isPhotoCard: true,
+                                                    photoDesc: aiPhotoDesc,
                                                     isOffline: isOfflineMode,
                                                     isOfflineSeparate: isSeparateUI
                                                 };
@@ -14904,7 +14904,7 @@
                                             if (!lastMsgPreview) {
                                                 if (stickerUrl) lastMsgPreview = '[表情包]';
                                                 if (hasDice) lastMsgPreview = '[骰子]';
-                                                if (aiFakePhotoDesc) lastMsgPreview = '[照片]';
+                                                if (aiPhotoDesc) lastMsgPreview = '[照片]';
                                             }
                                             friend.lastMsg = `${senderMember.name}: ${lastMsgPreview}`;
                                             friend.lastTime = getCurrentTimeStr();
@@ -14977,9 +14977,9 @@
                                     let quoteData = null;
                                     let transferData = null;
 
-                                    // Parse Delete Moment Command
-                                    const deleteMomentRegex = /<delete_moment>(.*?)<\/delete_moment>/;
-                                    const deleteMomentMatch = partText.match(deleteMomentRegex);
+                                // Parse Delete Moment Command
+                                const deleteMomentRegex = /<delete_moment>(.*?)<\/delete_moment>/i;
+                                const deleteMomentMatch = partText.match(deleteMomentRegex);
                                     if (deleteMomentMatch) {
                                         const keyword = deleteMomentMatch[1].trim();
                                         partText = partText.replace(deleteMomentRegex, '').trim();
@@ -15003,7 +15003,7 @@
                                     }
 
                                     // New: Parse Avatar Change Command
-                                    const avatarChangeRegex = /<change_avatar>(.*?)<\/change_avatar>/;
+                                    const avatarChangeRegex = /<change_avatar>(.*?)<\/change_avatar>/i;
                                     const avatarChangeMatch = partText.match(avatarChangeRegex);
                                     if (avatarChangeMatch) {
                                         const imageIdOrUrl = avatarChangeMatch[1].trim();
@@ -15030,8 +15030,8 @@
                                     }
 
                                     // Parse Transfer
-                                    const transferRegex = /<transfer amount="([^"]+)">([^<]*)<\/transfer>/;
-                                    const transferMatch = partText.match(transferRegex);
+                                const transferRegex = /<transfer amount="([^"]+)">([^<]*)<\/transfer>/i;
+                                const transferMatch = partText.match(transferRegex);
                                     if (transferMatch) {
                                         transferData = {
                                             amount: transferMatch[1],
@@ -15041,7 +15041,7 @@
                                     }
 
                                 // Parse AI Sticker
-                                const aiStickerRegex = /<sticker>(.*?)<\/sticker>/;
+                                const aiStickerRegex = /<sticker>(.*?)<\/sticker>/i;
                                 const aiStickerMatch = partText.match(aiStickerRegex);
                                 let aiStickerUrl = null;
                                 if (aiStickerMatch) {
@@ -15058,17 +15058,17 @@
                                 }
 
                                 const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/g;
-                                if (!partText.includes('<fake_photo>')) {
-                                    partText = partText.replace(lazyImageRegex, (match, desc) => `<fake_photo>${desc || '一张照片'}</fake_photo>`);
+                                if (!partText.includes('<photo>')) {
+                                    partText = partText.replace(lazyImageRegex, (match, desc) => `<photo>${desc || '一张照片'}</photo>`);
                                 }
 
                                 // Parse Fake Photo
-                                let aiFakePhotoDesc = null;
-                                const fakePhotoRegex = /<fake_photo>([\s\S]*?)<\/fake_photo>/;
-                                const fakePhotoMatch = partText.match(fakePhotoRegex);
-                                if (fakePhotoMatch) {
-                                    aiFakePhotoDesc = fakePhotoMatch[1].trim();
-                                    partText = partText.replace(fakePhotoRegex, '').trim();
+                                let aiPhotoDesc = null;
+                                const photoRegex = /<photo>([\s\S]*?)<\/photo>/;
+                                const photoMatch = partText.match(photoRegex);
+                                if (photoMatch) {
+                                    aiPhotoDesc = photoMatch[1].trim();
+                                    partText = partText.replace(photoRegex, '').trim();
                                 }
 
                                 // Parse Send Image Command
@@ -15110,7 +15110,7 @@
 
 
                                 // Parse Music Control
-                                const musicControlRegex = /<music_control>(.*?)<\/music_control>/;
+                                const musicControlRegex = /<music_control>(.*?)<\/music_control>/i;
                                 const musicMatch = partText.match(musicControlRegex);
                                 let hasMusicAction = false;
                                 if (musicMatch) {
@@ -15202,7 +15202,7 @@
                                     }
 
                                     // Parse Quote
-                                    const quoteRegex = /<quote>(.*?)<\/quote>/;
+                                    const quoteRegex = /<quote>(.*?)<\/quote>/i;
                                     const match = partText.match(quoteRegex);
                                     if (match) {
                                         quoteData = {
@@ -15212,7 +15212,7 @@
                                         partText = partText.replace(quoteRegex, '').trim();
                                     }
                                     
-                                    if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData) {
+                                    if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData && !aiPhotoDesc) {
                                         if (hasAction) {
                                             partText = actionText;
                                         } else if (avatarChangeMatch || hasMusicAction) {
@@ -15251,6 +15251,33 @@
                                         }
                                         await new Promise(resolve => dbAdd('chat_history', locationMsg, resolve));
                                         friend.lastMsg = `[位置] ${locationData.name}`;
+                                    } else if (aiPhotoDesc) {
+                                        if (partText) {
+                                            const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
+                                            if (quoteData) textMsg.quote = quoteData;
+                                            if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                                addMessageToUI(textMsg);
+                                            } else {
+                                                showBannerNotification(friend, partText);
+                                            }
+                                            await new Promise(resolve => dbAdd('chat_history', textMsg, resolve));
+                                        }
+
+                                        const fakePhotoMsg = {
+                                            friendId: friend.id,
+                                            text: `[照片] ${aiPhotoDesc}`,
+                                            type: 'received',
+                                            timestamp: Date.now() + 100,
+                                            isPhotoCard: true,
+                                            photoDesc: aiPhotoDesc
+                                        };
+                                        if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) {
+                                            addMessageToUI(fakePhotoMsg);
+                                        } else {
+                                            showBannerNotification(friend, '[照片]');
+                                        }
+                                        await new Promise(resolve => dbAdd('chat_history', fakePhotoMsg, resolve));
+                                        friend.lastMsg = '[照片]';
                                     } else if (transferData) {
                                         if (partText) {
                                             const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
@@ -15670,7 +15697,7 @@
                 prompt += `为了模拟真实的微信聊天体验，**任何人设**（无论是高冷、年长还是活泼）都必须遵循以下**强制断句规则**：\n`;
                 prompt += `1. **强制换行拆分**：除非用户明确要求“写长篇大论”或“一整段回复”，否则只要你的回复超过两句话，就**必须使用换行符（回车）**将其拆分为多条短消息。严禁回复没有换行的一长段文字！少于两句话时可以不换行。\n`;
                 prompt += `2. **标点与停顿**：\n   - 随性/年轻/高冷人设：多用空格代替标点，省略句末标点，大量使用换行。\n   - 严谨/年长人设：可以保留规范标点，但长回复也必须用换行符拆分成几条发送。\n`;
-                prompt += `3. **共同底线（无论何种人设都必须遵守）**：\n   - **严禁**使用书面语引号「」包裹对话。\n   - **严禁**在正文中出现任何动作、神态描写（如*叹气*、*笑*、（摸头）等）。\n   - **严禁**输出 <br> 等 HTML 代码。\n   - **绝对禁止**使用文字描述来编造发送图片或表情包的行为（例如绝对不能输出“[发送了一张表情包(含义:xxx)]”之类的文字），只能通过 <sticker> 标签发送已有的表情。\n   - 直接输出你想说的话，就像你在用微信打字一样。\n`;
+                prompt += `3. **共同底线（无论何种人设都必须遵守）**：\n   - **严禁**使用书面语引号「」包裹对话。\n   - **严禁**在正文中出现任何动作、神态描写（如*叹气*、*笑*、（摸头）等）。\n   - **严禁**输出 <br> 等 HTML 代码。\n   - **绝对禁止**使用纯文字占位符来敷衍发图行为**（例如绝对不能输出“[图片]”、“[发了一张自拍]”）。发已有的表情包必须用 <sticker> 标签；如果是发新的照片或自拍，必须且只能使用 <photo>照片的详细画面描述</photo> 标签！\n   - 直接输出你想说的话，就像你在用微信打字一样。\n`;
 
                 if (friend.enableThoughts) {
                     prompt += `\n【心声功能特别强调】\n即便开启了心声功能，你在“线上模式”下的正文也【必须】保持纯粹的聊天格式，【严禁】任何形式的动作或心理描写。心声只能作为附加信息，使用 <mood> 和 <inner_thought> 标签包裹，并【必须】放在所有聊天消息的【最后面】。\n<mood> 标签中仅允许填写一个日式颜文字（Kaomoji），例如 (^_^), (>_<), (T_T) 等。严禁使用任何 Emoji 表情（如 😊, 😂）。【重要】每次回复都【必须】生成 <mood> 标签，否则视为违规。\n`;
@@ -15688,7 +15715,27 @@
 8. 发送图片：如果用户发给你图片并希望你把它发出来（例如玩梗等），你可以根据人设直接答应或者进行多回合互动。当你决定要发这张照片时，请输出 <send_image>图片ID或图片链接</send_image> 指令，系统会自动帮你把那张图发出去。
 9. 删除朋友圈：如果用户在聊天中提到让你删掉某条朋友圈动态，你可以根据人设决定是否同意。如果同意，请在回复中包含指令<delete_moment>动态关键字或ID</delete_moment>，系统会自动帮你删除包含该关键字的最新一条朋友圈。如果你不想删，可以找理由拒绝。
 10. 发送位置：如果你想发送一个地理位置，请使用格式：<location name="位置名称">详细地址（可选）</location>。系统会自动将其渲染为位置卡片。你可以在发送位置的同时附带额外的文字。
-11. 拍照发送：如果用户希望你拍照分享当前的画面（比如自拍、风景等），或者你主动想给对方发送一张现拍的照片，请在回复中包含单独的一行：<fake_photo>照片画面的详细描述</fake_photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”或“[图片]”、“[照片]”等文字占位符来敷衍。你可以附带额外的聊天文字，但这不会影响角色发送常规的表情包。\n`;
+11. 发送照片：如果你想向用户发送现拍的照片/自拍，请在回复中包含：<photo>照片画面的详细描述</photo>。系统会自动将其渲染为照片卡片。绝对禁止直接输出“[发送了一张图片]”！
+
+【核心机制：发送照片】
+当你想向用户发送任何类型的照片（包括但不限于自拍、风景、美食、周围环境、物品等）时，你必须使用 <photo>照片的详细画面描述</photo> 标签！
+【极其重要的逻辑绑定】：如果你的聊天文字中包含了“发给你了”、“给你拍了”、“看吧”、“这就是我的自拍”、“喜欢吗”等暗示已经发送了照片的话语，你的回复中就【必须、绝对要】包含 <photo> 标签！否则用户什么图片都收不到！绝对不能只发纯文本而忘记带上标签！
+你的描述需要包含丰富生动的画面细节（如光线、色彩、构图、主体状态等）。
+
+（注：系统会自动将你回复中的 <photo> 标签转化为单独的照片卡片消息。以上是机制说明，以下是正确示范。你可以根据情况灵活决定照片和文字的顺序，只要分行输出，系统会自动帮你拆分成对应的多条连续消息发送。）
+
+示范1（先说话，再发照片）：
+给你看我今天的穿搭！
+<photo>我穿着一件黑色的风衣，里面是白色的高领毛衣，正站在全身镜前单手拿手机自拍，背景是我的衣帽间。</photo>
+
+示范2（先发照片，再说话）：
+<photo>一张木质桌子的特写，一杯拿铁表面有着精致的天鹅拉花，旁边放着一块咬了一口的提拉米苏，午后的阳光从窗户斜射进来，氛围感拉满。</photo>
+快来馋一下！
+
+示范3（先说话，发照片，然后再说话）：
+你看我这件新买的裙子怎么样？
+<photo>我站在试衣间的全身镜前，穿着一件复古风格的墨绿色碎花连衣裙，裙摆刚好到小腿肚，手里拿着手机对着镜子自拍，表情有些期待，试衣间的光线很柔和。</photo>
+是不是很显白？我纠结要不要直接穿走呢。\n`;
             }
             prompt += `\n请根据上述人设和记忆，以${friend.name}的口吻进行自然地回复。`;
             return prompt;
@@ -15705,8 +15752,8 @@
 
                 if (msg.isLocation) {
                     text = `[发送了位置: ${msg.locationName}${msg.locationDetail ? ` (${msg.locationDetail})` : ''}]`;
-                } else if (msg.isFakePhoto) {
-                    text = `[向你发送了一张新拍的照片，照片内容是：${msg.fakePhotoDesc}]`;
+                } else if (msg.isPhotoCard) {
+                    text = `[向你发送了一张新拍的照片，照片内容是：${msg.photoDesc}]`;
                 } else if (msg.isSticker) {
                     const src = msg.text;
                     const desc = msg.stickerDescription ? `(含义: ${msg.stickerDescription})` : '';
@@ -16078,9 +16125,9 @@
                         let aiResponseText = await callLLM(config, systemPrompt, history);
 
                         if (aiResponseText) {
-                            // Remove newlines inside <fake_photo> tags to prevent fragmentation
-                            aiResponseText = aiResponseText.replace(/<fake_photo>([\s\S]*?)<\/fake_photo>/g, (match, p1) => {
-                                return `<fake_photo>${p1.replace(/\n/g, ' ')}</fake_photo>`;
+                            // Remove newlines inside <photo> tags to prevent fragmentation
+                            aiResponseText = aiResponseText.replace(/<photo>([\s\S]*?)<\/photo>/gi, (match, p1) => {
+                                return `<photo>${p1.replace(/\n/g, ' ')}</photo>`;
                             });
                             
                             // Remove system prompt texts accidentally outputted by AI
@@ -16176,17 +16223,17 @@
                                 }
 
                                 const lazyImageRegex = /[\[【［\(（\*]+(?:发送了|发了|发送|发)?(?:一张|一张张)?(?:图片|照片|自拍|图)(?:：|:)?\s*(.*?)[\]】］\)）\*]+/g;
-                                if (!partText.includes('<fake_photo>')) {
-                                    partText = partText.replace(lazyImageRegex, (match, desc) => `<fake_photo>${desc || '一张照片'}</fake_photo>`);
+                                if (!partText.includes('<photo>')) {
+                                    partText = partText.replace(lazyImageRegex, (match, desc) => `<photo>${desc || '一张照片'}</photo>`);
                                 }
 
                                 // Parse Fake Photo
-                                let aiFakePhotoDesc = null;
-                                const fakePhotoRegex = /<fake_photo>([\s\S]*?)<\/fake_photo>/;
-                                const fakePhotoMatch = partText.match(fakePhotoRegex);
-                                if (fakePhotoMatch) {
-                                    aiFakePhotoDesc = fakePhotoMatch[1].trim();
-                                    partText = partText.replace(fakePhotoRegex, '').trim();
+                                let aiPhotoDesc = null;
+                                const photoRegex = /<photo>([\s\S]*?)<\/photo>/;
+                                const photoMatch = partText.match(photoRegex);
+                                if (photoMatch) {
+                                    aiPhotoDesc = photoMatch[1].trim();
+                                    partText = partText.replace(photoRegex, '').trim();
                                 }
 
                                 // Parse Send Image Command
@@ -16201,8 +16248,8 @@
                                         (m.text === imageIdOrUrl)
                                     );
                                     if (imageMsg) {
-                                        if (imageMsg.isFakePhoto) {
-                                            aiFakePhotoDesc = imageMsg.fakePhotoDesc;
+                                        if (imageMsg.isPhotoCard) {
+                                            aiPhotoDesc = imageMsg.photoDesc;
                                         } else {
                                             aiStickerUrl = imageMsg.text;
                                         }
@@ -16320,7 +16367,7 @@
                                     partText = partText.replace(quoteRegex, '').trim();
                                 }
                                 
-                                if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData && !aiFakePhotoDesc) {
+                                if (partText === '' && !transferData && !aiStickerUrl && !hasDice && !locationData && !aiPhotoDesc) {
                                     if (hasAction) {
                                         partText = actionText;
                                     } else if (hasMusicAction) {
@@ -16352,7 +16399,7 @@
                                     if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(locationMsg);
                                     else showBannerNotification(friend, `[位置] ${locationData.name}`);
                                     friend.lastMsg = `[位置] ${locationData.name}`;
-                                } else if (aiFakePhotoDesc) {
+                                } else if (aiPhotoDesc) {
                                     if (partText) {
                                         const textMsg = { friendId: friend.id, text: partText, type: 'received', timestamp: Date.now() };
                                         if (quoteData) textMsg.quote = quoteData;
@@ -16363,11 +16410,11 @@
 
                                     const fakePhotoMsg = {
                                         friendId: friend.id,
-                                        text: `[照片] ${aiFakePhotoDesc}`,
+                                        text: `[照片] ${aiPhotoDesc}`,
                                         type: 'received',
                                         timestamp: Date.now() + 100,
-                                        isFakePhoto: true,
-                                        fakePhotoDesc: aiFakePhotoDesc
+                                        isPhotoCard: true,
+                                        photoDesc: aiPhotoDesc
                                     };
                                     await new Promise(resolve => dbAdd('chat_history', fakePhotoMsg, resolve));
                                     if (currentChatFriendId === friend.id && document.getElementById('chat-interface-page').classList.contains('active')) addMessageToUI(fakePhotoMsg);
@@ -16919,30 +16966,42 @@ ${historyText}`;
                         return;
                     }
 
-                    let processedText = text;
-                    rules.forEach(rule => {
-                        let isMatch = false;
-                        if (rule.scopeType === 'all') isMatch = true;
-                        else if (rule.scopeType === 'group' && rule.scopeTarget === friendGroup) isMatch = true;
-                        else if (rule.scopeType === 'character') {
-                            if (Array.isArray(rule.scopeTarget)) {
-                                if (rule.scopeTarget.includes(friendId)) isMatch = true;
-                            } else if (rule.scopeTarget === friendId) {
-                                isMatch = true;
-                            }
-                        }
+                    // 保护系统级功能标签不被用户正则误删，采用物理切分法
+                    const protectPattern = /(<(?:photo|sticker|dice|transfer|location|quote|music_control|delete_moment|change_avatar|send_image)[^>]*>[\s\S]*?<\/(?:photo|sticker|dice|transfer|location|quote|music_control|delete_moment|change_avatar|send_image)>)/gi;
+                    
+                    const parts = text.split(protectPattern);
 
-                        if (isMatch) {
-                            try {
-                                const regex = new RegExp(rule.pattern, rule.flags);
-                                const replacement = rule.replacement.replace(/\\n/g, '\n');
-                                processedText = processedText.replace(regex, replacement);
-                            } catch (e) {
-                                console.error('Regex rule error:', e);
-                            }
+                    for (let i = 0; i < parts.length; i++) {
+                        // 偶数索引是普通文本，奇数索引是保护的标签
+                        if (i % 2 === 0) {
+                            let processedPart = parts[i];
+                            rules.forEach(rule => {
+                                let isMatch = false;
+                                if (rule.scopeType === 'all') isMatch = true;
+                                else if (rule.scopeType === 'group' && rule.scopeTarget === friendGroup) isMatch = true;
+                                else if (rule.scopeType === 'character') {
+                                    if (Array.isArray(rule.scopeTarget)) {
+                                        if (rule.scopeTarget.includes(friendId)) isMatch = true;
+                                    } else if (rule.scopeTarget === friendId) {
+                                        isMatch = true;
+                                    }
+                                }
+
+                                if (isMatch) {
+                                    try {
+                                        const regex = new RegExp(rule.pattern, rule.flags);
+                                        const replacement = rule.replacement.replace(/\\n/g, '\n');
+                                        processedPart = processedPart.replace(regex, replacement);
+                                    } catch (e) {
+                                        console.error('Regex rule error:', e);
+                                    }
+                                }
+                            });
+                            parts[i] = processedPart;
                         }
-                    });
-                    resolve(processedText);
+                    }
+
+                    resolve(parts.join(''));
                 });
             });
         }
