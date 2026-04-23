@@ -8867,7 +8867,7 @@
             listContainer.innerHTML = '';
 
             dbGetAll('friends', friends => {
-                friends.forEach(friend => {
+                friends.filter(f => !f.isGroup).forEach(friend => {
                     const label = document.createElement('label');
                     label.className = 'gm-contact-item';
                     label.style.padding = '10px 0';
@@ -20106,7 +20106,7 @@ ${historyText}`;
             });
 
             document.getElementById('transfer-modal').style.display = 'none';
-            triggerAIResponse(false);
+            // triggerAIResponse(false);
         }
 
         function openTransferActionModal(msg) {
@@ -20165,7 +20165,7 @@ ${historyText}`;
                                 }
                             });
                         });
-                        triggerAIResponse(false);
+                        // triggerAIResponse(false);
                     });
                 }
             });
@@ -21102,22 +21102,26 @@ ${historyText}`;
             };
             setVh();
             let lastWidth = window.innerWidth;
+            let lastHeight = window.innerHeight;
             window.addEventListener('resize', () => {
-                if (window.innerWidth !== lastWidth) {
-                    lastWidth = window.innerWidth;
+                const currentWidth = window.innerWidth;
+                const currentHeight = window.innerHeight;
+                
+                if (currentWidth !== lastWidth) {
+                    lastWidth = currentWidth;
+                    lastHeight = currentHeight;
                     setVh();
+                } else if (currentHeight !== lastHeight) {
+                    const activeEl = document.activeElement;
+                    const isInputFocused = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.hasAttribute('contenteditable'));
+                    
+                    if (!isInputFocused) {
+                        lastHeight = currentHeight;
+                        setVh();
+                    }
                 }
             });
         };
-
-
-        function handleAvatarClick(friendId) {
-            dbGet('friends', friendId, friend => {
-                if (friend && friend.enableThoughts) {
-                    showThoughtModal(friend);
-                }
-            });
-        }
 
         function showThoughtModal(friend) {
             const modal = document.getElementById('thought-modal');
