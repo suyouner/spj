@@ -6431,8 +6431,8 @@
         </div>
 
         <!-- Subtitle Area -->
-        <div style="flex-grow: 1; position: relative; z-index: 10; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; pointer-events: none;">
-            <div id="vc-subtitles" style="color: white; font-size: 18px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,0.8); line-height: 1.5; font-weight: 500; word-wrap: break-word; max-width: 100%;">
+        <div style="flex-grow: 1; position: relative; z-index: 10; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 20px; pointer-events: none; min-height: 0; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%); mask-image: linear-gradient(to bottom, transparent 0%, black 20%);">
+            <div id="vc-subtitles" style="color: white; font-size: 18px; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,0.8); line-height: 1.5; font-weight: 500; word-wrap: break-word; width: 100%; overflow-y: auto; pointer-events: auto; scrollbar-width: none; flex-shrink: 1; min-height: 0;">
             </div>
         </div>
 
@@ -7423,7 +7423,7 @@
         window.isUploading = false;
 
         function createImageUploader(callback, options = {}) {
-            const { quality = 0.7, maxSizeMB = 10 } = options;
+            const { quality = 0.7, maxSizeMB = 10, compress = true } = options;
 
             return function(...args) {
                 if (window.isUploading) {
@@ -7465,10 +7465,19 @@
                         return;
                     }
                     
-                    compressImage(file, quality, (compressedSrc) => {
-                        callback(compressedSrc, ...args);
-                        cleanup();
-                    });
+                    if (compress) {
+                        compressImage(file, quality, (compressedSrc) => {
+                            callback(compressedSrc, ...args);
+                            cleanup();
+                        });
+                    } else {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            callback(e.target.result, ...args);
+                            cleanup();
+                        };
+                        reader.readAsDataURL(file);
+                    }
                 };
                 
                 document.body.appendChild(input);
@@ -7494,7 +7503,7 @@
                     showToast('已保存全局设置');
                 });
             }
-        });
+        }, { compress: false });
         const triggerChatThemeUpload = (type) => uploaderForChatTheme(type);
 
         const uploaderForDesktopTheme = createImageUploader((compressedSrc, type) => {
@@ -7505,7 +7514,7 @@
             }).catch(err => {
                 showToast('保存失败，可能是存储空间不足');
             });
-        });
+        }, { compress: false });
         const triggerDesktopThemeUpload = (type) => uploaderForDesktopTheme(type);
 
         const uploaderForBubbleTheme = createImageUploader((compressedSrc, type) => {
@@ -7518,7 +7527,7 @@
             } else if (type === 'tail_image') {
                 updateBubbleThemeValue('tail_image', compressedSrc);
             }
-        });
+        }, { compress: false });
         const triggerBubbleUpload = (type) => uploaderForBubbleTheme(type);
 
         const uploaderForMainPage = createImageUploader((compressedSrc, displayId) => {
@@ -7554,7 +7563,7 @@
             }).catch(err => {
                 showToast('壁纸保存失败');
             });
-        });
+        }, { compress: false });
         const triggerWallpaperUpload = () => uploaderForWallpaper();
 
         const uploaderForIndividualIcon = createImageUploader((compressedSrc, id) => {
@@ -14026,62 +14035,6 @@
             reader.readAsDataURL(file);
         }
 
-        // --- Unified Image Uploader ---
-        window.isUploading = false;
-
-        function createImageUploader(callback, options = {}) {
-            const { quality = 0.7, maxSizeMB = 10 } = options;
-
-            return function(...args) {
-                if (window.isUploading) {
-                    showToast('请等待当前上传完成');
-                    return;
-                }
-                
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.style.display = 'none';
-                
-                input.onchange = function(e) {
-                    window.isUploading = true;
-                    const file = e.target.files[0];
-                    
-                    // Cleanup function
-                    const cleanup = () => {
-                        window.isUploading = false;
-                        if (input.parentNode) {
-                            document.body.removeChild(input);
-                        }
-                    };
-
-                    if (!file) {
-                        cleanup();
-                        return;
-                    }
-                    
-                    if (!file.type.startsWith('image/')) {
-                        showToast('请选择图片文件');
-                        cleanup();
-                        return;
-                    }
-                    
-                    if (file.size > maxSizeMB * 1024 * 1024) {
-                        showToast(`图片不能超过${maxSizeMB}MB`);
-                        cleanup();
-                        return;
-                    }
-                    
-                    compressImage(file, quality, (compressedSrc) => {
-                        callback(compressedSrc, ...args);
-                        cleanup();
-                    });
-                };
-                
-                document.body.appendChild(input);
-                input.click();
-            };
-        }
 
         stickerUploadBtn.addEventListener('click', () => stickerFileInput.click());
 
@@ -16049,7 +16002,7 @@
                 let fileUris = msg.fileUris || [];
 
                 if (msg.isVcText) {
-                    text = `[视频通话中说] ${text}`;
+                    text = `[视频通话] ${text}`;
                 }
 
                 if (msg.isLocation) {
@@ -20526,7 +20479,7 @@ ${historyText}`;
             if (!text) return;
             
             input.value = '';
-            document.getElementById('vc-input-bar').style.display = 'none';
+            // document.getElementById('vc-input-bar').style.display = 'none';
             
             appendVcSubtitle(`我: ${text}`);
             
@@ -20553,13 +20506,17 @@ ${historyText}`;
             const container = document.getElementById('vc-subtitles');
             const p = document.createElement('div');
             p.style.marginBottom = '10px';
+            
             p.textContent = text;
             container.appendChild(p);
             
-            // Keep only last 3 lines
-            while (container.children.length > 3) {
+            // Keep only last 2 lines
+            while (container.children.length > 2) {
                 container.removeChild(container.firstChild);
             }
+            
+            // Automatically scroll to bottom when new subtitle is added
+            container.scrollTop = container.scrollHeight;
         }
 
         async function triggerVcAIResponse(userText) {
@@ -20596,7 +20553,9 @@ ${historyText}`;
 1. 你们现在正打视频电话，可以面对面看到彼此。
 2. 动作描写必须放在全角括号“（）”内，语言描写在括号外！绝对禁止使用星号*或其他符号！无论之前的聊天记录是什么格式，从现在开始必须严格改用括号格式！
 3. 你的动作描写必须符合【隔着屏幕】的物理限制。例如：你可以“（凑近镜头）”、“（隔着屏幕摸了摸你的脸）”、“（对着镜头笑）”。绝对禁止出现不符合常理的动作，如“（拥抱你）”、“（真正地亲吻你）”、“（递给你一杯水）”等。
-4. 语言要口语化，像真实的视频聊天一样。不要长篇大论。
+4. 【严格禁止】：绝对禁止任何形式的心理描写（不论是用标签还是括号）！绝对禁止使用任何表情符号（Emoji、颜文字）！只能输出动作描写和真实说出口的语言！
+5. 绝对不要在回复开头加上你的名字或“[视频通话]”、“[视频通话中说]”等任何形式的前缀标签！直接输出你的动作和语言！
+6. 语言要口语化，像真实的视频聊天一样。不要长篇大论。
 
 【正确回复格式示例】：
 （对着镜头甜甜地笑了一下，挥了挥手）你今天过得怎么样呀？
@@ -20613,6 +20572,15 @@ ${historyText}`;
                     if (aiResponseText && vcIsCallActive) {
                         // Strip out XML tags since it's just subtitles
                         aiResponseText = aiResponseText.replace(/<[^>]+>/g, '').trim();
+                        // Clean up unexpected prefixes like [视频通话中说] or [视频通话] or friend's name
+                        aiResponseText = aiResponseText.replace(/\[视频通话.*?\]\s*/g, '').trim();
+                        const namePrefixRegex = new RegExp(`^${friend.name}[:：]\\s*`);
+                        aiResponseText = aiResponseText.replace(namePrefixRegex, '').trim();
+                        if (friend.realName) {
+                            const realNamePrefixRegex = new RegExp(`^${friend.realName}[:：]\\s*`);
+                            aiResponseText = aiResponseText.replace(realNamePrefixRegex, '').trim();
+                        }
+                        
                         appendVcSubtitle(`${friend.name}: ${aiResponseText}`);
                         
                         // Save AI response to DB
