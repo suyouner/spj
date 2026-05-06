@@ -13165,6 +13165,79 @@
                 return;
             }
 
+            if (msg.isVideoCallRecord) {
+                const wrapper = document.createElement('div');
+                wrapper.className = `message-bubble-wrapper ${msg.type}`;
+                wrapper.dataset.msgId = msg.id || msg.timestamp;
+
+                const checkbox = document.createElement('div');
+                checkbox.className = 'message-checkbox';
+                wrapper.appendChild(checkbox);
+
+                const contentGroup = document.createElement('div');
+                contentGroup.className = 'message-content-group';
+
+                const bubble = document.createElement('div');
+                bubble.className = `message-bubble ${msg.type} video-call-bubble`;
+                
+                let iconSvg = `<path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>`;
+                
+                bubble.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="transform: scale(0.9);">${iconSvg}</svg>
+                        <span>${msg.text}</span>
+                    </div>
+                `;
+
+                attachMessageEvents(bubble, msg);
+                contentGroup.appendChild(bubble);
+
+                const avatar = document.createElement('img');
+                avatar.className = 'chat-avatar-placeholder';
+                if (msg.type === 'received') {
+                    avatar.onclick = (e) => {
+                        e.stopPropagation();
+                        handleAvatarClick(msg.friendId);
+                    };
+                }
+                
+                const targetFriendId = msg.friendId || currentChatFriendId;
+                dbGet('friends', targetFriendId, friend => {
+                    const hideDisplay = friend ? friend.avatarDisplay : 'show_all';
+                    if (msg.type === 'received' && (hideDisplay === 'hide_other' || hideDisplay === 'hide_both')) {
+                        avatar.style.display = 'none';
+                    } else if (msg.type === 'sent' && (hideDisplay === 'hide_mine' || hideDisplay === 'hide_both')) {
+                        avatar.style.display = 'none';
+                    }
+
+                    if (msg.type === 'received') {
+                        if (friend && friend.isGroup && msg.senderAvatar) {
+                            avatar.src = msg.senderAvatar;
+                        } else {
+                            avatar.src = friend ? friend.avatar : '';
+                        }
+                    } else {
+                        if (friend && friend.myAvatar) avatar.src = friend.myAvatar;
+                        else {
+                            dbGet('user_profile', 'main_user', p => { avatar.src = (p && p.avatar) ? p.avatar : 'https://via.placeholder.com/150'; });
+                        }
+                    }
+                });
+
+                if (msg.type === 'received') {
+                    wrapper.appendChild(avatar);
+                    wrapper.appendChild(contentGroup);
+                } else {
+                    wrapper.appendChild(contentGroup);
+                    wrapper.appendChild(avatar);
+                }
+
+                container.appendChild(wrapper);
+                if (shouldScroll) container.scrollTop = container.scrollHeight;
+                
+                return bubble;
+            }
+
             // Handle Location messages
             if (msg.isLocation) {
                 const wrapper = document.createElement('div');
@@ -16003,6 +16076,16 @@
 
                 if (msg.isVcText) {
                     text = `[视频通话] ${text}`;
+                }
+
+                if (msg.isVideoCallRecord) {
+                    if (msg.text === '对方已拒绝') {
+                        text = `[你发起视频通话，但对方(角色)拒绝了]`;
+                    } else if (msg.text === '已取消') {
+                        text = `[你发起视频通话，但中途取消了]`;
+                    } else {
+                        text = `[视频通话记录：${msg.text}]`;
+                    }
                 }
 
                 if (msg.isLocation) {
@@ -20356,10 +20439,10 @@ ${historyText}`;
                                     // Save history
                                     const message = {
                                         friendId: currentChatFriendId,
-                                        text: `[视频通话] 对方已拒绝`,
+                                        text: `对方已拒绝`,
                                         type: 'sent',
                                         timestamp: Date.now(),
-                                        isInfo: true
+                                        isVideoCallRecord: true
                                     };
                                     addMessageToUI(message);
                                     dbAdd('chat_history', message);
@@ -20376,10 +20459,10 @@ ${historyText}`;
             if (isCancel && currentChatFriendId) {
                 const message = {
                     friendId: currentChatFriendId,
-                    text: `[视频通话] 已取消`,
+                    text: `已取消`,
                     type: 'sent',
                     timestamp: Date.now(),
-                    isInfo: true
+                    isVideoCallRecord: true
                 };
                 addMessageToUI(message);
                 dbAdd('chat_history', message);
@@ -20432,10 +20515,10 @@ ${historyText}`;
             
             const message = {
                 friendId: currentChatFriendId,
-                text: `[视频通话] 通话时长 ${durationStr}`,
+                text: `通话时长 ${durationStr}`,
                 type: 'sent',
                 timestamp: Date.now(),
-                isInfo: true
+                isVideoCallRecord: true
             };
             addMessageToUI(message);
             dbAdd('chat_history', message);
