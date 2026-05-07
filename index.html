@@ -195,8 +195,6 @@
         }
         
         #main-page {
-            background-size: cover;
-            background-position: center;
             background-color: transparent;
             position: absolute;
             top: 0;
@@ -205,6 +203,16 @@
             height: var(--fixed-vh, 100dvh) !important;
             max-height: var(--fixed-vh, 100dvh) !important;
             z-index: 1;
+        }
+        #main-page::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--main-bg-image);
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+            pointer-events: none;
         }
         
         #theme-page, #desktop-theme-page, #global-font-page {
@@ -727,7 +735,7 @@
         .date-display { position: absolute; top: 95px; right: 25px; font-size: 12px; color: #999; text-align: right; width: 200px; }
         .signature-area { margin: -35px 25px 25px 25px; background-color: white; border-radius: 50px; padding: 14px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; z-index: 5; min-height: 60px; }
         .signature-input { flex: 1; border: none; background: transparent; font-size: 16px; color: #555; outline: none; cursor: text; margin-right: 40px; }
-        .signature-icons { position: absolute; right: 25px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; pointer-events: none; }
+        .signature-icons { position: absolute; right: 25px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; }
         .apps-area { flex: 1; padding: 0 25px; display: flex; flex-direction: column; gap: 25px; }
         .apps-row-1 { display: flex; justify-content: space-between; }
         .apps-row-2 { display: flex; justify-content: flex-start; }
@@ -1565,6 +1573,18 @@
             padding-top: 0 !important; /* Remove default page padding for immersive header */
             padding-bottom: var(--keyboard-offset, 0px);
             transition: padding-bottom 0.2s ease-out;
+            position: relative;
+        }
+        
+        #chat-interface-page::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--chat-bg-image);
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+            pointer-events: none;
         }
 
         .chat-interface-header {
@@ -1574,11 +1594,20 @@
             align-items: center;
             padding: calc(max(34px, env(safe-area-inset-top)) + 2px) 15px 12px 15px;
             background-color: var(--chat-header-bg-color, #ededed);
+            flex-shrink: 0;
+            border-bottom: 1px solid #d7d7d7;
+            position: relative;
+        }
+        
+        .chat-interface-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             background-image: var(--chat-header-bg-image);
             background-size: cover;
             background-position: center;
-            flex-shrink: 0;
-            border-bottom: 1px solid #d7d7d7;
+            z-index: -1;
+            pointer-events: none;
         }
         .chat-interface-header .back-arrow {
             font-size: 24px;
@@ -1840,9 +1869,6 @@
         .chat-input-container {
             flex-shrink: 0;
             background-color: var(--chat-input-bg-color, #f7f7f7);
-            background-image: var(--chat-input-bg-image);
-            background-size: cover;
-            background-position: center;
             border-top: 1px solid #e0e0e0;
             padding: 8px;
             padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
@@ -1854,6 +1880,18 @@
             min-height: 52px;
             transition: padding-bottom 0.2s ease-out;
             width: 100%;
+            position: relative;
+        }
+        
+        .chat-input-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: var(--chat-input-bg-image);
+            background-size: cover;
+            background-position: center;
+            z-index: -1;
+            pointer-events: none;
         }
         .chat-input-icon {
             display: flex;
@@ -4391,6 +4429,47 @@
             color: #000;
             border: 1px solid #000;
         }
+
+        /* Dark Mode Styles */
+        .phone-container.dark-mode {
+            filter: invert(1) hue-rotate(180deg);
+        }
+        
+        .phone-container.dark-mode img:not(.music-avatar),
+        .phone-container.dark-mode video,
+        .phone-container.dark-mode .avatar,
+        .phone-container.dark-mode .app-icon img,
+        .phone-container.dark-mode .dock-icon-img,
+        .phone-container.dark-mode .chat-avatar,
+        .phone-container.dark-mode .banner-avatar,
+        .phone-container.dark-mode .discover-post-avatar,
+        .phone-container.dark-mode .discover-post-image,
+        .phone-container.dark-mode .tieba-comment-avatar,
+        .phone-container.dark-mode .wallpaper-preview,
+        .phone-container.dark-mode #main-page::before,
+        .phone-container.dark-mode #chat-interface-page::before,
+        .phone-container.dark-mode .chat-interface-header::before,
+        .phone-container.dark-mode .chat-input-container::before,
+        .phone-container.dark-mode .battery-icon.image-mode,
+        .phone-container.dark-mode .signal-icon[style*="background-image"],
+        .phone-container.dark-mode .chat-input-icon[style*="background-image"],
+        .phone-container.dark-mode .chat-interface-options[style*="background-image"],
+        .phone-container.dark-mode .back-arrow[style*="background-image"],
+        .phone-container.dark-mode .send-button[style*="background-image"] {
+            filter: brightness(0.8) invert(1) hue-rotate(180deg);
+        }
+
+        .phone-container.dark-mode .status-bar {
+            color: #ccc !important;
+        }
+        
+        .phone-container.dark-mode .battery-icon::after {
+            background: #ccc !important;
+        }
+
+        .phone-container.dark-mode .signature-icons svg {
+            stroke: #ccc !important;
+        }
     </style>
 </head>
 <body>
@@ -4447,7 +4526,7 @@
             </div>
             <div class="signature-area">
                 <div class="signature-input" contenteditable="true">天天开心</div>
-                <div class="signature-icons">
+                <div class="signature-icons" id="toggle-dark-mode" style="cursor: pointer;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </div>
             </div>
@@ -7556,7 +7635,7 @@
         }
 
         const uploaderForWallpaper = createImageUploader((compressedSrc) => {
-            document.getElementById('main-page').style.backgroundImage = `url(${compressedSrc})`;
+            document.documentElement.style.setProperty('--main-bg-image', `url(${compressedSrc})`);
             document.getElementById('wallpaper-preview').style.backgroundImage = `url(${compressedSrc})`;
             dbSaveSetting('wallpaper', compressedSrc).then(() => {
                 localStorage.removeItem('wallpaper'); // Clean up old storage
@@ -10198,7 +10277,7 @@
 
             const wallpaper = themeSettings['wallpaper'] || localStorage.getItem('wallpaper');
             if (wallpaper) {
-                document.getElementById('main-page').style.backgroundImage = `url(${wallpaper})`;
+                document.documentElement.style.setProperty('--main-bg-image', `url(${wallpaper})`);
                 document.getElementById('wallpaper-preview').style.backgroundImage = `url(${wallpaper})`;
             }
             document.querySelectorAll('#main-page .app-item').forEach(item => {
@@ -14307,16 +14386,16 @@
             // Reset base colors
             chatPage.style.backgroundImage = 'none';
             chatPage.style.backgroundColor = '#ededed';
+            chatPage.style.setProperty('--chat-bg-image', 'none');
 
             // Wallpaper
             const wallpaper = getSetting('chat_wallpaper', null);
             if (wallpaper) {
-                chatPage.style.backgroundImage = `url(${wallpaper})`;
-                chatPage.style.backgroundSize = 'cover';
-                chatPage.style.backgroundPosition = 'center';
+                chatPage.style.setProperty('--chat-bg-image', `url(${wallpaper})`);
+                chatPage.style.backgroundColor = 'transparent';
                 chatContainer.style.backgroundColor = 'transparent'; // Make message area transparent
             } else {
-                chatPage.style.backgroundImage = 'none';
+                chatPage.style.setProperty('--chat-bg-image', 'none');
                 chatPage.style.backgroundColor = '#ededed';
                 chatContainer.style.backgroundColor = ''; // Revert to stylesheet default
             }
@@ -14324,11 +14403,11 @@
             // Header BG
             const headerBg = getSetting('chat_header_bg', null);
             if (headerBg) {
-                chatHeader.style.backgroundImage = `url(${headerBg})`;
+                chatHeader.style.setProperty('--chat-header-bg-image', `url(${headerBg})`);
                 chatHeader.style.backgroundColor = 'transparent';
                 chatHeader.style.borderBottom = 'none';
             } else {
-                chatHeader.style.backgroundImage = 'none';
+                chatHeader.style.setProperty('--chat-header-bg-image', 'none');
                 chatHeader.style.backgroundColor = 'var(--chat-header-bg-color, #ededed)';
                 chatHeader.style.borderBottom = '1px solid #d7d7d7';
             }
@@ -14336,11 +14415,11 @@
             // Input BG
             const inputBg = getSetting('chat_input_bg', null);
             if (inputBg) {
-                chatInputContainer.style.backgroundImage = `url(${inputBg})`;
+                chatInputContainer.style.setProperty('--chat-input-bg-image', `url(${inputBg})`);
                 chatInputContainer.style.backgroundColor = 'transparent';
                 chatInputContainer.style.borderTop = 'none';
             } else {
-                chatInputContainer.style.backgroundImage = 'none';
+                chatInputContainer.style.setProperty('--chat-input-bg-image', 'none');
                 chatInputContainer.style.backgroundColor = 'var(--chat-input-bg-color, #f7f7f7)';
                 chatInputContainer.style.borderTop = '1px solid #e0e0e0';
             }
@@ -24307,6 +24386,23 @@ ${jsonExample}`;
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
+        const toggleDarkModeBtn = document.getElementById('toggle-dark-mode');
+        const phoneContainer = document.getElementById('main-app-container');
+        
+        // Load dark mode state
+        if (localStorage.getItem('dark_mode') === 'true') {
+            phoneContainer.classList.add('dark-mode');
+        }
+
+        if (toggleDarkModeBtn) {
+            toggleDarkModeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                phoneContainer.classList.toggle('dark-mode');
+                localStorage.setItem('dark_mode', phoneContainer.classList.contains('dark-mode'));
+                showToast(phoneContainer.classList.contains('dark-mode') ? '已开启夜间模式' : '已关闭夜间模式');
+            });
+        }
+
         const isActivated = localStorage.getItem('app_activated') === 'true';
         if (!isActivated) {
             document.getElementById('activation-page').style.display = 'flex';
